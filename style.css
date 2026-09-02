@@ -135,5 +135,47 @@ main {
   white-space: normal;
   overflow-wrap: break-word;
   text-align: center;
-  vertical-align: center;
+}
+
+.caja-info {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 15px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.caja-item {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  justify-content: space-evenly;
+  gap: 10px;
+}
+
+.columna {
+  font-weight: 700;
+  color: #333b46;
+  font-size: 1rem;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.fila {
+  color: #1e293b;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.fila ul {
+  list-style-type: none;
+}
+
+.fila ul li span {
+  font-weight: 700;
 }

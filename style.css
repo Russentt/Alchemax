@@ -41,6 +41,11 @@ header {
   cursor: pointer;
 }
 
+.lista-elementos li a {
+  text-decoration: none;
+  color: inherit;
+}
+
 main {
   padding: 40px 20px;
 }
@@ -67,6 +72,7 @@ main {
   font-size: 1.4rem;
   color: #0f172a;
   margin-bottom: 16px;
+  text-align: center;
   min-height: 48px;
 }
 
@@ -93,6 +99,7 @@ main {
   color: #475569;
   margin-bottom: 16px;
   text-transform: uppercase;
+  text-align: center;
   letter-spacing: 0.05em;
   border-bottom: 2px solid #f1f5f9;
   padding-bottom: 6px;
@@ -151,7 +158,7 @@ main {
   flex-direction: column;
   text-align: center;
   justify-content: space-evenly;
-  gap: 10px;
+  gap: 15px;
 }
 
 .columna {
@@ -161,19 +168,26 @@ main {
   text-transform: uppercase;
   text-align: center;
   letter-spacing: 0.05em;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 
 .fila {
   color: #1e293b;
   font-size: 1.1rem;
-  line-height: 1.4;
+  line-height: 1.8;
   white-space: normal;
   overflow-wrap: break-word;
 }
 
 .fila ul {
   list-style-type: none;
+}
+
+.fila ul li {
+  border: 0.15px solid #0c2264;
+  border-radius: 6px;
+  padding: 25px;
+  margin-bottom: 4.5px;
 }
 
 .fila ul li span {

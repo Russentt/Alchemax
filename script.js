@@ -7,7 +7,7 @@ async function initMap() {
   const map = new Map(document.getElementById("map"), {
     zoom: 15,
     center: storeLocation,
-    mapId: "DEMO_MAP_ID",
+    mapId: null, // Set this to null to stop checking for custom maps platform configurations
   });
 
   const marker = new AdvancedMarkerElement({

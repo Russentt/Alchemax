@@ -2,7 +2,7 @@ const formulario = document.querySelector(".formulario");
 const modal = document.querySelector(".modal");
 const span = document.querySelector(".close");
 
-formulario.addEventListener("click", (event) => {
+formulario.addEventListener("submit", (event) => {
   event.preventDefault();
   modal.style.display = "block";
 });

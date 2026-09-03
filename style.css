@@ -86,6 +86,7 @@ main {
   background-color: #f8fafc;
   border-radius: 8px;
   padding: 12px;
+  cursor: pointer;
 }
 
 .modelo-pc {
@@ -177,6 +178,7 @@ main {
   line-height: 1.8;
   white-space: normal;
   overflow-wrap: break-word;
+  letter-spacing: 0.05em;
 }
 
 .fila ul {
@@ -188,8 +190,21 @@ main {
   border-radius: 6px;
   padding: 25px;
   margin-bottom: 4.5px;
+  letter-spacing: 0.05em;
+  user-select: none;
 }
 
 .fila ul li span {
   font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+#map {
+  height: 450px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 20px auto;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  background-color: #1e1e24;
 }

@@ -1,0 +1,37 @@
+name: Deploy Alchemax Site to Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Swapping Secret Key String in HTML
+        run: |
+          sed -i "s/API_KEY_PLACEHOLDER/${{ secrets.MAPS_API_KEY }}/g" index.html
+
+      - name: Setup Pages Deployment
+        uses: actions/configure-pages@v4
+
+      - name: Pack Artifact Files
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Publish to Live Domain
+        id: deployment
+        uses: actions/deploy-pages@v4

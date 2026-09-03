@@ -199,7 +199,7 @@ main {
   letter-spacing: 0.05em;
 }
 
-#map {
+.mapa {
   height: 450px;
   width: 100%;
   max-width: 1200px;

@@ -12,7 +12,7 @@
       <nav class="barra-elementos">
         <ul class="lista-elementos">
           <li><a href="#featured">Destacados</a></li>
-          <li>Contacto</li>
+          <li><a href="#contact">Contacto</a></li>
           <li><a href="#about">Sobre nosotros</a></li>
         </ul>
       </nav>
@@ -269,49 +269,21 @@
         </div>
       </div>
       <div>
-        <div id="map"></div>
+        <div id="contact">
+          <div class="mapa">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d425483.9307381653!2d-70.8953333827449!3d-33.576929101302106!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6515ed8be19c19af%3A0x77068d25f19cf903!2sCirco%20Los%20Tachuelas!5e0!3m2!1ses!2scl!4v1788398184141!5m2!1ses!2scl"
+              width="100%"
+              height="100%"
+              style="border: 0"
+              allowfullscreen=""
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+        </div>
       </div>
     </main>
     <footer></footer>
-    <script>
-      ((g) => {
-        var h,
-          a,
-          k,
-          p = "The Google Maps JavaScript API",
-          c = "google",
-          l = "importLibrary",
-          q = "__ib__",
-          m = document,
-          b = window;
-        b = b[c] || (b[c] = {});
-        var d = b.maps || (b.maps = {}),
-          r = d[q] || (d[q] = new Set()),
-          e = new URLSearchParams(),
-          u = () =>
-            h ||
-            (h = new Promise(async (f, n) => {
-              await (a = m.createElement("script"));
-              e.set("libraries", [...r] + "");
-              for (k in g)
-                e.set(
-                  k.replace(/[A-Z]/g, (t) => "_" + t.toLowerCase()),
-                  g[k],
-                );
-              e.set("callback", c + ".maps." + q);
-              a.src = `https://maps.${c}://apis.com?` + e;
-              d[q] = f;
-              a.onerror = () => n(Error(p + " could not load."));
-              a.nonce = m.querySelector("script[nonce]")?.nonce || "";
-              m.head.append(a);
-            }));
-        d[l]
-          ? console.warn(p + " only loads once. Better to see https://goo.gle")
-          : (d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)));
-      })({
-        key: "API_KEY_PLACEHOLDER", // Our build step script target
-        v: "weekly",
-      });
-    </script>
   </body>
 </html>

@@ -281,6 +281,54 @@
               referrerpolicy="no-referrer-when-downgrade"
             ></iframe>
           </div>
+          <div class="contenedor-formulario">
+            <form action="POST" class="formulario">
+              <div class="form-group">
+                <label for="inputNombre">Nombre completo</label>
+                <input type="text" placeholder="Lucas Ortiz" />
+              </div>
+
+              <div class="form-group">
+                <label for="inputEmail">Correo</label>
+                <input type="email" placeholder="tucorreo@gmail.com" required />
+              </div>
+
+              <div class="form-group">
+                <label for="inputMensaje">Mensaje</label>
+                <textarea
+                  id="inputMensaje"
+                  placeholder="Escribe tu mensaje y te contactaremos!"
+                  maxlength="5000"
+                  rows="20"
+                  required
+                ></textarea>
+              </div>
+              <div class="seccion-btn">
+                <button class="boton-moderno" type="button">
+                  Enviar mensaje.
+                </button>
+              </div>
+            </form>
+            <div id="myModal" class="modal">
+              <div class="modal-content">
+                <span class="close">&times;</span>
+                <div><h3>Confirmación de Envío Exitoso</h3></div>
+                <p>
+                  Hemos recibido tu consulta técnica satisfactoriamente. Tu
+                  requerimiento ha sido derivado a nuestro equipo de
+                  especialistas en hardware para su correspondiente análisis.<br />
+                  Un asesor técnico evaluará las especificaciones de tu
+                  solicitud y se pondrá en contacto contigo a través de la
+                  dirección de correo electrónico provista en un plazo máximo de
+                  24 horas hábiles. En caso de requerir asistencia técnica
+                  crítica o soporte inmediato, por favor indícalo respondiendo
+                  al correo de confirmación generado por el sistema.
+                  <br />Agradecemos tu interés en nuestras soluciones
+                  computacionales de alto rendimiento.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>

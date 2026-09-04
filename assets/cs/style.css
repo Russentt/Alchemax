@@ -470,3 +470,7 @@ main {
   text-decoration: none;
   cursor: pointer;
 }
+
+.texto-claro {
+  color: #f1f0f0c7;
+}

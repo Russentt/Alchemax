@@ -3,221 +3,632 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
     <title>Alchemax</title>
     <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
     <script src="script.js" defer></script>
   </head>
+  <div class="cyber-bg-container">
+    <div class="cyber-glow"></div>
+    <div class="cyber-grid"></div>
+    <div class="scanlines"></div>
+  </div>
   <body>
+    <div class="cyber-bg-container">
+      <div class="cyber-glow"></div>
+      <div class="cyber-grid"></div>
+      <div class="scanlines"></div>
+    </div>
+
     <header>
-      <nav class="barra-elementos">
-        <ul class="lista-elementos">
-          <li><a href="#featured">Destacados</a></li>
-          <li><a href="#contact">Contacto</a></li>
-          <li><a href="#about">Sobre nosotros</a></li>
-        </ul>
+      <nav class="navbar navbar-expand-md navbar-dark">
+        <div class="container-fluid">
+          <span class="navbar-brand mb-0 h1 ms-2">Alchemax</span>
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#menuNavegacion"
+            aria-controls="menuNavegacion"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div
+            class="collapse navbar-collapse justify-content-end"
+            id="menuNavegacion"
+          >
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a href="#featured" class="nav-link text-light">Destacados</a>
+              </li>
+              <li class="nav-item">
+                <a href="#about" class="nav-link text-light">Sobre nosotros</a>
+              </li>
+              <li class="nav-item">
+                <a href="#contact" class="nav-link text-light">Contacto</a>
+              </li>
+            </ul>
+          </div>
+        </div>
       </nav>
     </header>
+
     <main>
-      <div class="contenedor" id="featured">
-        <article class="carta">
-          <h2>Apple MacBook Air 13" (M3 / M4)</h2>
-          <div class="formato-imagen">
-            <img
-              class="modelo-pc"
-              src="macbookair.png"
-              alt="Apple MacBook Air 13"
-            />
+      <div class="container my-5" id="featured">
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+          <div class="col">
+            <div class="card h-100 shadow-sm">
+              <div class="ratio ratio-4x3 p-3">
+                <img
+                  src="macbookair.png"
+                  class="object-fit-contain"
+                  alt="Laptop"
+                />
+              </div>
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title fw-bold text-center">MacBook Air M4</h5>
+                <p class="card-text small text-center">
+                  Diseño ultra delgado, autonomía sobresaliente y potencia
+                  eficiente para movilidad total.
+                </p>
+
+                <h6
+                  class="text-uppercase fw-bold text-secondary small mb-3 text-center"
+                >
+                  Especificaciones
+                </h6>
+
+                <div class="row g-2 text-center small mb-3">
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Categoría</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Ultrabook</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Procesador</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Apple M4</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Gráficos</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >GPU Apple 10c</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >RAM</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >16 GB</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Disco</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >512 GB SSD</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Pantalla</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >13.6"</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Formato</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Ultra delgada</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Red</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Wi-Fi 6E</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >S.O.</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >macOS</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary mt-auto w-100">
+                  Ver detalle
+                </button>
+              </div>
+            </div>
           </div>
 
-          <h3>Especificaciones</h3>
-          <div class="tabla-responsiva">
-            <div class="item-columna">
-              <div class="nombre-col">Categoría</div>
-              <div class="valor">Ultrabook Premium</div>
-            </div>
+          <div class="col">
+            <div class="card h-100 shadow-sm">
+              <div class="ratio ratio-4x3 p-3">
+                <img
+                  src="lenovolegion.avif"
+                  class="object-fit-contain"
+                  alt="Laptop"
+                />
+              </div>
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title fw-bold text-center">
+                  Lenovo Legion Pro
+                </h5>
+                <p class="card-text small text-center">
+                  Rendimiento gráfico extremo y refrigeración avanzada para
+                  gaming competitivo.
+                </p>
 
-            <div class="item-columna">
-              <div class="nombre-col">Procesador</div>
-              <div class="valor">Chip Apple M4 (10 núcleos CPU)</div>
-            </div>
+                <h6
+                  class="text-uppercase fw-bold text-secondary small mb-3 text-center"
+                >
+                  Especificaciones
+                </h6>
 
-            <div class="item-columna">
-              <div class="nombre-col">Gráficos</div>
-              <div class="valor">GPU integrada 10 núcleos</div>
-            </div>
+                <div class="row g-2 text-center small mb-3">
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Categoría</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Laptop Gaming</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Procesador</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Ryzen 7 7745HX</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Gráficos</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >RTX 4070</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >RAM</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >32 GB</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Disco</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >1 TB SSD</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Pantalla</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >16.0"</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Formato</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Estándar</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Red</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Wi-Fi 6E</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >S.O.</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Win 11 Home</span
+                      >
+                    </div>
+                  </div>
+                </div>
 
-            <div class="item-columna">
-              <div class="nombre-col">Memoria RAM</div>
-              <div class="valor">16 GB Unificada</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Espacio Disco</div>
-              <div class="valor">512 GB SSD PCIe</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Tamaño de Pantalla</div>
-              <div class="valor">13.6 pulgadas</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Formato</div>
-              <div class="valor">Laptop ultra delgada</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Conectividad Inalámbrica</div>
-              <div class="valor">Wi-Fi 6E</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Sistema Operativo</div>
-              <div class="valor">macOS</div>
+                <button class="btn btn-primary mt-auto w-100">
+                  Ver detalle
+                </button>
+              </div>
             </div>
           </div>
-        </article>
-        <article class="carta">
-          <h2>Lenovo Legion Pro 5 Gen 9</h2>
-          <div class="formato-imagen">
-            <img
-              class="modelo-pc"
-              src="lenovolegion.avif"
-              alt="Lenovo Legion Pro 5 Gen 9"
-            />
+
+          <div class="col">
+            <div class="card h-100 shadow-sm">
+              <div class="ratio ratio-4x3 p-3">
+                <img
+                  src="dellxps.png"
+                  class="object-fit-contain"
+                  alt="Laptop"
+                />
+              </div>
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title fw-bold text-center">Dell XPS 14</h5>
+                <p class="card-text text-center small">
+                  Eficiencia de nivel corporativo impulsada por IA en un chasis
+                  ultracompacto.
+                </p>
+
+                <h6
+                  class="text-uppercase fw-bold text-secondary small mb-3 text-center"
+                >
+                  Especificaciones
+                </h6>
+
+                <div class="row g-2 text-center small mb-3">
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Categoría</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Profesional</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Procesador</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Ultra 7 155H</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Gráficos</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Intel Arc</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >RAM</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >16 GB</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Disco</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >1 TB SSD</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Pantalla</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >14.5"</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Formato</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Compacta</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >Red</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Wi-Fi 7</span
+                      >
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div
+                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
+                    >
+                      <span
+                        class="text-light text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px"
+                        >S.O.</span
+                      >
+                      <span
+                        class="fw-semibold text-dark mt-1"
+                        style="font-size: 0.8rem"
+                        >Win 11 Pro</span
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary mt-auto w-100">
+                  Ver detalle
+                </button>
+              </div>
+            </div>
           </div>
-
-          <h3>Especificaciones</h3>
-          <div class="tabla-responsiva">
-            <div class="item-columna">
-              <div class="nombre-col">Categoría</div>
-              <div class="valor">Laptop Gaming</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Procesador</div>
-              <div class="valor">AMD Ryzen 7 7745HX</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Gráficos</div>
-              <div class="valor">NVIDIA GeForce RTX 4070</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Memoria RAM</div>
-              <div class="valor">32 GB DDR5</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Espacio Disco</div>
-              <div class="valor">1 TB SSD NVMe M.2</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Tamaño de Pantalla</div>
-              <div class="valor">16.0 pulgadas</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Formato</div>
-              <div class="valor">Laptop estándar</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Conectividad Inalámbrica</div>
-              <div class="valor">Wi-Fi 6E</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Sistema Operativo</div>
-              <div class="valor">Windows 11 Home</div>
-            </div>
-          </div>
-        </article>
-        <article class="carta">
-          <h2>Dell XPS 14 (9440)</h2>
-          <div class="formato-imagen">
-            <img class="modelo-pc" src="dellxps.png" alt="Dell XPS 14 (9440)" />
-          </div>
-          <h3>Especificaciones</h3>
-          <div class="tabla-responsiva">
-            <div class="item-columna">
-              <div class="nombre-col">Categoría</div>
-              <div class="valor">Portátil Profesional</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Procesador</div>
-              <div class="valor">Intel Core Ultra 7 155H</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Gráficos</div>
-              <div class="valor">Intel Arc Graphics</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Memoria RAM</div>
-              <div class="valor">16 GB LPDDR5x</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Espacio Disco</div>
-              <div class="valor">1 TB SSD PCIe 4.0</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Tamaño de Pantalla</div>
-              <div class="valor">14.5 pulgadas</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Formato</div>
-              <div class="valor">Laptop compacta</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Conectividad Inalámbrica</div>
-              <div class="valor">Wi-Fi 7</div>
-            </div>
-
-            <div class="item-columna">
-              <div class="nombre-col">Sistema Operativo</div>
-              <div class="valor">Windows 11 Pro</div>
-            </div>
-          </div>
-        </article>
+        </div>
       </div>
-      <div class="caja-info" id="about">
-        <div class="caja-item">
-          <div class="columna">
+
+      <div class="container my-5">
+        <div class="caja-item" id="about">
+          <div class="columna text-secondary fw-bold">
             <h3>Sobre nosotros</h3>
           </div>
-          <div class="fila">
+          <div class="fila text-secondary fw-bold">
             En Alchemax, transformamos la complejidad tecnológica en soluciones
             precisas de alto rendimiento. Somos una tienda especializada en
             computación avanzada, creada para acercar las herramientas digitales
             más potentes del mercado a usuarios que no aceptan límites técnicos.
           </div>
-          <div class="columna">
+          <div class="columna text-secondary fw-bold">
             <h3>Nuestra Misión</h3>
           </div>
-          <div class="fila">
+          <div class="fila text-secondary fw-bold">
             Democratizar el acceso al hardware de vanguardia mediante una
             selección rigurosa de equipos, garantizando que cada profesional,
             creador, gamer y empresa encuentre exactamente la potencia que
             necesita para materializar sus proyectos.
           </div>
-          <div class="columna"><h3>Nuestra Visión</h3></div>
-          <div class="fila">
+          <div class="columna text-secondary fw-bold">
+            <h3>Nuestra Visión</h3>
+          </div>
+          <div class="fila text-secondary fw-bold">
             Consolidarnos como el referente definitivo en el ecosistema
             informático, reconocidos por nuestro estándar de calidad, innovación
             constante y una asesoría técnica sin rodeos.
           </div>
-          <div class="columna"><h3>Nuestros Pilares</h3></div>
-          <div class="fila">
-            <ul>
+          <div class="columna text-secondary fw-bold">
+            <h3>Nuestros Pilares</h3>
+          </div>
+          <div class="fila text-light fw-bold">
+            <ul class="list-unstyled">
               <li>
                 <span>Criterio Técnico Riguroso</span><br />No acumulamos
                 inventario al azar; cada arquitectura, procesador y componente
@@ -268,70 +679,88 @@
           </div>
         </div>
       </div>
-      <div>
-        <div id="contact">
-          <div class="mapa">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d425483.9307381653!2d-70.8953333827449!3d-33.576929101302106!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6515ed8be19c19af%3A0x77068d25f19cf903!2sCirco%20Los%20Tachuelas!5e0!3m2!1ses!2scl!4v1788398184141!5m2!1ses!2scl"
-              width="100%"
-              height="100%"
-              style="border: 0"
-              allowfullscreen=""
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
-          </div>
-          <div class="contenedor-formulario">
-            <form class="formulario">
-              <div class="form-group">
-                <label for="inputNombre">Nombre completo</label>
-                <input type="text" placeholder="Lucas Ortiz" required />
-              </div>
 
-              <div class="form-group">
-                <label for="inputEmail">Correo</label>
-                <input type="email" placeholder="tucorreo@gmail.com" required />
-              </div>
+      <div class="container my-5" id="contact">
+        <div class="mapa">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d425483.9307381653!2d-70.8953333827449!3d-33.576929101302106!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6515ed8be19c19af%3A0x77068d25f19cf903!2sCirco%20Los%20Tachuelas!5e0!3m2!1ses!2scl!4v1788398184141!5m2!1ses!2scl"
+            width="100%"
+            height="100%"
+            style="border: 0"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
+        <div class="contenedor-formulario">
+          <form class="formulario">
+            <div class="form-group">
+              <label for="inputNombre">Nombre completo</label>
+              <input
+                type="text"
+                id="inputNombre"
+                placeholder="Lucas Ortiz"
+                required
+              />
+            </div>
 
-              <div class="form-group">
-                <label for="inputMensaje">Mensaje</label>
-                <textarea
-                  id="inputMensaje"
-                  placeholder="Escribe tu mensaje y te contactaremos!"
-                  maxlength="5000"
-                  rows="20"
-                  required
-                ></textarea>
+            <div class="form-group">
+              <label for="inputEmail">Correo</label>
+              <input
+                type="email"
+                id="inputEmail"
+                placeholder="tucorreo@gmail.com"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="inputMensaje">Mensaje</label>
+              <textarea
+                id="inputMensaje"
+                placeholder="Escribe tu mensaje y te contactaremos!"
+                maxlength="5000"
+                rows="10"
+                required
+              ></textarea>
+            </div>
+            <div class="seccion-btn">
+              <button class="boton-moderno" type="submit">
+                Enviar mensaje.
+              </button>
+            </div>
+          </form>
+
+          <div id="myModal" class="modal">
+            <div class="modal-content">
+              <span class="close">&times;</span>
+              <div>
+                <h3>Confirmación de Envío Exitoso</h3>
               </div>
-              <div class="seccion-btn">
-                <button class="boton-moderno" type="submit">
-                  Enviar mensaje.
-                </button>
-              </div>
-            </form>
-            <div id="myModal" class="modal">
-              <div class="modal-content">
-                <span class="close">&times;</span>
-                <div><h3>Confirmación de Envío Exitoso</h3></div>
-                <p>
-                  Hemos recibido tu consulta técnica satisfactoriamente. Tu
-                  requerimiento ha sido derivado a nuestro equipo de
-                  especialistas en hardware para su correspondiente análisis.<br />
-                  Un asesor técnico evaluará las especificaciones de tu
-                  solicitud y se pondrá en contacto contigo a través de la
-                  dirección de correo electrónico provista en un plazo máximo de
-                  24 horas hábiles. En caso de requerir asistencia técnica
-                  crítica o soporte inmediato, por favor indícalo respondiendo
-                  al correo de confirmación generado por el sistema.
-                  <br />Agradecemos tu interés en nuestras soluciones
-                  computacionales de alto rendimiento.
-                </p>
-              </div>
+              <p>
+                Hemos recibido tu consulta técnica satisfactoriamente. Tu
+                requerimiento ha sido derivado a nuestro equipo de especialistas
+                en hardware para su correspondiente análisis.<br />
+                Un asesor técnico evaluará las especificaciones de tu solicitud
+                y se pondrá en contacto contigo a través de la dirección de
+                correo electrónico provista en un plazo máximo de 24 horas
+                hábiles. En caso de requerir asistencia técnica crítica o
+                soporte inmediato, por favor indícalo respondiendo al correo de
+                confirmación generado por el sistema.
+                <br />Agradecemos tu interés en nuestras soluciones
+                computacionales de alto rendimiento.
+              </p>
             </div>
           </div>
         </div>
       </div>
     </main>
+
     <footer></footer>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>

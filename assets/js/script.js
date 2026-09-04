@@ -5,10 +5,12 @@ const span = document.querySelector(".close");
 formulario.addEventListener("submit", (event) => {
   event.preventDefault();
   modal.style.display = "block";
+  document.body.classList.add("modal-active");
 });
 
 span.onclick = function () {
   modal.style.display = "none";
+  document.body.classList.remove("modal-active");
 };
 
 document.addEventListener("DOMContentLoaded", () => {

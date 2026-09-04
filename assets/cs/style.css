@@ -1,5 +1,14 @@
+/* =========================================
+   1. VARIABLES & BASE SETUP (CLÍNICA)
+   ========================================= */
 :root {
-  color-scheme: dark;
+  --bg-main: #f8f9fa; /* Fondo general claro */
+  --bg-surface: #ffffff; /* Fondo de tarjetas y paneles */
+  --accent-primary: #198754; /* Verde Bootstrap (éxito/salud) */
+  --accent-hover: #146c43;
+  --text-main: #212529; /* Texto principal oscuro */
+  --text-muted: #6c757d; /* Texto secundario gris */
+  --border-color: #e9ecef;
 }
 
 * {
@@ -16,107 +25,24 @@ body {
     "Segoe UI",
     Roboto,
     sans-serif;
-  background: linear-gradient(-45deg, #0b132b, #1c2541, #192a56, #0f0c29);
-  background-size: 400% 400%;
-  animation: techGradient 12s ease infinite;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.6;
 }
 
-body {
-  background-color: #03050a;
-  position: relative;
-  overflow-x: hidden;
-  color: #eaeff5;
-}
-
-.cyber-bg-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  background-color: #03050a;
-  overflow: hidden;
-}
-
-.cyber-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 90vw;
-  height: 90vw;
-  max-width: 1000px;
-  max-height: 1000px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(
-    circle,
-    rgba(0, 195, 255, 0.15) 0%,
-    rgba(0, 0, 0, 0) 65%
-  );
-  animation: pulseGlow 6s ease-in-out infinite alternate;
-}
-
-.cyber-grid {
-  position: absolute;
-  width: 200%;
-  height: 200%;
-  top: 0%;
-  left: -50%;
-  background-image:
-    linear-gradient(rgba(0, 229, 255, 0.3) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.3) 1px, transparent 1px);
-  background-size: 60px 60px;
-  transform: perspective(600px) rotateX(75deg) translateY(0) translateZ(-200px);
-  animation: gridForward 2.5s linear infinite;
-}
-
-.scanlines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-    radial-gradient(circle, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.95) 100%);
-  background-size:
-    100% 4px,
-    100% 100%;
-  pointer-events: none;
-}
-
-@keyframes gridForward {
-  0% {
-    transform: perspective(600px) rotateX(75deg) translateY(0)
-      translateZ(-200px);
-  }
-  100% {
-    transform: perspective(600px) rotateX(75deg) translateY(60px)
-      translateZ(-200px);
-  }
-}
-
-@keyframes pulseGlow {
-  0% {
-    opacity: 0.6;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.1);
-  }
-}
-
+/* =========================================
+   2. NAVBAR
+   ========================================= */
 header {
-  background-color: rgba(31, 31, 31, 0.9);
-  border-bottom: 1px solid rgba(0, 195, 255, 0.3);
-  padding: 4px 5px;
-  width: 100%;
-  backdrop-filter: blur(5px);
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(8px);
   position: fixed;
   top: 0;
   left: 0;
+  width: 100%;
   z-index: 1000;
+  /* Lógica de ocultamiento del navbar (Script) */
   transform: translateY(-100%);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -125,307 +51,65 @@ header.nav-visible {
   transform: translateY(0);
 }
 
-.barra-elementos {
-  max-width: 1400px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.lista-elementos {
-  display: flex;
-  gap: 24px;
-  list-style: none;
-}
-
-.lista-elementos li {
-  color: #eaeff5;
+.nav-link {
+  color: var(--text-muted) !important;
   font-weight: 500;
-  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-.lista-elementos li a {
-  text-decoration: none;
-  color: inherit;
+.nav-link:hover {
+  color: var(--accent-primary) !important;
 }
 
+/* Compensar el navbar fijo en el contenido principal */
 main {
-  padding: 40px 20px;
+  padding-top: 80px;
 }
 
-.card {
-  background-color: rgba(11, 19, 43, 0.85) !important;
-  border: 1px solid rgba(0, 195, 255, 0.2) !important;
-  color: #eaeff5 !important;
-  backdrop-filter: blur(5px);
+/* =========================================
+   3. TARJETAS DE SERVICIO
+   ========================================= */
+.service-card {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+  border: 1px solid transparent !important;
 }
 
-.card .bg-light {
-  background-color: rgba(0, 195, 255, 0.05) !important;
-  border: 1px solid rgba(0, 195, 255, 0.15) !important;
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(25, 135, 84, 0.3) !important;
 }
 
-.card .text-dark {
-  color: #eaeff5 !important;
-}
-
-.card-title {
-  color: #00c3ff !important;
-}
-
-.row {
-  background-color: transparent !important;
-}
-
-.col {
-  background-color: transparent !important;
-}
-
-.contenedor {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.carta {
-  background-color: rgba(11, 19, 43, 0.85);
-  border: 1px solid rgba(0, 195, 255, 0.2);
-  border-radius: 12px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  color: #eaeff5;
-}
-
-.carta h2 {
-  font-size: 1.4rem;
-  color: #00c3ff;
-  margin-bottom: 16px;
-  text-align: center;
-  min-height: 48px;
-}
-
-.formato-imagen {
-  width: 100%;
-  height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-  background-color: rgba(0, 0, 0, 0.3);
+/* =========================================
+   4. FORMULARIO Y MAPA
+   ========================================= */
+.form-control {
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 12px;
-  cursor: pointer;
 }
 
-.modelo-pc {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+.form-control:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.15);
 }
 
-.carta h3 {
-  font-size: 1.1rem;
-  color: #eaeff5;
-  margin-bottom: 16px;
-  text-transform: uppercase;
-  text-align: center;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid rgba(0, 195, 255, 0.3);
-  padding-bottom: 6px;
-}
-
-.tabla-responsiva {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 130px;
-  gap: 12px;
-  width: 100%;
-}
-
-.item-columna {
-  background-color: rgba(0, 195, 255, 0.05);
-  border: 1px solid rgba(0, 195, 255, 0.15);
+.btn-success {
+  padding: 12px 24px;
+  font-weight: 600;
   border-radius: 8px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  overflow: hidden;
 }
 
-.nombre-col {
-  font-weight: 700;
-  color: #00c3ff;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  text-align: center;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
-  flex-shrink: 0;
+.mapa iframe {
+  border-radius: 1rem;
 }
 
-.valor {
-  color: #eaeff5;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  white-space: normal;
-  overflow-wrap: break-word;
-  text-align: center;
-}
-
-.caja-info {
-  background-color: rgba(11, 19, 43, 0.85);
-  border: 1px solid rgba(0, 195, 255, 0.2);
-  border-radius: 12px;
-  padding: 24px;
-  margin-top: 15px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-  color: #eaeff5;
-}
-
-.caja-item {
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  justify-content: space-evenly;
-  gap: 15px;
-}
-
-.columna {
-  font-weight: 700;
-  color: #00c3ff;
-  font-size: 1rem;
-  text-transform: uppercase;
-  text-align: center;
-  letter-spacing: 0.05em;
-  margin-bottom: 3px;
-}
-
-.fila {
-  color: #eaeff5;
-  font-size: 1.1rem;
-  line-height: 1.8;
-  white-space: normal;
-  overflow-wrap: break-word;
-  letter-spacing: 0.05em;
-}
-
-.fila ul {
-  list-style-type: none;
-}
-
-.fila ul li {
-  background-color: rgba(0, 195, 255, 0.05);
-  border: 1px solid rgba(0, 195, 255, 0.2);
-  border-radius: 6px;
-  padding: 25px;
-  margin-bottom: 4.5px;
-  letter-spacing: 0.05em;
-  user-select: none;
-}
-
-.fila ul li span {
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #00c3ff;
-}
-
-.mapa {
-  height: 450px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 20px auto;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-  background-color: #0a1128;
-  border: 1px solid rgba(0, 195, 255, 0.2);
-}
-
-.contenedor-formulario {
-  background-color: rgba(11, 19, 43, 0.85);
-  border: 1px solid rgba(0, 195, 255, 0.2);
-  border-radius: 12px;
-  padding: 24px;
-  margin: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(5px);
-}
-
-.formulario {
-  padding: 35px;
-  gap: 35px;
-}
-
-.form-group {
-  align-content: center;
-  display: flex;
-  flex-direction: column;
-  text-align: start;
-  gap: 10px;
-  color: #00c3ff;
-}
-
-.form-group input,
-.form-group textarea {
-  background-color: rgba(0, 0, 0, 0.5);
-  color: #eaeff5;
-  border: 1px solid rgba(0, 195, 255, 0.3);
-  padding: 0.8rem;
-  margin-bottom: 15px;
-  border-radius: 6px;
-}
-
-.form-group input::placeholder,
-.form-group textarea::placeholder {
-  color: rgba(234, 239, 245, 0.4);
-}
-
-.form-group textarea {
-  resize: none;
-  padding: 0.9rem;
-}
-
-.seccion-btn {
-  display: flex;
-  margin-top: 30px;
-  justify-content: center;
-}
-
-.boton-moderno {
-  background-color: rgba(0, 195, 255, 0.1);
-  color: #00c3ff;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
-  font-size: 15px;
-  font-weight: bold;
-  letter-spacing: 0.3px;
-  padding: 14px 34px;
-  border: 1px solid #00c3ff;
-  border-radius: 12px;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.boton-moderno:hover {
-  background-color: #00c3ff;
-  color: #000;
-  box-shadow:
-    0 0 0 1px #00c3ff,
-    0 0 25px 0px rgba(0, 195, 255, 0.6);
-  transform: translateY(-1px);
-}
-
-.boton-moderno:active {
-  transform: translateY(0);
-}
-
+/* =========================================
+   5. MODAL (ESTRUCTURA MANTENIDA)
+   ========================================= */
 .modal {
   display: none;
   position: fixed;
@@ -435,42 +119,33 @@ main {
   width: 100%;
   height: 100%;
   overflow: auto;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(3px);
 }
 
 .modal-content {
-  background-color: #0a1128;
-  margin: 15% auto;
-  padding: 30px;
-  text-align: center;
-  letter-spacing: 0.05em;
-  border: 1px solid #00c3ff;
-  box-shadow: 0 0 25px rgba(0, 195, 255, 0.2);
-  border-radius: 8px;
-  width: 80%;
-  color: #eaeff5;
-}
-
-.modal-content h3 {
-  margin-bottom: 10px;
-  color: #00c3ff;
+  background-color: var(--bg-surface);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 40px;
+  border: none;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
 }
 
 .close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-  color: #00c3ff;
-  text-decoration: none;
+  order: 10;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.texto-claro {
-  color: #f1f0f0c7;
+body.modal-active {
+  overflow: hidden;
 }

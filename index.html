@@ -1,10 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
-    <title>Alchemax</title>
+    <title>NutriVida | Clínica de Nutrición y Dietética</title>
     <link rel="stylesheet" href="assets/cs/style.css" />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
@@ -14,22 +13,14 @@
     />
     <script src="assets/js/script.js" defer></script>
   </head>
-  <div class="cyber-bg-container">
-    <div class="cyber-glow"></div>
-    <div class="cyber-grid"></div>
-    <div class="scanlines"></div>
-  </div>
   <body>
-    <div class="cyber-bg-container">
-      <div class="cyber-glow"></div>
-      <div class="cyber-grid"></div>
-      <div class="scanlines"></div>
-    </div>
-
+    <!-- Navbar -->
     <header>
-      <nav class="navbar navbar-expand-md navbar-dark">
+      <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
         <div class="container-fluid">
-          <span class="navbar-brand mb-0 h1 ms-2">Alchemax</span>
+          <span class="navbar-brand mb-0 h1 ms-2 text-success fw-bold"
+            >NutriVida</span
+          >
           <button
             class="navbar-toggler"
             type="button"
@@ -47,13 +38,13 @@
           >
             <ul class="navbar-nav">
               <li class="nav-item">
-                <a href="#featured" class="nav-link text-light">Destacados</a>
+                <a href="#servicios" class="nav-link">Especialidades</a>
               </li>
               <li class="nav-item">
-                <a href="#about" class="nav-link text-light">Sobre nosotros</a>
+                <a href="#about" class="nav-link">La Clínica</a>
               </li>
               <li class="nav-item">
-                <a href="#contact" class="nav-link text-light">Contacto</a>
+                <a href="#contact" class="nav-link">Agendar Cita</a>
               </li>
             </ul>
           </div>
@@ -62,701 +53,242 @@
     </header>
 
     <main>
-      <div class="container my-5" id="featured">
-        <div class="row row-cols-1 row-cols-md-3 g-4">
+      <!-- Hero / Bienvenida -->
+      <section class="container text-center my-5 py-4">
+        <h1 class="display-5 fw-bold text-dark">
+          Tu bienestar comienza desde adentro
+        </h1>
+        <p class="lead text-muted mx-auto" style="max-width: 700px">
+          Somos una clínica especializada en nutrición y dietética ubicada en
+          Temuco. Nuestro equipo de 4 nutricionistas te acompañará paso a paso
+          para alcanzar tus metas de salud con planes de alimentación 100%
+          personalizados.
+        </p>
+      </section>
+
+      <!-- Servicios (Tarjetas) -->
+      <div class="container my-5" id="servicios">
+        <h2 class="text-center fw-bold mb-5 text-success">
+          Nuestras Especialidades
+        </h2>
+        <!-- Usamos row-cols-md-2 para crear una cuadrícula 2x2 equilibrada -->
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+          <!-- Servicio 1 -->
           <div class="col">
-            <div class="card h-100 shadow-sm">
-              <div class="ratio ratio-4x3 p-3">
-                <img
-                  src="macbookair.png"
-                  class="object-fit-contain"
-                  alt="Laptop"
-                />
-              </div>
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title fw-bold text-center">MacBook Air M4</h5>
-                <p class="card-text small text-center">
-                  Diseño ultra delgado, autonomía sobresaliente y potencia
-                  eficiente para movilidad total.
+            <div class="card h-100 shadow-sm border-0 service-card">
+              <div class="card-body text-center p-4">
+                <h5 class="card-title fw-bold text-dark">Pérdida de Peso</h5>
+                <p class="card-text text-muted mt-3">
+                  Planes de déficit calórico sostenibles y saludables, sin
+                  dietas extremas. Nos enfocamos en la reeducación alimentaria
+                  para lograr resultados duraderos y mejorar tu relación con la
+                  comida.
                 </p>
-
-                <h6
-                  class="text-uppercase fw-bold text-secondary small mb-3 text-center"
-                >
-                  Especificaciones
-                </h6>
-
-                <div class="row g-2 text-center small mb-3">
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Categoría</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Ultrabook</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Procesador</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Apple M4</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Gráficos</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >GPU Apple 10c</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >RAM</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >16 GB</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Disco</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >512 GB SSD</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Pantalla</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >13.6"</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Formato</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Ultra delgada</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Red</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Wi-Fi 6E</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >S.O.</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >macOS</span
-                      >
-                    </div>
-                  </div>
-                </div>
-
-                <button class="btn btn-primary mt-auto w-100">
-                  Ver detalle
-                </button>
               </div>
             </div>
           </div>
 
+          <!-- Servicio 2 -->
           <div class="col">
-            <div class="card h-100 shadow-sm">
-              <div class="ratio ratio-4x3 p-3">
-                <img
-                  src="lenovolegion.avif"
-                  class="object-fit-contain"
-                  alt="Laptop"
-                />
+            <div class="card h-100 shadow-sm border-0 service-card">
+              <div class="card-body text-center p-4">
+                <h5 class="card-title fw-bold text-dark">Control Metabólico</h5>
+                <p class="card-text text-muted mt-3">
+                  Tratamiento nutricional para patologías crónicas como
+                  diabetes, resistencia a la insulina, hipertensión,
+                  dislipidemias y síndrome metabólico, siempre en coordinación
+                  con tu médico tratante.
+                </p>
               </div>
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title fw-bold text-center">
-                  Lenovo Legion Pro
+            </div>
+          </div>
+
+          <!-- Servicio 3 -->
+          <div class="col">
+            <div class="card h-100 shadow-sm border-0 service-card">
+              <div class="card-body text-center p-4">
+                <h5 class="card-title fw-bold text-dark">
+                  Nutrición Deportiva
                 </h5>
-                <p class="card-text small text-center">
-                  Rendimiento gráfico extremo y refrigeración avanzada para
-                  gaming competitivo.
+                <p class="card-text text-muted mt-3">
+                  Optimiza tu rendimiento deportivo, favorece la recuperación
+                  muscular y alcanza tus objetivos de composición corporal, ya
+                  seas un atleta de alto rendimiento o entusiasta del fitness.
                 </p>
-
-                <h6
-                  class="text-uppercase fw-bold text-secondary small mb-3 text-center"
-                >
-                  Especificaciones
-                </h6>
-
-                <div class="row g-2 text-center small mb-3">
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Categoría</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Laptop Gaming</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Procesador</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Ryzen 7 7745HX</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Gráficos</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >RTX 4070</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >RAM</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >32 GB</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Disco</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >1 TB SSD</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Pantalla</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >16.0"</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Formato</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Estándar</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Red</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Wi-Fi 6E</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >S.O.</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Win 11 Home</span
-                      >
-                    </div>
-                  </div>
-                </div>
-
-                <button class="btn btn-primary mt-auto w-100">
-                  Ver detalle
-                </button>
               </div>
             </div>
           </div>
 
+          <!-- Servicio 4 -->
           <div class="col">
-            <div class="card h-100 shadow-sm">
-              <div class="ratio ratio-4x3 p-3">
-                <img
-                  src="dellxps.png"
-                  class="object-fit-contain"
-                  alt="Laptop"
-                />
-              </div>
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title fw-bold text-center">Dell XPS 14</h5>
-                <p class="card-text text-center small">
-                  Eficiencia de nivel corporativo impulsada por IA en un chasis
-                  ultracompacto.
+            <div class="card h-100 shadow-sm border-0 service-card">
+              <div class="card-body text-center p-4">
+                <h5 class="card-title fw-bold text-dark">
+                  Alimentación Vegana / Vegetariana
+                </h5>
+                <p class="card-text text-muted mt-3">
+                  Transición segura y planificación de dietas basadas en
+                  plantas. Aseguramos el cumplimiento de todos tus
+                  requerimientos de macro y micronutrientes para una vida plena
+                  y saludable.
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                <h6
-                  class="text-uppercase fw-bold text-secondary small mb-3 text-center"
-                >
-                  Especificaciones
-                </h6>
+      <!-- Sobre Nosotros -->
+      <div class="container my-5 py-4">
+        <div class="caja-item bg-light p-5 rounded-4 shadow-sm" id="about">
+          <div class="text-center mb-4">
+            <h3 class="fw-bold text-success">Sobre NutriVida</h3>
+          </div>
+          <div class="text-dark text-center lead mb-5">
+            Fundada en 2016 en Temuco, Región de La Araucanía,
+            <strong>NutriVida</strong> nació con el propósito de entregar una
+            atención nutricional empática y basada en evidencia científica.
+          </div>
 
-                <div class="row g-2 text-center small mb-3">
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Categoría</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Profesional</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Procesador</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Ultra 7 155H</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Gráficos</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Intel Arc</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >RAM</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >16 GB</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Disco</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >1 TB SSD</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Pantalla</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >14.5"</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Formato</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Compacta</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >Red</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Wi-Fi 7</span
-                      >
-                    </div>
-                  </div>
-                  <div class="col-4">
-                    <div
-                      class="p-2 rounded-3 bg-light border-0 h-100 d-flex flex-column justify-content-center"
-                    >
-                      <span
-                        class="text-light text-uppercase"
-                        style="font-size: 0.65rem; letter-spacing: 0.5px"
-                        >S.O.</span
-                      >
-                      <span
-                        class="fw-semibold text-dark mt-1"
-                        style="font-size: 0.8rem"
-                        >Win 11 Pro</span
-                      >
-                    </div>
-                  </div>
+          <div class="row text-center mt-4 g-4">
+            <div class="col-md-4">
+              <h4 class="text-success fw-bold">Atención Integral</h4>
+              <p class="text-muted">
+                Nuestro equipo está formado por 4 nutricionistas clínicas
+                capacitadas para abordar diversos requerimientos de salud y
+                bienestar.
+              </p>
+            </div>
+            <div class="col-md-4">
+              <h4 class="text-success fw-bold">+60 Pacientes</h4>
+              <p class="text-muted">
+                Atendemos semanalmente a más de 60 pacientes, realizando
+                seguimientos cada 15 o 30 días para asegurar el apego al
+                tratamiento.
+              </p>
+            </div>
+            <div class="col-md-4">
+              <h4 class="text-success fw-bold">Confianza Médica</h4>
+              <p class="text-muted">
+                El 70% de nuestros pacientes nos elige por derivación directa de
+                su médico o recomendación de otros pacientes satisfechos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacto / Agendamiento -->
+      <div class="container my-5 pb-5" id="contact">
+        <h2 class="text-center fw-bold mb-4 text-success">
+          Solicita tu Hora de Evaluación
+        </h2>
+        <p class="text-center text-muted mb-4">
+          Déjanos tus datos y una de nuestras nutricionistas te contactará para
+          agendar tu primera consulta presencial en Temuco.
+        </p>
+
+        <div class="row g-4 justify-content-center">
+          <div class="col-lg-6">
+            <div class="contenedor-formulario bg-white p-4 rounded-4 shadow-sm">
+              <form class="formulario">
+                <div class="form-group mb-3">
+                  <label for="inputNombre" class="fw-semibold"
+                    >Nombre completo</label
+                  >
+                  <input
+                    type="text"
+                    id="inputNombre"
+                    class="form-control"
+                    placeholder="Ej. María Pérez"
+                    required
+                  />
                 </div>
 
-                <button class="btn btn-primary mt-auto w-100">
-                  Ver detalle
-                </button>
+                <div class="form-group mb-3">
+                  <label for="inputEmail" class="fw-semibold"
+                    >Correo electrónico</label
+                  >
+                  <input
+                    type="email"
+                    id="inputEmail"
+                    class="form-control"
+                    placeholder="tucorreo@email.com"
+                    required
+                  />
+                </div>
+
+                <div class="form-group mb-4">
+                  <label for="inputMensaje" class="fw-semibold"
+                    >Motivo de consulta</label
+                  >
+                  <textarea
+                    id="inputMensaje"
+                    class="form-control"
+                    placeholder="Brevemente, cuéntanos cuál es tu objetivo nutricional..."
+                    maxlength="1000"
+                    rows="5"
+                    required
+                  ></textarea>
+                </div>
+
+                <div class="d-grid">
+                  <button class="btn btn-success btn-lg" type="submit">
+                    Enviar Solicitud de Agendamiento
+                  </button>
+                </div>
+              </form>
+
+              <!-- Modal -->
+              <div id="myModal" class="modal">
+                <div class="modal-content text-center">
+                  <div class="mb-3">
+                    <h3 class="text-success fw-bold">¡Solicitud Enviada!</h3>
+                  </div>
+                  <p class="text-muted">
+                    Hemos recibido tus datos correctamente. Nuestro equipo de
+                    recepción te contactará en las próximas 24 horas hábiles al
+                    correo indicado para coordinar la fecha y hora de tu
+                    sesión.<br /><br />
+                    ¡Te esperamos en NutriVida!
+                  </p>
+
+                  <!-- Botón de cierre movido debajo del texto -->
+                  <span
+                    class="close btn btn-outline-success mt-4 mx-auto"
+                    style="width: fit-content"
+                    >Aceptar</span
+                  >
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="container">
-        <div class="caja-item" id="about">
-          <div class="columna text-secondary fw-bold">
-            <h3>Sobre nosotros</h3>
-          </div>
-          <div class="fila texto-claro fw-bold">
-            En Alchemax, transformamos la complejidad tecnológica en soluciones
-            precisas de alto rendimiento. Somos una tienda especializada en
-            computación avanzada, creada para acercar las herramientas digitales
-            más potentes del mercado a usuarios que no aceptan límites técnicos.
-          </div>
-          <div class="columna text-secondary fw-bold">
-            <h3>Nuestra Misión</h3>
-          </div>
-          <div class="fila texto-claro fw-bold">
-            Democratizar el acceso al hardware de vanguardia mediante una
-            selección rigurosa de equipos, garantizando que cada profesional,
-            creador, gamer y empresa encuentre exactamente la potencia que
-            necesita para materializar sus proyectos.
-          </div>
-          <div class="columna text-secondary fw-bold">
-            <h3>Nuestra Visión</h3>
-          </div>
-          <div class="fila texto-claro fw-bold">
-            Consolidarnos como el referente definitivo en el ecosistema
-            informático, reconocidos por nuestro estándar de calidad, innovación
-            constante y una asesoría técnica sin rodeos.
-          </div>
-          <div class="columna text-secondary fw-bold">
-            <h3>Nuestros Pilares</h3>
-          </div>
-          <div class="fila texto-claro fw-bold">
-            <ul class="list-unstyled">
-              <li>
-                <span>Criterio Técnico Riguroso</span><br />No acumulamos
-                inventario al azar; cada arquitectura, procesador y componente
-                en nuestro catálogo pasa por un filtro estricto de eficiencia y
-                durabilidad. Evaluamos métricas reales de rendimiento térmico,
-                estabilidad energética y tasas de compatibilidad antes de sumar
-                cualquier equipo a nuestras líneas de distribución. Nuestro
-                equipo de ingenieros audita cada plataforma para certificar que
-                cumpla con los estándares más exigentes del sector informático
-                actual, descartando opciones que comprometan la fiabilidad
-                operativa a largo plazo.
-              </li>
-              <li>
-                <span>Transparencia Absoluta</span><br />Hablamos el idioma del
-                hardware de forma directa, priorizando especificaciones reales
-                sobre etiquetas comerciales. Desglosamos al detalle cada
-                arquitectura de silicio, frecuencias de reloj, anchos de banda y
-                protocolos de conectividad para que tomes decisiones informadas
-                con datos contrastables. Rechazamos tácticas de venta basadas en
-                números inflados o promesas vacías, garantizando que cada
-                presupuesto entregado refleje el costo justo de componentes con
-                desempeño comprobable en escenarios reales de uso.
-              </li>
-              <li>
-                <span>Enfoque en el Rendimiento</span><br />Entendemos que un
-                computador no es solo una máquina, sino el motor de trabajo y
-                entretenimiento de nuestros usuarios. Ya sea para renderizado
-                intensivo, compilación de código, modelado estructural en tres
-                dimensiones o sesiones competitivas prolongadas, ajustamos las
-                configuraciones para eliminar cuellos de botella. Diseñamos un
-                ecosistema de hardware capaz de sostener cargas de trabajo
-                pesadas de forma continua sin pérdida de potencia ni degradación
-                en sus componentes clave.
-              </li>
-              <li>
-                <span>Garantía y Continuidad Operativa</span><br />Brindamos
-                respaldo posventa y soporte técnico especializado para asegurar
-                que cada equipo opere con máxima fiabilidad en todo momento.
-                Implementamos protocolos ágiles de diagnóstico, gestión de
-                garantías directas con fabricantes y tiempos de respuesta
-                mínimos para resolver incidencias con celeridad. Acompañamos a
-                nuestros clientes durante todo el ciclo de vida del hardware,
-                asegurando que sus proyectos, actividades productivas y
-                operaciones empresariales nunca se detengan ante un imprevisto
-                técnico.
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="container my-5" id="contact">
-        <div class="mapa">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d425483.9307381653!2d-70.8953333827449!3d-33.576929101302106!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6515ed8be19c19af%3A0x77068d25f19cf903!2sCirco%20Los%20Tachuelas!5e0!3m2!1ses!2scl!4v1788398184141!5m2!1ses!2scl"
-            width="100%"
-            height="100%"
-            style="border: 0"
-            allowfullscreen=""
-            loading="lazy"
-            referrerpolicy="no-referrer-when-downgrade"
-          ></iframe>
-        </div>
-        <div class="contenedor-formulario">
-          <form class="formulario">
-            <div class="form-group">
-              <label for="inputNombre">Nombre completo</label>
-              <input
-                type="text"
-                id="inputNombre"
-                placeholder="Lucas Ortiz"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="inputEmail">Correo</label>
-              <input
-                type="email"
-                id="inputEmail"
-                placeholder="tucorreo@gmail.com"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label for="inputMensaje">Mensaje</label>
-              <textarea
-                id="inputMensaje"
-                placeholder="Escribe tu mensaje y te contactaremos!"
-                maxlength="5000"
-                rows="10"
-                required
-              ></textarea>
-            </div>
-            <div class="seccion-btn">
-              <button class="boton-moderno" type="submit">
-                Enviar mensaje.
-              </button>
-            </div>
-          </form>
-
-          <div id="myModal" class="modal">
-            <div class="modal-content">
-              <span class="close">&times;</span>
-              <div>
-                <h3>Confirmación de Envío Exitoso</h3>
-              </div>
-              <p>
-                Hemos recibido tu consulta técnica satisfactoriamente. Tu
-                requerimiento ha sido derivado a nuestro equipo de especialistas
-                en hardware para su correspondiente análisis.<br />
-                Un asesor técnico evaluará las especificaciones de tu solicitud
-                y se pondrá en contacto contigo a través de la dirección de
-                correo electrónico provista en un plazo máximo de 24 horas
-                hábiles. En caso de requerir asistencia técnica crítica o
-                soporte inmediato, por favor indícalo respondiendo al correo de
-                confirmación generado por el sistema.
-                <br />Agradecemos tu interés en nuestras soluciones
-                computacionales de alto rendimiento.
-              </p>
+          <div class="col-lg-6">
+            <div class="mapa h-100 rounded-4 overflow-hidden shadow-sm">
+              <!-- Mapa centrado en Temuco -->
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d100067.75019011409!2d-72.68413840742133!3d-38.73461413444855!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9614d3e5a59379fd%3A0xc6226ea5d63f2d24!2sTemuco%2C%20Araucania!5e0!3m2!1sen!2scl!4v1700000000000!5m2!1sen!2scl"
+                width="100%"
+                height="100%"
+                style="border: 0; min-height: 400px"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+              ></iframe>
             </div>
           </div>
         </div>
       </div>
     </main>
 
-    <footer></footer>
+    <footer class="bg-light py-4 text-center border-top">
+      <p class="text-muted mb-0">
+        © 2026 NutriVida. Temuco, Región de La Araucanía. Todos los derechos
+        reservados.
+      </p>
+    </footer>
+
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"

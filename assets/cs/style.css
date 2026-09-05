@@ -1,13 +1,10 @@
-/* =========================================
-   1. VARIABLES & BASE SETUP (CLÍNICA)
-   ========================================= */
 :root {
-  --bg-main: #f8f9fa; /* Fondo general claro */
-  --bg-surface: #ffffff; /* Fondo de tarjetas y paneles */
-  --accent-primary: #198754; /* Verde Bootstrap (éxito/salud) */
+  --bg-main: #f8f9fa;
+  --bg-surface: #ffffff;
+  --accent-primary: #198754;
   --accent-hover: #146c43;
-  --text-main: #212529; /* Texto principal oscuro */
-  --text-muted: #6c757d; /* Texto secundario gris */
+  --text-main: #212529;
+  --text-muted: #6c757d;
   --border-color: #e9ecef;
 }
 
@@ -30,9 +27,6 @@ body {
   line-height: 1.6;
 }
 
-/* =========================================
-   2. NAVBAR
-   ========================================= */
 header {
   background-color: rgba(255, 255, 255, 0.95) !important;
   border-bottom: 1px solid var(--border-color);
@@ -42,7 +36,6 @@ header {
   left: 0;
   width: 100%;
   z-index: 1000;
-  /* Lógica de ocultamiento del navbar (Script) */
   transform: translateY(-100%);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -61,14 +54,10 @@ header.nav-visible {
   color: var(--accent-primary) !important;
 }
 
-/* Compensar el navbar fijo en el contenido principal */
 main {
   padding-top: 80px;
 }
 
-/* =========================================
-   3. TARJETAS DE SERVICIO
-   ========================================= */
 .service-card {
   transition:
     transform 0.3s ease,
@@ -83,9 +72,6 @@ main {
   border-color: rgba(25, 135, 84, 0.3) !important;
 }
 
-/* =========================================
-   4. FORMULARIO Y MAPA
-   ========================================= */
 .form-control {
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -106,10 +92,6 @@ main {
 .mapa iframe {
   border-radius: 1rem;
 }
-
-/* =========================================
-   5. MODAL (ESTRUCTURA MANTENIDA)
-   ========================================= */
 .modal {
   display: none;
   position: fixed;

@@ -53,7 +53,6 @@
     </header>
 
     <main>
-      <!-- Hero / Bienvenida -->
       <section class="container text-center my-5 py-4">
         <h1 class="display-5 fw-bold text-dark">
           Tu bienestar comienza desde adentro
@@ -66,14 +65,11 @@
         </p>
       </section>
 
-      <!-- Servicios (Tarjetas) -->
       <div class="container my-5" id="servicios">
         <h2 class="text-center fw-bold mb-5 text-success">
           Nuestras Especialidades
         </h2>
-        <!-- Usamos row-cols-md-2 para crear una cuadrícula 2x2 equilibrada -->
         <div class="row row-cols-1 row-cols-md-2 g-4">
-          <!-- Servicio 1 -->
           <div class="col">
             <div class="card h-100 shadow-sm border-0 service-card">
               <div class="card-body text-center p-4">
@@ -88,7 +84,6 @@
             </div>
           </div>
 
-          <!-- Servicio 2 -->
           <div class="col">
             <div class="card h-100 shadow-sm border-0 service-card">
               <div class="card-body text-center p-4">
@@ -103,7 +98,6 @@
             </div>
           </div>
 
-          <!-- Servicio 3 -->
           <div class="col">
             <div class="card h-100 shadow-sm border-0 service-card">
               <div class="card-body text-center p-4">
@@ -119,7 +113,6 @@
             </div>
           </div>
 
-          <!-- Servicio 4 -->
           <div class="col">
             <div class="card h-100 shadow-sm border-0 service-card">
               <div class="card-body text-center p-4">
@@ -138,7 +131,6 @@
         </div>
       </div>
 
-      <!-- Sobre Nosotros -->
       <div class="container my-5 py-4">
         <div class="caja-item bg-light p-5 rounded-4 shadow-sm" id="about">
           <div class="text-center mb-4">
@@ -178,7 +170,6 @@
         </div>
       </div>
 
-      <!-- Contacto / Agendamiento -->
       <div class="container my-5 pb-5" id="contact">
         <h2 class="text-center fw-bold mb-4 text-success">
           Solicita tu Hora de Evaluación
@@ -266,7 +257,6 @@
 
           <div class="col-lg-6">
             <div class="mapa h-100 rounded-4 overflow-hidden shadow-sm">
-              <!-- Mapa centrado en Temuco -->
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d100067.75019011409!2d-72.68413840742133!3d-38.73461413444855!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9614d3e5a59379fd%3A0xc6226ea5d63f2d24!2sTemuco%2C%20Araucania!5e0!3m2!1sen!2scl!4v1700000000000!5m2!1sen!2scl"
                 width="100%"
@@ -281,12 +271,93 @@
         </div>
       </div>
     </main>
+    <section class="bg-success text-white py-5 mt-5 shadow-lg">
+      <div class="container py-4">
+        <div class="row align-items-center">
+          <div class="col-lg-5 mb-4 mb-lg-0 text-center text-lg-start">
+            <h2 class="fw-bold display-6 mb-3">
+              Tu progreso, ahora en tu bolsillo
+            </h2>
+            <p class="lead mb-4" style="opacity: 0.9">
+              Agendar tu evaluación es solo el primer paso. Regístrate en
+              nuestro <strong>Portal del Paciente</strong> para acceder a
+              herramientas exclusivas que te mantendrán motivado y conectado con
+              tu nutricionista en todo momento.
+            </p>
+            <a
+              href="pages/register.html"
+              class="btn btn-light text-success btn-lg fw-bold px-4 rounded-pill shadow-sm"
+            >
+              Crear mi cuenta gratis
+            </a>
+          </div>
 
+          <!-- Beneficios de la cuenta -->
+          <div class="col-lg-6 offset-lg-1">
+            <div class="d-flex flex-column gap-4">
+              <div class="d-flex align-items-start">
+                <div
+                  class="bg-white text-success rounded-circle p-3 me-3 shadow-sm d-flex justify-content-center align-items-center"
+                  style="width: 60px; height: 60px; flex-shrink: 0"
+                >
+                  <span class="fs-4">📊</span>
+                </div>
+                <div>
+                  <h5 class="fw-bold mb-1">Métricas y Evolución Visual</h5>
+                  <p class="mb-0" style="opacity: 0.85">
+                    Revisa gráficos interactivos con tus cambios de composición
+                    corporal: porcentaje de grasa, masa muscular y peso a lo
+                    largo del tiempo.
+                  </p>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-start">
+                <div
+                  class="bg-white text-success rounded-circle p-3 me-3 shadow-sm d-flex justify-content-center align-items-center"
+                  style="width: 60px; height: 60px; flex-shrink: 0"
+                >
+                  <span class="fs-4">🥗</span>
+                </div>
+                <div>
+                  <h5 class="fw-bold mb-1">Pautas y Recetas Digitales</h5>
+                  <p class="mb-0" style="opacity: 0.85">
+                    No más papeles que se pierden. Accede a tus planes de
+                    alimentación, listas de supermercado y recetarios desde tu
+                    celular cuando vayas de compras.
+                  </p>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-start">
+                <div
+                  class="bg-white text-success rounded-circle p-3 me-3 shadow-sm d-flex justify-content-center align-items-center"
+                  style="width: 60px; height: 60px; flex-shrink: 0"
+                >
+                  <span class="fs-4">📁</span>
+                </div>
+                <div>
+                  <h5 class="fw-bold mb-1">Historial y Exámenes Médicos</h5>
+                  <p class="mb-0" style="opacity: 0.85">
+                    Sube tus exámenes de laboratorio (perfil lipídico, insulina,
+                    etc.) para que tu nutricionista los evalúe antes de la
+                    consulta de seguimiento.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
     <footer class="bg-light py-4 text-center border-top">
       <p class="text-muted mb-0">
         © 2026 NutriVida. Temuco, Región de La Araucanía. Todos los derechos
         reservados.
       </p>
+      <br />
+      <p>DSY1104 – 2026</p>
+      <p>Alchemax: Ignacio Battistoni, Lucas Ortiz, Cristopher Rojas.</p>
     </footer>
 
     <script

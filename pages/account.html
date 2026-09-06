@@ -13,6 +13,7 @@
       crossorigin="anonymous"
     />
    <link rel="icon" href="../assets/img/Favicon.png">
+   <script src="../assets/js/account.js" defer></script>
   </head>
   <body class="bg-light">
     
@@ -23,11 +24,11 @@
             <span class="navbar-brand mb-0 h1 text-success fw-bold">NutriVida</span>
           </a>
           <div class="d-flex align-items-center gap-3">
-            <span class="text-muted d-none d-md-inline">Bienvenida, Camila</span>
+            <span class="text-muted d-none d-md-inline">Bienvenida, <p class="paciente-nombre"></p></span>
             <div class="bg-success text-white rounded-circle d-flex justify-content-center align-items-center fw-bold" style="width: 40px; height: 40px;">
               CS
             </div>
-            <a href="login.html" class="btn btn-outline-danger btn-sm ms-2">Cerrar Sesión</a>
+            <a href="login.html" id="btnCerrarSesion" class="btn btn-outline-danger btn-sm ms-2">Cerrar Sesión</a>
           </div>
         </div>
       </nav>
@@ -39,7 +40,7 @@
         <aside class="col-lg-3 col-md-4">
           <div class="bg-white p-4 rounded-4 shadow-sm h-100 border-0">
             <div class="text-center mb-4">
-              <h5 class="fw-bold text-dark mb-1">Camila Soto</h5>
+              <h5 class="fw-bold text-dark mb-1 paciente-nombre">Camila Soto</h5>
               <p class="text-muted small">Paciente activo</p>
             </div>
             
@@ -69,7 +70,7 @@
           
           <div class="bg-success text-white p-4 rounded-4 shadow-sm mb-4 d-flex justify-content-between align-items-center">
             <div>
-              <h3 class="fw-bold mb-1">¡Hola, Camila!</h3>
+              <h3 class="fw-bold mb-1 paciente-nombre">¡Hola, Camila!</h3>  
               <p class="mb-0 text-white-50">Aquí tienes el resumen de tu tratamiento y cuenta.</p>
             </div>
             <div class="d-none d-sm-block fs-1">🌱</div>
@@ -111,31 +112,31 @@
                 
                 <div class="row mb-3">
                   <div class="col-sm-4 text-muted fw-semibold">Nombre Completo</div>
-                  <div class="col-sm-8 text-dark">Camila Andrea Soto</div>
+                  <div class="col-sm-8 text-dark paciente-nombre">Camila Andrea Soto</div> 
                 </div>
                 <hr class="text-muted my-2 opacity-25">
                 
                 <div class="row mb-3">
                   <div class="col-sm-4 text-muted fw-semibold">Correo Electrónico</div>
-                  <div class="col-sm-8 text-dark">camila.soto@email.com</div>
+                  <div class="col-sm-8 text-dark" id="perfilCorreo">camila.soto@email.com</div>
                 </div>
                 <hr class="text-muted my-2 opacity-25">
                 
                 <div class="row mb-3">
                   <div class="col-sm-4 text-muted fw-semibold">Teléfono</div>
-                  <div class="col-sm-8 text-dark">+56 9 1234 5678</div>
+                  <div class="col-sm-8 text-dark" id="perfilNumero">+56 9 1234 5678</div>
                 </div>
                 <hr class="text-muted my-2 opacity-25">
                 
                 <div class="row mb-3">
                   <div class="col-sm-4 text-muted fw-semibold">Fecha de Nac.</div>
-                  <div class="col-sm-8 text-dark">12 de Mayo, 1994 (32 años)</div>
+                  <div class="col-sm-8 text-dark" id="perfilAnos">12 de Mayo, 1994 (32 años)</div>
                 </div>
                 <hr class="text-muted my-2 opacity-25">
                 
                 <div class="row">
                   <div class="col-sm-4 text-muted fw-semibold">Dirección</div>
-                  <div class="col-sm-8 text-dark">Av. Alemania 1234, Depto 5, Temuco</div>
+                  <div class="col-sm-8 text-dark" id="perfilDireccion">Av. Alemania 1234, Depto 5, Temuco</div>
                 </div>
               </div>
             </div>

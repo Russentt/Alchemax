@@ -30,7 +30,7 @@ function iniciarSesion() {
     if (pacEncontrado) {
         alert("Inicio de session correcto")
         sessionStorage.setItem("usuarioActivo", JSON.stringify(pacEncontrado));
-        
+        window.location.href = "account.html";
     } else {
         alert("Correo/Clave invalidos")
     }

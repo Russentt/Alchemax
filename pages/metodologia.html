@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Metodología y Planes | NutriVida</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body class="bg-light">
+
+    <header class="bg-white shadow-sm sticky-top">
+      <nav class="navbar navbar-expand-md navbar-light py-3">
+        <div class="container-fluid px-4">
+          <a href="index.html" class="text-decoration-none">
+            <span class="navbar-brand mb-0 h1 text-success fw-bold">NutriVida</span>
+          </a>
+          <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMetodologia">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse justify-content-end mt-3 mt-md-0" id="navbarMetodologia">
+            <ul class="navbar-nav align-items-center text-center gap-2">
+              <li class="nav-item w-100"><a href="index.html#servicios" class="nav-link">Especialidades</a></li>
+              <li class="nav-item w-100"><a href="metodologia.html" class="nav-link active text-success fw-bold">Nuestro Método</a></li>
+              <li class="nav-item w-100"><a href="testimonios.html" class="nav-link">Testimonios</a></li>
+              <li class="nav-item dropdown w-100">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  Recursos
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm text-center text-md-start">
+                  <li><a class="dropdown-item py-2" href="faq.html">Preguntas Frecuentes</a></li>
+                  <li><a class="dropdown-item py-2" href="telemedicina.html">Telemedicina</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item py-2" href="blog.html">Artículos Clínicos</a></li>
+                </ul>
+              </li>
+              <li class="nav-item ms-md-3 w-100 mt-2 mt-md-0">
+                <a href="index.html#contact" class="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-md-auto">Agendar Cita</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+      <div class="carousel-indicators">
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+      </div>
+      <div class="carousel-inner">
+        <div class="carousel-item active bg-success" style="min-height: 60vh;">
+          <div class="d-flex h-100 py-5 align-items-center justify-content-center text-center text-white px-3 px-md-5">
+            <div style="max-width: 800px;" class="py-5">
+              <span class="badge bg-light text-success mb-3 px-3 py-2 rounded-pill text-wrap">Nutrición Basada en Evidencia</span>
+              <h1 class="display-5 fw-bold mb-4">Ciencia Aplicada a tu Metabolismo</h1>
+              <p class="lead fs-5 px-2">En NutriVida no creemos en las dietas de moda. Implementamos un enfoque clínico riguroso, analizando tu composición corporal, tu entorno psicosocial y tus objetivos fisiológicos para diseñar un plan irrepetible.</p>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item bg-dark" style="min-height: 60vh;">
+          <div class="d-flex h-100 py-5 align-items-center justify-content-center text-center text-white px-3 px-md-5">
+            <div style="max-width: 800px;" class="py-5">
+              <span class="badge bg-success mb-3 px-3 py-2 rounded-pill text-wrap">Tecnología de Vanguardia</span>
+              <h1 class="display-5 fw-bold mb-4">Precisión Biométrica InBody</h1>
+              <p class="lead fs-5 px-2">Dejamos de lado el Índice de Masa Corporal tradicional. Utilizamos bioimpedancia multifrecuencia para segmentar tu agua intracelular, masa libre de grasa y tejido adiposo visceral con un 98% de precisión clínica.</p>
+            </div>
+          </div>
+        </div>
+        <div class="carousel-item bg-secondary" style="min-height: 60vh;">
+          <div class="d-flex h-100 py-5 align-items-center justify-content-center text-center text-white px-3 px-md-5">
+            <div style="max-width: 800px;" class="py-5">
+              <span class="badge bg-warning text-dark mb-3 px-3 py-2 rounded-pill text-wrap">Acompañamiento Continuo</span>
+              <h1 class="display-5 fw-bold mb-4">El Portal del Paciente</h1>
+              <p class="lead fs-5 px-2">Tu tratamiento vive en tu bolsillo. Una plataforma integral donde gráficas dinámicas de progreso, listas de supermercado interactivas y recetarios digitales aseguran tu adherencia al tratamiento los 365 días del año.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+      </button>
+    </div>
+
+    <main class="container my-5 px-3 px-md-4">
+      
+      <nav aria-label="breadcrumb" class="mb-5">
+        <ol class="breadcrumb p-3 bg-white rounded-3 shadow-sm flex-nowrap overflow-auto">
+          <li class="breadcrumb-item text-nowrap"><a href="index.html" class="text-success text-decoration-none">Inicio</a></li>
+          <li class="breadcrumb-item text-nowrap active">Metodología y Planes</li>
+        </ol>
+      </nav>
+
+      <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-5 d-flex flex-column flex-sm-row align-items-sm-center gap-3" role="alert">
+        <span class="fs-1 text-center text-sm-start">📊</span>
+        <div>
+          <h4 class="alert-heading fw-bold mb-2 text-center text-sm-start">¡Nuevo algoritmo de cálculo calórico!</h4>
+          <p class="mb-0 text-center text-sm-start">A partir de este mes, todas nuestras pautas integran la ecuación de Mifflin-St Jeor ajustada por factor de actividad termogénica no derivada del ejercicio (NEAT).</p>
+        </div>
+        <button type="button" class="btn-close position-absolute top-0 end-0 p-3" data-bs-dismiss="alert"></button>
+      </div>
+
+      <section class="mb-5">
+        <div class="text-center mb-5 px-2">
+          <h2 class="display-5 fw-bold text-dark mb-3">El Viaje del Paciente</h2>
+          <p class="text-muted fs-5">Un proceso estructurado, diseñado para garantizar el éxito y la sostenibilidad de tus hábitos.</p>
+        </div>
+
+        <div class="row g-5 align-items-center">
+          <div class="col-lg-6">
+            <div class="progress mb-4 rounded-pill shadow-sm d-none d-sm-flex" style="height: 25px;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 25%">Fase 1</div>
+              <div class="progress-bar bg-info text-dark fw-bold" style="width: 25%">Fase 2</div>
+              <div class="progress-bar bg-warning text-dark fw-bold" style="width: 25%">Fase 3</div>
+              <div class="progress-bar bg-primary" style="width: 25%">Fase 4</div>
+            </div>
+
+            <div class="list-group shadow-sm rounded-4">
+              <a href="#" class="list-group-item list-group-item-action p-3 p-md-4 border-0 border-bottom">
+                <div class="d-flex flex-column flex-sm-row w-100 justify-content-between align-items-start align-items-sm-center mb-2 gap-2">
+                  <h5 class="mb-0 fw-bold text-success">1. Evaluación Clínica</h5>
+                  <span class="badge bg-success rounded-pill align-self-start align-self-sm-auto">Día 1</span>
+                </div>
+                <p class="mb-1 text-muted small">Sesión de 60 minutos revisando historial médico, patrón de sueño y medición antropométrica.</p>
+              </a>
+              <a href="#" class="list-group-item list-group-item-action p-3 p-md-4 border-0 border-bottom">
+                <div class="d-flex flex-column flex-sm-row w-100 justify-content-between align-items-start align-items-sm-center mb-2 gap-2">
+                  <h5 class="mb-0 fw-bold text-info">2. Pauta Estratégica</h5>
+                  <span class="badge bg-info text-dark rounded-pill align-self-start align-self-sm-auto">Día 3</span>
+                </div>
+                <p class="mb-1 text-muted small">Recepción de minuta semanal, cálculo de macronutrientes y lista de compras vía Portal.</p>
+              </a>
+              <a href="#" class="list-group-item list-group-item-action p-3 p-md-4 border-0 border-bottom">
+                <div class="d-flex flex-column flex-sm-row w-100 justify-content-between align-items-start align-items-sm-center mb-2 gap-2">
+                  <h5 class="mb-0 fw-bold text-warning">3. Seguimiento</h5>
+                  <span class="badge bg-warning text-dark rounded-pill align-self-start align-self-sm-auto">Quincenal</span>
+                </div>
+                <p class="mb-1 text-muted small">Ajuste calórico según adherencia. Evaluación de pérdida de grasa vs retención hídrica.</p>
+              </a>
+              <a href="#" class="list-group-item list-group-item-action p-3 p-md-4 border-0">
+                <div class="d-flex flex-column flex-sm-row w-100 justify-content-between align-items-start align-items-sm-center mb-2 gap-2">
+                  <h5 class="mb-0 fw-bold text-primary">4. Alta Nutricional</h5>
+                  <span class="badge bg-primary rounded-pill align-self-start align-self-sm-auto">Mes 6 - 12</span>
+                </div>
+                <p class="mb-1 text-muted small">Independencia total. Conoces tus porciones y tu metabolismo funciona de manera óptima.</p>
+              </a>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="accordion shadow-sm rounded-4 overflow-hidden" id="accordionMetodologia">
+              <div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                  <button class="accordion-button fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                    Mito: Los carbohidratos en la noche engordan
+                  </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionMetodologia">
+                  <div class="accordion-body text-muted px-4">
+                    Falso. El balance energético total diario es lo que determina la pérdida o ganancia de peso, no la hora en que ingieres un macronutriente.
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                    Mito: Sudar quema grasa visceral
+                  </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionMetodologia">
+                  <div class="accordion-body text-muted px-4">
+                    El sudor es un mecanismo de termorregulación que elimina agua y minerales, no lípidos. La grasa se oxida y se expulsa principalmente a través de la respiración (CO2).
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item border-0">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                    Mito: Existen alimentos con calorías negativas
+                  </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionMetodologia">
+                  <div class="accordion-body text-muted px-4">
+                    Todos los alimentos aportan energía. Si bien vegetales como el apio tienen un alto efecto térmico, su saldo final nunca es negativo, aunque es insignificante calóricamente.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-5 bg-white p-3 p-md-5 rounded-4 shadow-sm">
+        <h3 class="fw-bold text-center text-success mb-4 mb-md-5">Tecnología de Medición Clínica</h3>
+        
+        <ul class="nav nav-pills flex-column flex-md-row nav-fill mb-4 gap-2 gap-md-3" id="techTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold border w-100" data-bs-toggle="pill" data-bs-target="#inbody" type="button" role="tab">Bioimpedancia</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold border w-100" data-bs-toggle="pill" data-bs-target="#plicometria" type="button" role="tab">Plicometría</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold border w-100" data-bs-toggle="pill" data-bs-target="#software" type="button" role="tab">Software</button>
+          </li>
+        </ul>
+        
+        <div class="tab-content" id="techTabsContent">
+          <div class="tab-pane fade show active p-4 bg-light rounded-4" id="inbody" role="tabpanel">
+            <h4 class="fw-bold text-dark text-center text-md-start">Análisis InBody 570</h4>
+            <p class="text-muted lh-lg mt-3 text-center text-md-start">Al enviar corrientes imperceptibles a través de 8 electrodos, la máquina discrimina la resistencia de tus tejidos, trazando un mapa exacto de dónde acumulas grasa visceral y masa muscular.</p>
+            <div class="text-center text-md-start">
+              <button class="btn btn-success mt-2 w-100 w-md-auto" data-bs-toggle="offcanvas" data-bs-target="#offcanvasGlosario">Glosario biométrico</button>
+            </div>
+          </div>
+          <div class="tab-pane fade p-4 bg-light rounded-4" id="plicometria" role="tabpanel">
+            <h4 class="fw-bold text-dark text-center text-md-start">Antropometría ISAK 2</h4>
+            <p class="text-muted lh-lg mt-3 text-center text-md-start">Utilizamos plicómetros Harpenden de precisión. A través del método ISAK, medimos 8 pliegues cutáneos para monitorear reducciones de grasa subcutánea de hasta un milímetro.</p>
+          </div>
+          <div class="tab-pane fade p-4 bg-light rounded-4" id="software" role="tabpanel">
+            <h4 class="fw-bold text-dark text-center text-md-start">NutriTrack Digital</h4>
+            <p class="text-muted lh-lg mt-3 text-center text-md-start">Los datos se sincronizan con tu Portal. Nuestro algoritmo analiza las bases de la USDA para estructurar pautas que cubran el 100% de tus necesidades de micronutrientes.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-5 px-2">
+        <h3 class="fw-bold text-center text-success mb-2">Comprende tu Biología</h3>
+        <p class="text-center text-muted mb-4 mb-md-5">Pasa el cursor sobre los términos resaltados para revelar su explicación clínica.</p>
+        
+        <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm text-dark fs-6 fs-md-5 lh-lg text-center text-md-start">
+          Para que exista una <span tabindex="0" class="text-success fw-bold text-decoration-underline" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-title="Oxidación Lipídica" data-bs-content="Proceso biológico donde los ácidos grasos son descompuestos para generar energía.">pérdida de grasa real</span>, el cuerpo debe entrar en un 
+          <a href="#" class="text-success fw-bold text-decoration-underline" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Consumir menos calorías de las que tu cuerpo gasta.">déficit calórico</a> sostenido. Si es muy agresivo, el 
+          <span tabindex="0" class="text-success fw-bold text-decoration-underline" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-title="Tasa Metabólica Basal" data-bs-content="Energía mínima que tu cuerpo necesita en estado de reposo absoluto.">metabolismo basal</span> se adaptará. Calibramos la ingesta de 
+          <a href="#" class="text-success fw-bold text-decoration-underline" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Proteínas, Carbohidratos y Grasas.">macronutrientes</a> para proteger tu masa magra y mejorar tu 
+          <span tabindex="0" class="text-success fw-bold text-decoration-underline" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-title="Sensibilidad a la Insulina" data-bs-content="Eficiencia con la que tus células absorben la glucosa.">sensibilidad a la insulina</span>.
+        </div>
+      </section>
+
+      <section class="mb-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center align-items-md-end mb-4 gap-3 text-center text-md-start">
+          <div>
+            <h2 class="display-6 fw-bold text-dark mb-2">Nuestros Programas</h2>
+            <p class="text-muted mb-0">Compara nuestros planes y elige tu tratamiento.</p>
+          </div>
+          <div class="btn-group shadow-sm w-100 w-md-auto" role="group">
+            <button type="button" class="btn btn-outline-success active">Mensual</button>
+            <button type="button" class="btn btn-outline-success">Trimestral</button>
+          </div>
+        </div>
+
+        <div class="table-responsive bg-white rounded-4 shadow-sm p-2 border">
+          <table class="table table-hover table-striped align-middle mb-0 text-center">
+            <thead class="table-success">
+              <tr>
+                <th scope="col" class="py-3 px-3 text-start" style="min-width: 140px;">Características</th>
+                <th scope="col" class="py-3 px-2" style="min-width: 110px;">Plan Básico</th>
+                <th scope="col" class="py-3 px-2" style="min-width: 130px;">
+                  <div class="d-flex flex-column align-items-center">
+                    <span>Plan Integral</span>
+                    <span class="badge rounded-pill bg-danger mt-1">¡Popular!</span>
+                  </div>
+                </th>
+                <th scope="col" class="py-3 px-2" style="min-width: 110px;">Plan Deportivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-start fw-bold text-muted px-3 py-3">Controles</td>
+                <td class="px-2 py-3">Mensual</td>
+                <td class="fw-bold px-2 py-3">Quincenal</td>
+                <td class="px-2 py-3">Semanal</td>
+              </tr>
+              <tr>
+                <td class="text-start fw-bold text-muted px-3 py-3">Medición InBody 570</td>
+                <td class="px-2 py-3">✔️</td>
+                <td class="px-2 py-3">✔️</td>
+                <td class="px-2 py-3">✔️</td>
+              </tr>
+              <tr>
+                <td class="text-start fw-bold text-muted px-3 py-3">Antropometría ISAK 2</td>
+                <td class="px-2 py-3">❌</td>
+                <td class="px-2 py-3">❌</td>
+                <td class="px-2 py-3">✔️</td>
+              </tr>
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <td class="text-start px-3"></td>
+                <td class="py-3 px-2"><button class="btn btn-outline-success btn-sm w-100">Elegir Básico</button></td>
+                <td class="py-3 px-2"><button class="btn btn-success btn-sm fw-bold w-100 shadow-sm">Elegir Integral</button></td>
+                <td class="py-3 px-2"><button class="btn btn-dark btn-sm w-100">Elegir Deportivo</button></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="mb-5">
+        <h3 class="fw-bold text-dark mb-4 text-center text-md-start">Últimas Publicaciones Clínicas</h3>
+        <div class="row g-4 mb-5 d-flex align-items-stretch">
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 d-flex flex-column">
+              <div class="card-header bg-success text-white fw-bold text-center text-md-start">Microbiota</div>
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title fw-bold">Impacto de los probióticos en la absorción</h5>
+                <p class="card-text text-muted small flex-grow-1">Estudio de 12 semanas sobre la cepa Lactobacillus reuteri en pacientes con resistencia a la insulina leve.</p>
+                <a href="#" class="btn btn-outline-success btn-sm w-100 mt-auto">Leer artículo</a>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 d-flex flex-column" aria-hidden="true">
+              <div class="card-header bg-light text-muted text-center text-md-start">Cargando categoría...</div>
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title placeholder-glow"><span class="placeholder col-8"></span></h5>
+                <p class="card-text placeholder-glow flex-grow-1">
+                  <span class="placeholder col-7"></span>
+                  <span class="placeholder col-4"></span>
+                  <span class="placeholder col-6"></span>
+                </p>
+                <a href="#" tabindex="-1" class="btn btn-outline-secondary btn-sm disabled placeholder col-12 mt-auto"></a>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-12 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 d-flex flex-column" aria-hidden="true">
+              <div class="card-header bg-light text-muted text-center text-md-start">Cargando categoría...</div>
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title placeholder-glow"><span class="placeholder col-9"></span></h5>
+                <p class="card-text placeholder-glow flex-grow-1">
+                  <span class="placeholder col-8"></span>
+                  <span class="placeholder col-5"></span>
+                </p>
+                <a href="#" tabindex="-1" class="btn btn-outline-secondary btn-sm disabled placeholder col-12 mt-auto"></a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <nav aria-label="Navegación de artículos">
+          <ul class="pagination justify-content-center flex-wrap gap-1">
+            <li class="page-item disabled"><a class="page-link rounded" href="#">Anterior</a></li>
+            <li class="page-item active"><a class="page-link rounded" href="#">1</a></li>
+            <li class="page-item"><a class="page-link rounded" href="#">2</a></li>
+            <li class="page-item"><a class="page-link rounded" href="#">3</a></li>
+            <li class="page-item"><a class="page-link rounded" href="#">Siguiente</a></li>
+          </ul>
+        </nav>
+      </section>
+
+      <section class="bg-success text-white p-4 p-md-5 rounded-4 shadow-lg mb-4">
+        <div class="row align-items-center g-4">
+          <div class="col-lg-6 text-center text-lg-start">
+            <h2 class="fw-bold mb-3">Calculadora de Triage Clínico</h2>
+            <p class="lead mb-0 fs-6 fs-md-5">Ingresa tus datos corporales básicos y nuestro sistema generará un pre-diagnóstico de tu estado actual para recomendarte el especialista adecuado.</p>
+          </div>
+          <div class="col-lg-6">
+            <div class="bg-white p-4 p-md-5 rounded-4 shadow">
+              <form id="imcForm">
+                <div class="form-floating mb-4">
+                  <input type="text" class="form-control border-secondary-subtle" id="floatingName" placeholder="Tu nombre" required>
+                  <label for="floatingName" class="text-muted">Nombre de pila</label>
+                </div>
+                <div class="row g-3 mb-4">
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label text-success fw-bold small mb-1">Estatura</label>
+                    <div class="input-group flex-nowrap shadow-sm">
+                      <span class="input-group-text bg-light border-end-0 border-secondary-subtle">📏</span>
+                      <input type="number" class="form-control border-start-0 border-secondary-subtle" id="alturaInput" required>
+                      <span class="input-group-text bg-light border-secondary-subtle">cm</span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label text-success fw-bold small mb-1">Peso Actual</label>
+                    <div class="input-group flex-nowrap shadow-sm">
+                      <span class="input-group-text bg-light border-end-0 border-secondary-subtle">⚖️</span>
+                      <input type="number" class="form-control border-start-0 border-secondary-subtle" id="pesoInput" step="0.1" required>
+                      <span class="input-group-text bg-light border-secondary-subtle">kg</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mb-4">
+                  <label class="form-label text-success fw-bold small mb-1">Objetivo</label>
+                  <select class="form-select shadow-sm border-secondary-subtle py-2" required>
+                    <option selected disabled value="">Selecciona una opción...</option>
+                    <option value="1">Bajar grasa corporal</option>
+                    <option value="2">Subir masa muscular</option>
+                    <option value="3">Mejorar rendimiento</option>
+                  </select>
+                </div>
+                <button type="button" class="btn btn-success w-100 fw-bold py-3 fs-5 shadow-sm mt-2" data-bs-toggle="modal" data-bs-target="#imcModal">
+                  Generar Pre-Diagnóstico
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3 z-3">
+      <div id="liveToast" class="toast bg-white border-0 shadow-lg rounded-3" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white border-0 rounded-top-3">
+          <strong class="me-auto">🔔 Nueva Reserva</strong>
+          <small>Hace un momento</small>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body fw-semibold text-dark py-3">
+          Camila S. ha agendado una Evaluación Integral.
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="imcModal" tabindex="-1" aria-labelledby="imcModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable px-2">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+          <div class="modal-header bg-success text-white border-0 rounded-top-4 py-3">
+            <h5 class="modal-title fw-bold" id="imcModalLabel">Tu Resultado Preliminar</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center p-4 p-md-5">
+            <div class="spinner-border text-success mb-4" role="status" style="width: 3rem; height: 3rem;">
+              <span class="visually-hidden">Calculando...</span>
+            </div>
+            <h4 class="text-dark fw-bold mb-3">¡Excelente iniciativa!</h4>
+            <p class="text-muted px-2">Hemos procesado tus datos preliminares. Si bien el IMC es referencial, es un buen punto de partida.</p>
+            <div class="alert alert-light border border-success text-success fw-bold mt-4 shadow-sm">
+              Reserva tu evaluación clínica completa creando tu perfil.
+            </div>
+          </div>
+          <div class="modal-footer border-0 justify-content-center pb-4 flex-nowrap w-100 gap-2">
+            <button type="button" class="btn btn-outline-secondary w-50" data-bs-dismiss="modal">Cerrar</button>
+            <a href="register.html" class="btn btn-success fw-bold w-50">Crear Cuenta</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasGlosario" aria-labelledby="offcanvasGlosarioLabel">
+      <div class="offcanvas-header bg-success text-white py-3">
+        <h5 class="offcanvas-title fw-bold" id="offcanvasGlosarioLabel">Glosario Biométrico</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body px-4 py-4">
+        <div class="card border-0 shadow-sm mb-3 bg-light">
+          <div class="card-body p-4">
+            <h6 class="card-title fw-bold text-success mb-2">Masa Magra (MLG)</h6>
+            <p class="card-text text-muted small mb-0">El peso total de tu cuerpo restando la masa grasa. Es vital protegerla durante el déficit calórico.</p>
+          </div>
+        </div>
+        <div class="card border-0 shadow-sm mb-3 bg-light">
+          <div class="card-body p-4">
+            <h6 class="card-title fw-bold text-success mb-2">Grasa Visceral</h6>
+            <p class="card-text text-muted small mb-0">Grasa intra-abdominal que rodea los órganos internos. Principal foco clínico a reducir.</p>
+          </div>
+        </div>
+        <div class="d-grid mt-5">
+          <a href="index.html#contact" class="btn btn-success fw-bold py-3 shadow-sm">Hablar con un especialista</a>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bg-white py-4 py-md-5 text-center border-top mt-auto px-3">
+      <p class="text-muted mb-0 fw-semibold">© 2026 NutriVida. Temuco, Región de La Araucanía. Todos los derechos reservados.</p>
+    </footer>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+        const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+        [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+        
+        const imcModal = document.getElementById('imcModal');
+        imcModal.addEventListener('show.bs.modal', () => {
+          const spinner = imcModal.querySelector('.spinner-border');
+          const contentText = imcModal.querySelector('h4');
+          spinner.style.display = 'inline-block';
+          contentText.style.display = 'none';
+          setTimeout(() => {
+            spinner.style.display = 'none';
+            contentText.style.display = 'block';
+          }, 1500);
+        });
+
+        const toastElement = document.getElementById('liveToast');
+        if (toastElement) {
+          const toast = new bootstrap.Toast(toastElement);
+          setTimeout(() => {
+            toast.show();
+          }, 3500);
+        }
+      });
+    </script>
+  </body>
+</html>

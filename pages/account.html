@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Mi Portal | NutriVida</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+   <link rel="icon" href="../assets/img/Favicon.png">
+  </head>
+  <body class="bg-light">
+    
+    <header class="bg-white shadow-sm sticky-top">
+      <nav class="navbar navbar-expand-md navbar-light py-3">
+        <div class="container-fluid px-4">
+          <a href="../index.html" class="text-decoration-none">
+            <span class="navbar-brand mb-0 h1 text-success fw-bold">NutriVida</span>
+          </a>
+          <div class="d-flex align-items-center gap-3">
+            <span class="text-muted d-none d-md-inline">Bienvenida, Camila</span>
+            <div class="bg-success text-white rounded-circle d-flex justify-content-center align-items-center fw-bold" style="width: 40px; height: 40px;">
+              CS
+            </div>
+            <a href="login.html" class="btn btn-outline-danger btn-sm ms-2">Cerrar Sesión</a>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-fluid py-4 px-4">
+      <div class="row g-4">
+        
+        <aside class="col-lg-3 col-md-4">
+          <div class="bg-white p-4 rounded-4 shadow-sm h-100 border-0">
+            <div class="text-center mb-4">
+              <h5 class="fw-bold text-dark mb-1">Camila Soto</h5>
+              <p class="text-muted small">Paciente activo</p>
+            </div>
+            
+            <hr class="text-muted mb-4">
+
+            <div class="nav flex-column nav-pills gap-2">
+              <a href="#" class="nav-link active bg-success text-white fw-semibold rounded-3 px-3 py-2">
+                🏠 Resumen de Cuenta
+              </a>
+              <a href="#" class="nav-link text-dark fw-semibold rounded-3 px-3 py-2 bg-light">
+                📅 Mis Citas
+              </a>
+              <a href="#" class="nav-link text-dark fw-semibold rounded-3 px-3 py-2 bg-light">
+                🥗 Mi Plan Nutricional
+              </a>
+              <a href="#" class="nav-link text-dark fw-semibold rounded-3 px-3 py-2 bg-light">
+                📊 Evolución y Métricas
+              </a>
+              <a href="#" class="nav-link text-dark fw-semibold rounded-3 px-3 py-2 bg-light">
+                📁 Exámenes Médicos
+              </a>
+            </div>
+          </div>
+        </aside>
+
+        <section class="col-lg-9 col-md-8">
+          
+          <div class="bg-success text-white p-4 rounded-4 shadow-sm mb-4 d-flex justify-content-between align-items-center">
+            <div>
+              <h3 class="fw-bold mb-1">¡Hola, Camila!</h3>
+              <p class="mb-0 text-white-50">Aquí tienes el resumen de tu tratamiento y cuenta.</p>
+            </div>
+            <div class="d-none d-sm-block fs-1">🌱</div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-md-4">
+              <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100 border-start border-4 border-success">
+                <p class="text-muted mb-1 fw-semibold small text-uppercase">Próxima Cita</p>
+                <h5 class="fw-bold text-dark mb-2">15 Nov 2026, 10:30 hrs</h5>
+                <p class="text-success small fw-semibold mb-0">Consulta Presencial - Temuco</p>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100 border-start border-4 border-info">
+                <p class="text-muted mb-1 fw-semibold small text-uppercase">Último Peso Registrado</p>
+                <h5 class="fw-bold text-dark mb-2">68.5 kg</h5>
+                <p class="text-muted small mb-0">Registrado el 15 Oct 2026</p>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100 border-start border-4 border-warning">
+                <p class="text-muted mb-1 fw-semibold small text-uppercase">Objetivo Actual</p>
+                <h5 class="fw-bold text-dark mb-2">Recomposición Corporal</h5>
+                <p class="text-muted small mb-0">Déficit calórico leve</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-lg-7">
+              <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="fw-bold text-success mb-0">Información Personal</h5>
+                  <button class="btn btn-outline-secondary btn-sm">Editar datos</button>
+                </div>
+                
+                <div class="row mb-3">
+                  <div class="col-sm-4 text-muted fw-semibold">Nombre Completo</div>
+                  <div class="col-sm-8 text-dark">Camila Andrea Soto</div>
+                </div>
+                <hr class="text-muted my-2 opacity-25">
+                
+                <div class="row mb-3">
+                  <div class="col-sm-4 text-muted fw-semibold">Correo Electrónico</div>
+                  <div class="col-sm-8 text-dark">camila.soto@email.com</div>
+                </div>
+                <hr class="text-muted my-2 opacity-25">
+                
+                <div class="row mb-3">
+                  <div class="col-sm-4 text-muted fw-semibold">Teléfono</div>
+                  <div class="col-sm-8 text-dark">+56 9 1234 5678</div>
+                </div>
+                <hr class="text-muted my-2 opacity-25">
+                
+                <div class="row mb-3">
+                  <div class="col-sm-4 text-muted fw-semibold">Fecha de Nac.</div>
+                  <div class="col-sm-8 text-dark">12 de Mayo, 1994 (32 años)</div>
+                </div>
+                <hr class="text-muted my-2 opacity-25">
+                
+                <div class="row">
+                  <div class="col-sm-4 text-muted fw-semibold">Dirección</div>
+                  <div class="col-sm-8 text-dark">Av. Alemania 1234, Depto 5, Temuco</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-5">
+              <div class="bg-white p-4 rounded-4 shadow-sm border-0 h-100">
+                <h5 class="fw-bold text-success mb-4">Documentos Recientes</h5>
+                
+                <div class="d-flex align-items-center justify-content-between p-3 mb-3 bg-light rounded-3">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="fs-3">📄</div>
+                    <div>
+                      <h6 class="mb-0 fw-bold text-dark">Pauta Alimentaria Octubre</h6>
+                      <small class="text-muted">PDF • 1.2 MB</small>
+                    </div>
+                  </div>
+                  <a href="#" class="btn btn-sm btn-success">Descargar</a>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between p-3 mb-3 bg-light rounded-3">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="fs-3">🛒</div>
+                    <div>
+                      <h6 class="mb-0 fw-bold text-dark">Lista de Supermercado</h6>
+                      <small class="text-muted">PDF • 0.5 MB</small>
+                    </div>
+                  </div>
+                  <a href="#" class="btn btn-sm btn-outline-success">Descargar</a>
+                </div>
+                
+                <div class="alert alert-warning mt-4 mb-0 border-0 d-flex align-items-start gap-2 rounded-3" role="alert">
+                  <span>⚠️</span>
+                  <div class="small text-dark">
+                    <strong>Recordatorio:</strong> Recuerda subir tus últimos exámenes de sangre (Perfil Lipídico) antes de tu próxima cita.
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </section>
+      </div>
+    </main>
+
+  </body>
+</html>

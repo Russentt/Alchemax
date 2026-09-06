@@ -7,6 +7,8 @@ const region = document.getElementById("regRegion");
 const correo = document.getElementById("regEmail");
 const contrasena = document.getElementById("regPassword");
 const confirmarContrasena = document.getElementById("regConfirmPassword");
+const modal = document.getElementById("myModal");
+const btnCerrar = document.querySelector(".close");
 
 const alertas = document.querySelectorAll(".invalid");
 const alertaClave = document.querySelector("#coincidenciaClave");
@@ -106,9 +108,6 @@ formulario.addEventListener("submit", (event) => {
     alert("REGISTRO FALLIDO, Edad insuficiente");
     return;
   }
-
-  alert("TEST CORRECTO");
-
   const nuevoPaciente = {
       id: crypto.randomUUID(),
       nombre: nombre.value,
@@ -120,8 +119,13 @@ formulario.addEventListener("submit", (event) => {
       contrasena: contrasena.value,
       confContra: confirmarContrasena.value
   }
-
   agregarPaciente(nuevoPaciente);
   formulario.reset();
-
+  modal.style.display = "block";
 });
+
+btnCerrar.addEventListener("click", ()=>{
+   modal.style.display = "none";
+   document.body.classList.remove("modal-active");
+}
+);

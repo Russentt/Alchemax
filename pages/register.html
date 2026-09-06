@@ -12,6 +12,7 @@
       integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
       crossorigin="anonymous"
     />
+    <script src="../assets/js/register.js" defer></script>
   </head>
   <body class="bg-light">
     <header style="position: relative; transform: none; transition: none">
@@ -55,6 +56,9 @@
                   placeholder="Ej. Camila Andrea Soto"
                   required
                 />
+                <div class="invalid mt-2 mb-2 p-1">
+                  Por favor, rellena este campo.
+                </div>
               </div>
 
               <div class="row">
@@ -115,6 +119,9 @@
                     placeholder="Ej. Av. Alemania 1234, Depto 5"
                     required
                   />
+                  <div class="invalid mt-2 mb-2 p-1">
+                    Por favor, rellena este campo.
+                  </div>
                 </div>
 
                 <div class="col-md-5 mb-4">
@@ -156,9 +163,12 @@
                   type="email"
                   class="form-control"
                   id="regEmail"
-                  placeholder="tucorreo@email.com"
+                  placeholder="tucorreo@duocuc.cl"
                   required
                 />
+                <div class="invalid mt-2 mb-2 p-1">
+                  Por favor, rellena este campo.
+                </div>
               </div>
 
               <div class="row mb-4">
@@ -175,6 +185,9 @@
                     placeholder="Crea una contraseña segura"
                     required
                   />
+                  <div class="invalid mt-2 mb-2 p-1">
+                    Por favor, rellena este campo.
+                  </div>
                 </div>
                 <div class="col-md-6">
                   <label
@@ -189,10 +202,15 @@
                     placeholder="Repite tu contraseña"
                     required
                   />
+                  <div class="invalid mt-2 mb-2 p-1">
+                    Por favor, rellena este campo.
+                  </div>
+                  <div id="coincidenciaClave" class="mt-2 mb-2 p-1">
+                    Las contraseñas no coinciden.
+                  </div>
                 </div>
               </div>
 
-              <!-- Botón de Registro -->
               <div class="d-grid mt-4">
                 <button type="submit" class="btn btn-success btn-lg fw-bold">
                   Completar Registro

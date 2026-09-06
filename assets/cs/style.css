@@ -131,3 +131,15 @@ main {
 body.modal-active {
   overflow: hidden;
 }
+
+.invalid {
+  background-color: rgba(243, 8, 55, 0.288);
+  border-radius: 6px;
+  text-align: center;
+}
+
+#coincidenciaClave {
+  background-color: rgba(243, 8, 55, 0.288);
+  border-radius: 6px;
+  text-align: center;
+}

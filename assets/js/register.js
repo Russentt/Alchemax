@@ -11,6 +11,8 @@ const confirmarContrasena = document.getElementById("regConfirmPassword");
 const alertas = document.querySelectorAll(".invalid");
 const alertaClave = document.querySelector("#coincidenciaClave");
 
+const clave_pacientes = "nutrivida_pacientes";
+
 window.addEventListener("DOMContentLoaded", () => {
   const navigation = performance.getEntriesByType("navigation")[0];
 
@@ -20,6 +22,23 @@ window.addEventListener("DOMContentLoaded", () => {
     correo.value = "";
   }
 });
+
+function obtenerPaciente() {
+  const datos = localStorage.getItem(clave_pacientes);
+  if (datos === null) return [];
+  return JSON.parse(datos);
+}
+
+function guardarPacientes(pacientes) {
+  const pacienteJSON = JSON.stringify(pacientes)
+  localStorage.setItem(clave_pacientes, pacienteJSON);
+}
+
+function agregarPaciente(paciente) {
+  const pacientes = obtenerPaciente();
+  pacientes.push(paciente);
+  guardarPacientes(pacientes);
+}
 
 function displayAlerta() {
   const campos = [nombre, direccion, correo, contrasena, confirmarContrasena];
@@ -78,15 +97,31 @@ formulario.addEventListener("submit", (event) => {
 
   if (!correo.value.match(dominioValido)) {
     flag = false;
-    alert("REGISTRO FALLIDO.");
+    alert("REGISTRO FALLIDO. Correo invalido");
     return;
   }
 
   if (edadUsuario() < 14) {
     flag = false;
-    alert("REGISTRO FALLIDO");
+    alert("REGISTRO FALLIDO, Edad insuficiente");
     return;
   }
 
   alert("TEST CORRECTO");
+
+  const nuevoPaciente = {
+      id: crypto.randomUUID(),
+      nombre: nombre.value,
+      fechaNac: fechaNacimiento.value,
+      genero: genero.value,
+      direccion: direccion.value,
+      region: region.value,
+      correo: correo.value,
+      contrasena: contrasena.value,
+      confContra: confirmarContrasena.value
+  }
+
+  agregarPaciente(nuevoPaciente);
+  formulario.reset();
+
 });

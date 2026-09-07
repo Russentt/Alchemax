@@ -10,6 +10,18 @@ formLogin.addEventListener("submit", (event) => {
 
 });
 
+function mostrarMensaje(texto, tipo) {
+    if (!mensaje) return;
+
+    mensaje.textContent = texto;
+
+    if (tipo === "success") {
+        mensaje.className = "alert alert-success text-center py-2 mt-3";
+    } else {
+        mensaje.className = "alert alert-danger text-center py-2 mt-3"
+    }
+}
+
 function iniciarSesion() {
     const email = inputEmail.value.trim().toLowerCase();
     const password = inputPass.value.trim();
@@ -17,7 +29,7 @@ function iniciarSesion() {
     const datos = localStorage.getItem(clave_pacientes);
 
     if (datos === null) {
-        alert("Sin usuarios en el sistema")
+        mostrarMensaje("Sin usuarios en el sistema")
         return;
     }
 
@@ -26,12 +38,12 @@ function iniciarSesion() {
     const paciente = listaPacientes.find(p => p.correo.toLowerCase() === email);
 
     if (!paciente) {
-        alert("correo no registrado");
+        mostrarMensaje("correo no registrado");
         return;
     }
 
     if (paciente.bloqueado) {
-        alert("Esta cuenta ha sido bloqueada temporalmente");
+        mostrarMensaje("Esta cuenta ha sido bloqueada temporalmente");
         return;
     }
 
@@ -43,7 +55,7 @@ function iniciarSesion() {
         paciente.intentos = 0;
         localStorage.setItem(clave_pacientes, JSON.stringify(listaPacientes));
 
-        alert("Inicio de sesión correcto");
+        mostrarMensaje("Inicio de sesión correcto");
         sessionStorage.setItem("usuarioActivo", JSON.stringify(paciente));
         window.location.href = "account.html";
     } else {
@@ -51,10 +63,10 @@ function iniciarSesion() {
 
         if (paciente.intentos >= 3) {
             paciente.bloqueado = true;
-            alert("Cuenta bloqueada, intenta de nuevo más tarde.");
+            mostrarMensaje("Cuenta bloqueada, intenta de nuevo más tarde.");
         } else {
             const restante = 3 - paciente.intentos;
-            alert(`Contraseña incorrecta. Te quedan ${restante} intento(s).`);
+            mostrarMensaje(`Contraseña incorrecta. Te quedan ${restante} intento(s).`);
         }
 
         localStorage.setItem(clave_pacientes, JSON.stringify(listaPacientes));

@@ -13,6 +13,7 @@
       crossorigin="anonymous"
     />
    <link rel="icon" href="../assets/img/Favicon.png">
+   <script src="../assets/js/catalogo.js" defer></script>
   </head>
   <body class="bg-light">
 
@@ -27,13 +28,11 @@
           </button>
           <div class="collapse navbar-collapse justify-content-end mt-3 mt-md-0" id="navbarMetodologia">
             <ul class="navbar-nav align-items-center text-center gap-2">
-              <li class="nav-item w-100"><a href="index.html#servicios" class="nav-link">Especialidades</a></li>
-              <li class="nav-item w-100"><a href="metodologia.html" class="nav-link active text-success fw-bold">Nuestro Método</a></li>
+              <li class="nav-item w-100"><a href="#servicios" class="nav-link text-success fw-bold">Servicios</a></li>
+              <li class="nav-item w-100"><a href="metodologia.html" class="nav-link active">Nuestro Método</a></li>
               <li class="nav-item w-100"><a href="testimonios.html" class="nav-link">Testimonios</a></li>
               <li class="nav-item dropdown w-100">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                  Recursos
-                </a>
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Recursos</a>
                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm text-center text-md-start">
                   <li><a class="dropdown-item py-2" href="faq.html">Preguntas Frecuentes</a></li>
                   <li><a class="dropdown-item py-2" href="telemedicina.html">Telemedicina</a></li>
@@ -42,7 +41,7 @@
                 </ul>
               </li>
               <li class="nav-item ms-md-3 w-100 mt-2 mt-md-0">
-                <a href="index.html#contact" class="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-md-auto">Agendar Cita</a>
+                <a href="../index.html#contact" class="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-md-auto">Agendar Cita</a>
               </li>
             </ul>
           </div>
@@ -357,6 +356,77 @@
           </ul>
         </nav>
       </section>
+
+      <section id="servicios" class="mb-5 pt-3">
+        <div class="text-center mb-4 px-2">
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-bold mb-2">Catálogo Oficial NutriVida</span>
+          <h2 class="display-5 fw-bold text-dark mb-2">Servicios y Planes Clínicos</h2>
+          <p class="text-muted fs-5">Encuentra y filtra el tratamiento nutricional ideal según tus objetivos de salud.</p>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+          <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-5">
+              <label for="filtroCategoria" class="form-label fw-bold text-dark small mb-1">Filtrar por Categoría:</label>
+              <select id="filtroCategoria" class="form-select border-secondary-subtle py-2">
+                <option value="todos">Todas las categorías</option>
+                <option value="Consulta">Consultas Clínicas</option>
+                <option value="Plan especializado">Planes Especializados</option>
+                <option value="Evaluación">Evaluaciones Biométricas</option>
+                <option value="Taller grupal">Talleres Grupales</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-5">
+              <label for="filtroPrecio" class="form-label fw-bold text-dark small mb-1">
+                Precio máximo: <span id="labelPrecio" class="text-success fw-bold">$170.000</span>
+              </label>
+              <input type="range" class="form-range" id="filtroPrecio" min="10000" max="170000" step="5000" value="170000">
+            </div>
+            <div class="col-12 col-md-2 d-flex align-items-end">
+              <button id="btnLimpiarFiltros" class="btn btn-outline-secondary w-100 py-2">Restablecer</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="contenedorCatalogo">          
+        </div>
+      
+        <div id="sinResultados" class="alert alert-warning text-center rounded-4 shadow-sm py-4 my-4 d-none">
+          No se encontraron servicios que coincidan con la categoría y rango de precio seleccionado.
+        </div>
+      </section>
+
+      
+      <div class="modal fade" id="modalDetalleProducto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-success text-white py-3">
+              <h5 class="modal-title fw-bold" id="detalleTitulo">Detalle del Servicio</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-start">
+              <div class="text-center mb-3">
+                <img id="detalleImg" src="" alt="Servicio" class="img-fluid rounded-3 shadow-sm" style="max-height: 200px; width: 100%; object-fit: cover;">
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-secondary-subtle text-secondary fw-semibold" id="detalleCodigo"></span>
+                <span class="badge bg-success-subtle text-success fw-bold" id="detalleCategoria"></span>
+              </div>
+              <p class="text-muted fs-6" id="detalleDescripcion"></p>
+              <ul class="list-group list-group-flush mb-3 border rounded-3">
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Duración:</span> <strong id="detalleDuracion"></strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Modalidad:</span> <strong id="detalleModalidad"></strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Profesional:</span> <strong id="detalleProfesional"></strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Disponibilidad:</span> <strong id="detalleStock" class="text-success"></strong></li>
+              </ul>
+              <div class="d-flex justify-content-between align-items-center pt-2">
+                <span class="fs-4 fw-bold text-success" id="detallePrecio"></span>
+                <button class="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm" id="btnDetalleAgregar">Agregar al Carrito</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <section class="bg-success text-white p-4 p-md-5 rounded-4 shadow-lg mb-4">
         <div class="row align-items-center g-4">

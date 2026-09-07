@@ -11,77 +11,154 @@ const productos = [
     { id: "EV002", nombre: "Bioimpedanciometría InBody", categoria: "Evaluación", precio: 9990, precioOriginal: 12000, oferta: true, stock: 20, img: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=500&q=80", duracion: "15 min", desc: "Diagnóstico de masa grasa segmental, agua corporal y masa magra." },
     { id: "TG001", nombre: "Taller: Alimentación Saludable", categoria: "Taller grupal", precio: 15000, stock: 10, img: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=500&q=80", duracion: "90 min", desc: "Lectura crítica de etiquetas y diseño de platos equilibrados." },
     { id: "TG002", nombre: "Taller: Cocina Nutritiva", categoria: "Taller grupal", precio: 16990, precioOriginal: 20000, oferta: true, stock: 8, img: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500&q=80", duracion: "120 min", desc: "Taller práctico con técnicas de batch cooking y degustación." }
-    ];
+];
 
-    document.addEventListener("DOMContentLoaded", () => {
-    const contenedor = document.getElementById("contenedorCatalogo");
-    const filtroCat = document.getElementById("filtroCategoria");
-    const filtroPrecio = document.getElementById("filtroPrecio");
-    const labelPrecio = document.getElementById("labelPrecio");
-    const sinResultados = document.getElementById("sinResultados");
+const clave_stock = "nutrivida_stock";
+const clave_carrito = "nutrivida_carrito";
 
-    const fmtCLP = (v) => `$${v.toLocaleString("es-CL")}`;
+function obtenerProducto() {
+    const guardados = localStorage.getItem(clave_stock);
+    if (!guardados) {
+        localStorage.setItem(clave_stock, JSON.stringify(productos));
+        return productos;
+    }
+    return JSON.parse(guardados);
+}
 
-    
-    function render(lista) {
-        contenedor.innerHTML = "";
-        sinResultados.classList.toggle("d-none", lista.length > 0);
+let totalProductos = obtenerProducto();
 
-        lista.forEach(p => {
-        const col = document.createElement("div");
-        col.className = "col";
-        col.innerHTML = `
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative">
-            ${p.oferta ? '<span class="badge bg-danger position-absolute top-0 end-0 m-3">Oferta</span>' : ''}
-            <img src="${p.img}" class="card-img-top" style="height: 170px; object-fit: cover;">
-            <div class="card-body d-flex flex-column p-3">
-                <div class="d-flex justify-content-between small text-muted mb-1">
-                <span>${p.categoria}</span>
-                <span>Stock: ${p.stock}</span>
-                </div>
-                <h6 class="fw-bold mb-1">${p.nombre}</h6>
-                <p class="text-success fw-bold mb-3">${fmtCLP(p.precio)}</p>
-                <div class="mt-auto d-grid gap-2">
-                <button class="btn btn-outline-success btn-sm" onclick="verDetalle('${p.id}')">Ver Detalle</button>
-                <button class="btn btn-success btn-sm" onclick="agregarCarrito('${p.id}')">Agregar al Carrito</button>
-                </div>
+document.addEventListener("DOMContentLoaded", () => {
+const contenedor = document.getElementById("contenedorCatalogo");
+const filtroCat = document.getElementById("filtroCategoria");
+const filtroPrecio = document.getElementById("filtroPrecio");
+const labelPrecio = document.getElementById("labelPrecio");
+const sinResultados = document.getElementById("sinResultados");
+
+const fmtCLP = (v) => `$${v.toLocaleString("es-CL")}`;
+
+function render(lista) {
+    contenedor.innerHTML = "";
+    sinResultados.classList.toggle("d-none", lista.length > 0);
+
+    lista.forEach(p => {
+    const col = document.createElement("div");
+    col.className = "col";
+    col.innerHTML = `
+        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative">
+        ${p.oferta ? '<span class="badge bg-danger position-absolute top-0 end-0 m-3">Oferta</span>' : ''}
+        <img src="${p.img}" class="card-img-top" style="height: 170px; object-fit: cover;">
+        <div class="card-body d-flex flex-column p-3">
+            <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>${p.categoria}</span>
+            <span>Stock: ${p.stock}</span>
             </div>
-            </div>`;
-        contenedor.appendChild(col);
-        });
+            <h6 class="fw-bold mb-1">${p.nombre}</h6>
+            <p class="text-success fw-bold mb-3">${fmtCLP(p.precio)}</p>
+            <div class="mt-auto d-grid gap-2">
+            <button class="btn btn-outline-success btn-sm" onclick="verDetalle('${p.id}')">Ver Detalle</button>
+            <button class="btn ${p.stock <= 0 ? 'btn-secondary' : 'btn-success'} btn-sm" 
+                onclick="agregarCarrito('${p.id}')" 
+                ${p.stock <= 0 ? 'disabled' : ''}>
+                ${p.stock <= 0 ? 'Sin Stock' : 'Agregar al Carrito'}
+            </button>
+            </div>
+        </div>
+        </div>`;
+    contenedor.appendChild(col);
+    });
+}
+
+function aplicarFiltros() {
+    const cat = filtroCat.value;
+    const max = parseInt(filtroPrecio.value, 10);
+    labelPrecio.textContent = fmtCLP(max);
+
+    const filtrados = totalProductos.filter(p => (cat === "todos" || p.categoria === cat) && p.precio <= max);
+    render(filtrados);
+}
+
+window.agregarCarrito = (id) => {
+    const prod = totalProductos.find(p => p.id === id);
+
+    if (!prod || prod.stock <= 0) {
+    mostrarMensaje("No quedan más cupos para este servicio.");
+    return;
     }
 
-    
-    function aplicarFiltros() {
-        const cat = filtroCat.value;
-        const max = parseInt(filtroPrecio.value, 10);
-        labelPrecio.textContent = fmtCLP(max);
+    prod.stock -= 1;
+    localStorage.setItem(clave_stock, JSON.stringify(totalProductos));
 
-        const filtrados = productos.filter(p => (cat === "todos" || p.categoria === cat) && p.precio <= max);
-        render(filtrados);
+    const carrito = JSON.parse(localStorage.getItem(clave_carrito)) || [];
+    const itemCarrito = carrito.find(item => item.id === id);
+
+    if (itemCarrito) {
+        itemCarrito.cantidad += 1;
+    } else {
+        carrito.push({
+            id: prod.id,
+            nombre: prod.nombre,
+            precio: prod.precio,
+            cantidad: 1
+    });
+}
+
+    localStorage.setItem(clave_carrito, JSON.stringify(carrito));
+    mostrarMensaje("Producto agregado correctamente.");
+    aplicarFiltros();
+
+    const stockModal = document.getElementById("detalleStock");
+    if (stockModal) {
+    stockModal.textContent = prod.stock > 0 ? `${prod.stock} cupos` : "Agotado";
+    stockModal.className = prod.stock > 0 ? "text-success fw-bold" : "text-danger fw-bold";
     }
-
-    
-    window.agregarCarrito = (id) => {
-        const prod = productos.find(p => p.id === id);
-        const carrito = JSON.parse(localStorage.getItem("nutrivida_carrito")) || [];
-        carrito.push(prod);
-        localStorage.setItem("nutrivida_carrito", JSON.stringify(carrito));
-        alert(`"${prod.nombre}" agregado al carrito.`);
-    };
+};
 
     window.verDetalle = (id) => {
-        const p = productos.find(item => item.id === id);
+        const p = totalProductos.find(item => item.id === id);
+        if (!p) return;
+
         document.getElementById("detalleTitulo").textContent = p.nombre;
         document.getElementById("detalleImg").src = p.img;
         document.getElementById("detalleCodigo").textContent = `ID: ${p.id}`;
         document.getElementById("detalleCategoria").textContent = p.categoria;
         document.getElementById("detalleDescripcion").textContent = p.desc;
         document.getElementById("detalleDuracion").textContent = p.duracion;
-        document.getElementById("detalleModalidad").textContent = "Presencial / Clínica";
-        document.getElementById("detalleProfesional").textContent = "Nutricionista NutriVida";
-        document.getElementById("detalleStock").textContent = `${p.stock} cupos`;
+        document.getElementById("detalleModalidad").textContent = p.modalidad || "Presencial / Clínica";
+        document.getElementById("detalleProfesional").textContent = p.profesional || "Nutricionista NutriVida";
         document.getElementById("detallePrecio").textContent = fmtCLP(p.precio);
+
+        const stockModal = document.getElementById("detalleStock");
+        if (stockModal) {
+        if (p.stock > 0) {
+            stockModal.textContent = `${p.stock} cupos`;
+            stockModal.className = "text-success fw-bold";
+        } else {
+            stockModal.textContent = "Agotado";
+            stockModal.className = "text-danger fw-bold";
+        }
+        }
+
+        const btnModalAgregar = document.getElementById("btnDetalleAgregar");
+        if (btnModalAgregar) {
+        btnModalAgregar.disabled = p.stock <= 0;
+        btnModalAgregar.className = p.stock <= 0 ? "btn btn-secondary fw-bold" : "btn btn-success fw-bold";
+        btnModalAgregar.textContent = p.stock <= 0 ? "Sin Stock" : "Agregar al Carrito";
+
+        btnModalAgregar.onclick = () => {
+            window.agregarCarrito(p.id);
+
+            const pActualizado = totalProductos.find(item => item.id === id);
+            if (stockModal && pActualizado) {
+            stockModal.textContent = pActualizado.stock > 0 ? `${pActualizado.stock} cupos` : "Agotado";
+            stockModal.className = pActualizado.stock > 0 ? "text-success fw-bold" : "text-danger fw-bold";
+            }
+            if (pActualizado && pActualizado.stock <= 0) {
+            btnModalAgregar.disabled = true;
+            btnModalAgregar.className = "btn btn-secondary fw-bold";
+            btnModalAgregar.textContent = "Sin Stock";
+            }
+        };
+        }
 
         bootstrap.Modal.getOrCreateInstance(document.getElementById("modalDetalleProducto")).show();
     };
@@ -96,3 +173,24 @@ const productos = [
 
     aplicarFiltros();
 });
+
+function mostrarMensaje(mensaje, tipo = "exito") {
+    const notificacion = document.getElementById("liveToast");
+    if (!notificacion) {
+        alert(mensaje);
+        return;
+    }
+
+    const cabecera = notificacion.querySelector(".toast-header");
+    const titulo = notificacion.querySelector(".toast-header strong");
+    const cuerpo = notificacion.querySelector(".toast-body");
+
+    const esExito = tipo === "exito";
+
+    titulo.textContent = esExito ? "Carrito NutriVida" : "Aviso";
+    cuerpo.textContent = mensaje;
+
+    cabecera.className = `toast-header text-white border-0 rounded-top-3 ${esExito ? "bg-success" : "bg-danger"}`;
+
+    bootstrap.Toast.getOrCreateInstance(notificacion).show();
+}

@@ -71,6 +71,6 @@ function iniciarSesion() {
 
         localStorage.setItem(clave_pacientes, JSON.stringify(listaPacientes));
     }
-
+console.log(paciente)
 
 };

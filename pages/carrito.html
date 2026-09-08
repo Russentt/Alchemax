@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Mi Carrito | Portal del Paciente NutriVida</title>
+
+    <link rel="stylesheet" href="../assets/cs/style.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous" />
+    <script src="../assets/js/carrito.js" defer></script>
+</head>
+
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <header style="position: relative; transform: none; transition: none">
+        <nav class="navbar navbar-expand-md navbar-light py-3">
+            <div class="container-fluid px-4">
+                <a href="../index.html" class="text-decoration-none">
+                    <span class="navbar-brand mb-0 h1 text-success fw-bold">NutriVida</span>
+                </a>
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarMetodologia">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end mt-3 mt-md-0" id="navbarMetodologia">
+                    <ul class="navbar-nav align-items-center text-center gap-2">
+                        <li class="nav-item w-100"><a href="#servicios"
+                                class="nav-link text-success fw-bold">Servicios</a></li>
+                        <li class="nav-item w-100"><a href="metodologia.html" class="nav-link active">Nuestro Método</a>
+                        </li>
+                        <li class="nav-item w-100"><a href="testimonios.html" class="nav-link">Testimonios</a></li>
+                        <li class="nav-item w-100"><a href="metodologia.html#servicios" class="nav-link">Volver</a></li>
+                        <li class="nav-item dropdown w-100">
+                            <a class="nav-link dropdown-toggle" href="#" role="button"
+                                data-bs-toggle="dropdown">Recursos</a>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm text-center text-md-start">
+                                <li><a class="dropdown-item py-2" href="faq.html">Preguntas Frecuentes</a></li>
+                                <li><a class="dropdown-item py-2" href="telemedicina.html">Telemedicina</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item py-2" href="blog.html">Artículos Clínicos</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item ms-md-3 w-100 mt-2 mt-md-0">
+                            <a href="../index.html#contact"
+                                class="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-md-auto">Agendar
+                                Cita</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container my-auto py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="bg-white p-5 rounded-4 shadow-sm border-0">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold text-success">Mi Carrito de Compras</h2>
+                        <p class="text-muted">Revisa tus productos antes de finalizar la compra.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mt-4">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Precio Unitario</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpoCarrito">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div
+                        class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <h4 class="mb-3 mb-md-0">Total: <span id="totalCompra" class="text-success fw-bold">$0</span>
+                        </h4>
+                        <div class="d-flex gap-2">
+                            <button id="btnVaciar" class="btn btn-outline-danger">Vaciar Carrito</button>
+                            <button id="btnFinalizar" class="btn btn-success fw-bold">Finalizar Compra</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white py-4 py-md-5 text-center border-top mt-auto px-3">
+      <p class="text-muted mb-0 fw-semibold">© 2026 NutriVida. Temuco, Región de La Araucanía. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

@@ -34,7 +34,7 @@ const filtroPrecio = document.getElementById("filtroPrecio");
 const labelPrecio = document.getElementById("labelPrecio");
 const sinResultados = document.getElementById("sinResultados");
 
-const fmtCLP = (v) => `$${v.toLocaleString("es-CL")}`;
+const fmtCLP = (v) => `$${v.toLocaleString("es-CL")}`; //moneda
 
 function render(lista) {
     contenedor.innerHTML = "";

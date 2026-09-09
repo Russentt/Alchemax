@@ -216,3 +216,25 @@ body.modal-active {
     height: 60vh;
   }
 }
+
+.burbuja {
+    position: fixed; /* Esto hace que persiga la pantalla */
+    bottom: 30px;
+    right: 30px;
+    background-color: #198754; 
+    color: white;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 6px 15px rgba(0,0,0,0.3);
+    z-index: 1050; 
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+.burbuja:hover {
+transform: scale(1.1);
+}

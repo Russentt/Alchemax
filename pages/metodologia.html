@@ -5,35 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light" />
     <title>Metodología y Planes | NutriVida</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../assets/cs/style.css" />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
       crossorigin="anonymous"
     />
-   <script src="../assets/js/catalogo.js" defer></script>
+    <link rel="icon" href="../assets/img/Favicon.png" />
+    <script src="../assets/js/catalogo.js" defer></script>
   </head>
   <body class="bg-light">
 
-    <header class="bg-white shadow-sm sticky-top">
-      <nav class="navbar navbar-expand-md navbar-light py-3">
+    <header class="bg-white shadow-sm sticky-top z-3">
+      <nav class="navbar navbar-expand-md bg-white py-3">
         <div class="container-fluid px-4">
-          <a href="index.html" class="text-decoration-none">
-            <span class="navbar-brand mb-0 h1 text-success fw-bold">NutriVida</span>
-          </a>
+          <a href="../index.html" class="navbar-brand text-success fw-bold">NutriVida</a>
           <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMetodologia">
             <span class="navbar-toggler-icon"></span>
           </button>
           <div class="collapse navbar-collapse justify-content-end mt-3 mt-md-0" id="navbarMetodologia">
             <ul class="navbar-nav align-items-center text-center gap-2">
-              <li class="nav-item w-100"><a href="index.html#servicios" class="nav-link">Especialidades</a></li>
-              <li class="nav-item w-100"><a href="metodologia.html" class="nav-link active text-success fw-bold">Nuestro Método</a></li>
-              <li class="nav-item w-100"><a href="testimonios.html" class="nav-link">Testimonios</a></li>
+              <li class="nav-item w-100"><a href="#servicios" class="nav-link text-success fw-bold">Servicios</a></li>
+              <li class="nav-item w-100"><a href="metodologia.html" class="nav-link active fw-bold text-success">Nuestro Método</a></li>
+              <li class="nav-item w-100"><a href="testimonios.html" class="nav-link text-dark">Testimonios</a></li>
+              <li class="nav-item w-100"><a href="carrito.html" class="nav-link text-dark">Carrito</a></li>
               <li class="nav-item dropdown w-100">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                  Recursos
-                </a>
+                <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown">Recursos</a>
                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm text-center text-md-start">
                   <li><a class="dropdown-item py-2" href="faq.html">Preguntas Frecuentes</a></li>
                   <li><a class="dropdown-item py-2" href="telemedicina.html">Telemedicina</a></li>
@@ -42,7 +40,7 @@
                 </ul>
               </li>
               <li class="nav-item ms-md-3 w-100 mt-2 mt-md-0">
-                <a href="index.html#contact" class="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-md-auto">Agendar Cita</a>
+                <a href="../index.html#contact" class="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-md-auto">Agendar Cita</a>
               </li>
             </ul>
           </div>
@@ -88,7 +86,7 @@
       <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
         <span class="carousel-control-prev-icon"></span>
       </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+      <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide-to="next">
         <span class="carousel-control-next-icon"></span>
       </button>
     </div>
@@ -97,7 +95,7 @@
 
       <nav aria-label="breadcrumb" class="mb-5">
         <ol class="breadcrumb p-3 bg-white rounded-3 shadow-sm flex-nowrap overflow-auto">
-          <li class="breadcrumb-item text-nowrap"><a href="index.html" class="text-success text-decoration-none">Inicio</a></li>
+          <li class="breadcrumb-item text-nowrap"><a href="../index.html" class="text-success text-decoration-none">Inicio</a></li>
           <li class="breadcrumb-item text-nowrap active">Metodología y Planes</li>
         </ol>
       </nav>
@@ -202,7 +200,6 @@
 
       <section class="mb-5 bg-white p-3 p-md-5 rounded-4 shadow-sm">
         <h3 class="fw-bold text-center text-success mb-4 mb-md-5">Tecnología de Medición Clínica</h3>
-
         <ul class="nav nav-pills flex-column flex-md-row nav-fill mb-4 gap-2 gap-md-3" id="techTabs" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active fw-bold border w-100" data-bs-toggle="pill" data-bs-target="#inbody" type="button" role="tab">Bioimpedancia</button>
@@ -214,7 +211,6 @@
             <button class="nav-link fw-bold border w-100" data-bs-toggle="pill" data-bs-target="#software" type="button" role="tab">Software</button>
           </li>
         </ul>
-
         <div class="tab-content" id="techTabsContent">
           <div class="tab-pane fade show active p-4 bg-light rounded-4" id="inbody" role="tabpanel">
             <h4 class="fw-bold text-dark text-center text-md-start">Análisis InBody 570</h4>
@@ -237,7 +233,6 @@
       <section class="mb-5 px-2">
         <h3 class="fw-bold text-center text-success mb-2">Comprende tu Biología</h3>
         <p class="text-center text-muted mb-4 mb-md-5">Pasa el cursor sobre los términos resaltados para revelar su explicación clínica.</p>
-
         <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm text-dark fs-6 fs-md-5 lh-lg text-center text-md-start">
           Para que exista una <span tabindex="0" class="text-success fw-bold text-decoration-underline" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="bottom" data-bs-title="Oxidación Lipídica" data-bs-content="Proceso biológico donde los ácidos grasos son descompuestos para generar energía.">pérdida de grasa real</span>, el cuerpo debe entrar en un 
           <a href="#" class="text-success fw-bold text-decoration-underline" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Consumir menos calorías de las que tu cuerpo gasta.">déficit calórico</a> sostenido. Si es muy agresivo, el 
@@ -389,14 +384,12 @@
           </div>
         </div>
 
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="contenedorCatalogo">          
-        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="contenedorCatalogo"></div>
 
         <div id="sinResultados" class="alert alert-warning text-center rounded-4 shadow-sm py-4 my-4 d-none">
           No se encontraron servicios que coincidan con la categoría y rango de precio seleccionado.
         </div>
       </section>
-
 
       <div class="modal fade" id="modalDetalleProducto" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -447,7 +440,7 @@
                     <label class="form-label text-success fw-bold small mb-1">Estatura</label>
                     <div class="input-group flex-nowrap shadow-sm">
                       <span class="input-group-text bg-light border-end-0 border-secondary-subtle">📏</span>
-                      <input type="number" class="form-control border-start-0 border-secondary-subtle" id="alturaInput" required>
+                      <input type="number" class="form-control border-start-0 border-secondary-subtle" id="alturaInput" placeholder="Ej: 175" required>
                       <span class="input-group-text bg-light border-secondary-subtle">cm</span>
                     </div>
                   </div>
@@ -455,21 +448,21 @@
                     <label class="form-label text-success fw-bold small mb-1">Peso Actual</label>
                     <div class="input-group flex-nowrap shadow-sm">
                       <span class="input-group-text bg-light border-end-0 border-secondary-subtle">⚖️</span>
-                      <input type="number" class="form-control border-start-0 border-secondary-subtle" id="pesoInput" step="0.1" required>
+                      <input type="number" class="form-control border-start-0 border-secondary-subtle" id="pesoInput" step="0.1" placeholder="Ej: 70" required>
                       <span class="input-group-text bg-light border-secondary-subtle">kg</span>
                     </div>
                   </div>
                 </div>
                 <div class="mb-4">
-                  <label class="form-label text-success fw-bold small mb-1">Objetivo</label>
-                  <select class="form-select shadow-sm border-secondary-subtle py-2" required>
+                  <label for="selectObjetivo" class="form-label text-success fw-bold small mb-1">Objetivo</label>
+                  <select id="selectObjetivo" class="form-select shadow-sm border-secondary-subtle py-2" required>
                     <option selected disabled value="">Selecciona una opción...</option>
                     <option value="1">Bajar grasa corporal</option>
                     <option value="2">Subir masa muscular</option>
                     <option value="3">Mejorar rendimiento</option>
                   </select>
                 </div>
-                <button type="button" class="btn btn-success w-100 fw-bold py-3 fs-5 shadow-sm mt-2" data-bs-toggle="modal" data-bs-target="#imcModal">
+                <button id="btnDiagnostico" type="button" class="btn btn-success w-100 fw-bold py-3 fs-5 shadow-sm mt-2">
                   Generar Pre-Diagnóstico
                 </button>
               </form>
@@ -500,16 +493,7 @@
             <h5 class="modal-title fw-bold" id="imcModalLabel">Tu Resultado Preliminar</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body text-center p-4 p-md-5">
-            <div class="spinner-border text-success mb-4" role="status" style="width: 3rem; height: 3rem;">
-              <span class="visually-hidden">Calculando...</span>
-            </div>
-            <h4 class="text-dark fw-bold mb-3">¡Excelente iniciativa!</h4>
-            <p class="text-muted px-2">Hemos procesado tus datos preliminares. Si bien el IMC es referencial, es un buen punto de partida.</p>
-            <div class="alert alert-light border border-success text-success fw-bold mt-4 shadow-sm">
-              Reserva tu evaluación clínica completa creando tu perfil.
-            </div>
-          </div>
+          <div class="modal-body text-center p-4 p-md-5"></div>
           <div class="modal-footer border-0 justify-content-center pb-4 flex-nowrap w-100 gap-2">
             <button type="button" class="btn btn-outline-secondary w-50" data-bs-dismiss="modal">Cerrar</button>
             <a href="register.html" class="btn btn-success fw-bold w-50">Crear Cuenta</a>
@@ -537,7 +521,7 @@
           </div>
         </div>
         <div class="d-grid mt-5">
-          <a href="index.html#contact" class="btn btn-success fw-bold py-3 shadow-sm">Hablar con un especialista</a>
+          <a href="../index.html#contact" class="btn btn-success fw-bold py-3 shadow-sm">Hablar con un especialista</a>
         </div>
       </div>
     </div>
@@ -558,25 +542,11 @@
 
         const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
         [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
-
-        const imcModal = document.getElementById('imcModal');
-        imcModal.addEventListener('show.bs.modal', () => {
-          const spinner = imcModal.querySelector('.spinner-border');
-          const contentText = imcModal.querySelector('h4');
-          spinner.style.display = 'inline-block';
-          contentText.style.display = 'none';
-          setTimeout(() => {
-            spinner.style.display = 'none';
-            contentText.style.display = 'block';
-          }, 1500);
-        });
-
+        
         const toastElement = document.getElementById('liveToast');
         if (toastElement) {
           const toast = new bootstrap.Toast(toastElement);
-          setTimeout(() => {
-            toast.show();
-          }, 3500);
+          setTimeout(() => { toast.show(); }, 3500);
         }
       });
     </script>

@@ -15,6 +15,9 @@ const alertaClave = document.querySelector("#coincidenciaClave");
 
 const clave_pacientes = "nutrivida_pacientes";
 
+const valorPass = contrasena.value;
+const regexSegura = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+
 window.addEventListener("DOMContentLoaded", () => {
   const navigation = performance.getEntriesByType("navigation")[0];
 
@@ -100,6 +103,12 @@ formulario.addEventListener("submit", (event) => {
   if (!correo.value.match(dominioValido)) {
     flag = false;
     alert("REGISTRO FALLIDO. Correo invalido");
+    return;
+  }
+
+  if (!regexSegura.test(valorPass)) {
+    flag = false;
+    alert("La contraseña requiere minimo 6 caracteres, 1 mayuscula, 1 minuscula y 1 numero");
     return;
   }
 

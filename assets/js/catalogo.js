@@ -194,3 +194,75 @@ function mostrarMensaje(mensaje, tipo = "exito") {
 
     bootstrap.Toast.getOrCreateInstance(notificacion).show();
 }
+
+// Calculadora
+
+document.getElementById("btnDiagnostico").addEventListener("click", () => {
+    const peso = parseFloat(document.getElementById("pesoInput").value);
+    const estaturaRaw = parseFloat(document.getElementById("alturaInput").value);
+    const nombre = document.getElementById("floatingName").value.trim();
+    const selectObj = document.getElementById("selectObjetivo");
+
+    if (isNaN(peso) || isNaN(estaturaRaw) || estaturaRaw <= 0 || !selectObj.value) {
+        alert("Por favor completa tu nombre, estatura, peso y objetivo.");
+        return;
+    }
+
+    const estaturaM = estaturaRaw > 3 ? estaturaRaw / 100 : estaturaRaw;
+    const imc = (peso / (estaturaM * estaturaM)).toFixed(1);
+
+    let clasificacion = "";
+    if (imc < 18.5) clasificacion = "Bajo peso";
+    else if (imc < 25) clasificacion = "Peso saludable";
+    else if (imc < 30) clasificacion = "Sobrepeso";
+    else clasificacion = "Obesidad";
+
+    let recomendacionTexto = "Te sugerimos un plan personalizado para optimizar tu composición corporal de forma progresiva.";
+    let categoriaRecomendada = "Plan especializado";
+
+    if (selectObj.value === "3") {
+        recomendacionTexto = "Te sugerimos iniciar con una evaluación biométrica avanzada para monitorear tu rendimiento deportivo.";
+        categoriaRecomendada = "Evaluación";
+    } else if (selectObj.value === "2") {
+        recomendacionTexto = "Te recomendamos enfocar tu plan en superávit calórico controlado y pautas de nutrición deportiva.";
+        categoriaRecomendada = "Plan especializado";
+    }
+
+    const modalBody = document.querySelector("#imcModal .modal-body");
+    if (modalBody) {
+        modalBody.innerHTML = `
+        <h4 class="text-dark fw-bold mb-2">Resultado para ${nombre || "Paciente"}</h4>
+        <div class="display-4 fw-bold text-success mb-2">${imc}</div>
+        <p class="fs-5 text-muted mb-4">Clasificación: <strong class="text-dark">${clasificacion}</strong></p>
+        
+        <div class="alert alert-light border border-success p-4 rounded-4 shadow-sm text-center">
+            <p class="text-dark mb-3 small">${recomendacionTexto}</p>
+            <button id="btnVerRecomendados" type="button" class="btn btn-success fw-bold w-100 py-2 shadow-sm">
+            Ver planes recomendados
+            </button>
+        </div>
+        `;
+
+        document.getElementById("btnVerRecomendados").addEventListener("click", () => {
+        const modalElement = document.getElementById("imcModal");
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+
+        const filtroCat = document.getElementById("filtroCategoria");
+        if (filtroCat) {
+            filtroCat.value = categoriaRecomendada;
+            filtroCat.dispatchEvent(new Event("change"));
+        }
+
+        const seccionCatalogo = document.getElementById("servicios");
+        if (seccionCatalogo) {
+            seccionCatalogo.scrollIntoView({ behavior: "smooth" });
+        }
+        });
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("imcModal"));
+    modal.show();
+});

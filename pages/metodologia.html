@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light" />
     <title>Metodología y Planes | NutriVida</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../assets/cs/style.css" />
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -462,14 +462,14 @@
                 </div>
                 <div class="mb-4">
                   <label class="form-label text-success fw-bold small mb-1">Objetivo</label>
-                  <select class="form-select shadow-sm border-secondary-subtle py-2" required>
+                  <select id="selectObjetivo" class="form-select shadow-sm border-secondary-subtle py-2" required>
                     <option selected disabled value="">Selecciona una opción...</option>
                     <option value="1">Bajar grasa corporal</option>
                     <option value="2">Subir masa muscular</option>
                     <option value="3">Mejorar rendimiento</option>
                   </select>
                 </div>
-                <button type="button" class="btn btn-success w-100 fw-bold py-3 fs-5 shadow-sm mt-2" data-bs-toggle="modal" data-bs-target="#imcModal">
+                <button id="btnDiagnostico" type="button" class="btn btn-success w-100 fw-bold py-3 fs-5 shadow-sm mt-2">
                   Generar Pre-Diagnóstico
                 </button>
               </form>
@@ -481,17 +481,29 @@
     </main>
 
     <div class="toast-container position-fixed bottom-0 end-0 p-3 z-3">
-      <div id="liveToast" class="toast bg-white border-0 shadow-lg rounded-3" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header bg-success text-white border-0 rounded-top-3">
-          <strong class="me-auto">🔔 Nueva Reserva</strong>
-          <small>Hace un momento</small>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body fw-semibold text-dark py-3">
-          Camila S. ha agendado una Evaluación Integral.
+      ...
+    </div>
+
+    
+    <div class="modal fade" id="imcModal" tabindex="-1" aria-labelledby="imcModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable px-2">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+          <div class="modal-header bg-success text-white border-0 rounded-top-4 py-3">
+            <h5 class="modal-title fw-bold" id="imcModalLabel">Tu Resultado Preliminar</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center p-4 p-md-5">
+          
+          </div>
+          <div class="modal-footer border-0 justify-content-center pb-4 flex-nowrap w-100 gap-2">
+            <button type="button" class="btn btn-outline-secondary w-50" data-bs-dismiss="modal">Cerrar</button>
+            <a href="register.html" class="btn btn-success fw-bold w-50">Crear Cuenta</a>
+          </div>
         </div>
       </div>
     </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasGlosario" ...>
 
     <div class="modal fade" id="imcModal" tabindex="-1" aria-labelledby="imcModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable px-2">

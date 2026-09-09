@@ -37,7 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-
 document.addEventListener("DOMContentLoaded", () => {
   const chatToggle = document.getElementById('chatToggle');
   const chatWindow = document.getElementById('chatWindow');
@@ -55,51 +54,60 @@ document.addEventListener("DOMContentLoaded", () => {
     chatClose.addEventListener('click', () => {
       chatWindow.classList.add('d-none');
     });
-   chatForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const message = chatInput.value.trim();
-  if (!message) return;
 
-  const userDiv = document.createElement('div');
-  userDiv.className = 'chat-message user-message p-2 rounded-3 mb-2 w-75 small';
-  userDiv.textContent = message;
-  chatBody.appendChild(userDiv);
-  
-  chatInput.value = '';
-  chatBody.scrollTop = chatBody.scrollHeight;
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
 
-  const botDiv = document.createElement('div');
-  botDiv.className = 'chat-message bot-message bg-light p-2 rounded-3 mb-2 w-75 small';
-  botDiv.innerHTML = `<strong>Vida:</strong> <em>Pensando...</em>`;
-  chatBody.appendChild(botDiv);
-  chatBody.scrollTop = chatBody.scrollHeight;
+      const userDiv = document.createElement('div');
+      userDiv.className = 'chat-message user-message p-2 rounded-3 mb-2 w-75 small';
+      userDiv.textContent = message;
+      chatBody.appendChild(userDiv);
+      
+      chatInput.value = '';
+      chatBody.scrollTop = chatBody.scrollHeight;
 
-  try {
-     const apiKey = '__GEMINI_API_KEY__';
-     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-   const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Eres Vida, un asistente virtual experto de la clínica nutricional NutriVida en Temuco. Responde de forma amable, concisa y profesional a esta duda del paciente: "${message}"`
-          }]
-        }]
-      })
+      const botDiv = document.createElement('div');
+      botDiv.className = 'chat-message bot-message bg-light p-2 rounded-3 mb-2 w-75 small';
+      botDiv.innerHTML = `<strong>Vida:</strong> <em>Pensando...</em>`;
+      chatBody.appendChild(botDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      try {
+        const apiKey = '__GEMINI_API_KEY__';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: [{
+              role: "user",
+              parts: [{
+                text: `Eres Vida, un asistente virtual experto de la clínica nutricional NutriVida en Temuco. Responde de forma amable, concisa y profesional a esta duda del paciente: "${message}"`
+              }]
+            }]
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("Gemini API Error:", errorData);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const botReply = data.candidates[0].content.parts[0].text;
+
+        botDiv.innerHTML = `<strong>Vida:</strong> ${botReply}`;
+      } catch (error) {
+        console.error("Chatbot Fetch Failed:", error);
+        botDiv.innerHTML = `<strong>Vida:</strong> Disculpa, en este momento tengo problemas de conexión, pero recuerda que puedes agendar tu cita en el sitio. 🍎`;
+      }
+      
+      chatBody.scrollTop = chatBody.scrollHeight;
     });
-
-    const data = await response.json();
-    const botReply = data.candidates[0].content.parts[0].text;
-
-    botDiv.innerHTML = `<strong>Vida:</strong> ${botReply}`;
-  } catch (error) {
-    botDiv.innerHTML = `<strong>Vida:</strong> Disculpa, en este momento tengo problemas de conexión, pero recuerda que puedes agendar tu cita en el sitio. 🍎`;
-  }
-  
-  chatBody.scrollTop = chatBody.scrollHeight;
-});
   }
 });

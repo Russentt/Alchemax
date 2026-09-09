@@ -75,10 +75,9 @@ document.addEventListener("DOMContentLoaded", () => {
   chatBody.scrollTop = chatBody.scrollHeight;
 
   try {
-    const apiKey ='AQ.Ab8RN6JcixHP-Dnz1JvSuKRsqiUjVm8dxHuul9MmVxwWB50Pqg'; 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-    const response = await fetch(url, {
+     const apiKey = '__GEMINI_API_KEY__';
+     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+   const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

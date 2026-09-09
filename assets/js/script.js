@@ -55,28 +55,52 @@ document.addEventListener("DOMContentLoaded", () => {
     chatClose.addEventListener('click', () => {
       chatWindow.classList.add('d-none');
     });
+   chatForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const message = chatInput.value.trim();
+  if (!message) return;
 
-    chatForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const message = chatInput.value.trim();
-      if (!message) return;
+  const userDiv = document.createElement('div');
+  userDiv.className = 'chat-message user-message p-2 rounded-3 mb-2 w-75 small';
+  userDiv.textContent = message;
+  chatBody.appendChild(userDiv);
+  
+  chatInput.value = '';
+  chatBody.scrollTop = chatBody.scrollHeight;
 
-      const userDiv = document.createElement('div');
-      userDiv.className = 'chat-message user-message p-2 rounded-3 mb-2 w-75 small';
-      userDiv.textContent = message;
-      chatBody.appendChild(userDiv);
-      
-      chatInput.value = '';
-      chatBody.scrollTop = chatBody.scrollHeight;
+  const botDiv = document.createElement('div');
+  botDiv.className = 'chat-message bot-message bg-light p-2 rounded-3 mb-2 w-75 small';
+  botDiv.innerHTML = `<strong>Vida:</strong> <em>Pensando...</em>`;
+  chatBody.appendChild(botDiv);
+  chatBody.scrollTop = chatBody.scrollHeight;
 
-      setTimeout(() => {
-        const botDiv = document.createElement('div');
-        botDiv.className = 'chat-message bot-message bg-light p-2 rounded-3 mb-2 w-75 small';
-        botDiv.innerHTML = `<strong>Vida:</strong> Gracias por comunicarte. Para recibir una asesoría nutricional completa y acceder a nuestras pautas, te invito a registrarte en nuestro portal. 🍎`;
-        
-        chatBody.appendChild(botDiv);
-        chatBody.scrollTop = chatBody.scrollHeight;
-      }, 1200);
+  try {
+    const apiKey ='AQ.Ab8RN6JcixHP-Dnz1JvSuKRsqiUjVm8dxHuul9MmVxwWB50Pqg'; 
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Eres Vida, un asistente virtual experto de la clínica nutricional NutriVida en Temuco. Responde de forma amable, concisa y profesional a esta duda del paciente: "${message}"`
+          }]
+        }]
+      })
     });
+
+    const data = await response.json();
+    const botReply = data.candidates[0].content.parts[0].text;
+
+    botDiv.innerHTML = `<strong>Vida:</strong> ${botReply}`;
+  } catch (error) {
+    botDiv.innerHTML = `<strong>Vida:</strong> Disculpa, en este momento tengo problemas de conexión, pero recuerda que puedes agendar tu cita en el sitio. 🍎`;
+  }
+  
+  chatBody.scrollTop = chatBody.scrollHeight;
+});
   }
 });

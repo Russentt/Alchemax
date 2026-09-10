@@ -65,28 +65,29 @@ function render(lista) {
     const col = document.createElement("div");
     col.className = "col";
     col.innerHTML = `
-        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative">
+    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden position-relative text-center">
         ${p.oferta ? '<span class="badge bg-danger position-absolute top-0 end-0 m-3">Oferta</span>' : ''}
         <img src="${p.img}" class="card-img-top" style="height: 170px; object-fit: cover;">
-        <div class="card-body d-flex flex-column p-3">
-            <div class="d-flex justify-content-between small text-muted mb-1">
+        <div class="card-body d-flex flex-column align-items-center p-3">
+        <div class="d-flex justify-content-center gap-3 small text-muted mb-2 w-100">
             <span>${p.categoria}</span>
+            <span>•</span>
             <span>Stock: ${p.stock}</span>
-            </div>
-            <h6 class="fw-bold mb-1">${p.nombre}</h6>
-            <p class="text-success fw-bold mb-3">${fmtCLP(p.precio)}</p>
-            <div class="mt-auto d-grid gap-2">
+        </div>
+        <h6 class="fw-bold mb-1 text-dark">${p.nombre}</h6>
+        <p class="text-success fw-bold fs-5 mb-3">${fmtCLP(p.precio)}</p>
+        <div class="mt-auto d-grid gap-2 w-100">
             <button class="btn btn-outline-success btn-sm" onclick="verDetalle('${p.id}')">Ver Detalle</button>
             <button class="btn ${p.stock <= 0 ? 'btn-secondary' : 'btn-success'} btn-sm" 
-                onclick="agregarCarrito('${p.id}')" 
-                ${p.stock <= 0 ? 'disabled' : ''}>
-                ${p.stock <= 0 ? 'Sin Stock' : 'Agregar al Carrito'}
+            onclick="agregarCarrito('${p.id}')" 
+            ${p.stock <= 0 ? 'disabled' : ''}>
+            ${p.stock <= 0 ? 'Sin Stock' : 'Agregar al Carrito'}
             </button>
-            </div>
         </div>
-        </div>`;
+        </div>
+    </div>`;
     contenedor.appendChild(col);
-    });
+});
 }
 
 function aplicarFiltros() {

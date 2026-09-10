@@ -15,7 +15,6 @@ const alertaClave = document.querySelector("#coincidenciaClave");
 
 const clave_pacientes = "nutrivida_pacientes";
 
-const valorPass = contrasena.value;
 const regexSegura = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -95,26 +94,44 @@ formulario.addEventListener("submit", (event) => {
     const element = campos[index];
     if (element.value === "" || element === undefined) {
       flag = false;
-      alert("REGISTRO FALLIDO.");
+      mostrarError("REGISTRO FALLIDO.");
       return;
     }
+
+    if (nombre.value.trim() === "") {
+      mostrarError("REGISTRO FALLIDO. Nombre invalido");
+      return;
+    }
+
   }
 
   if (!correo.value.match(dominioValido)) {
     flag = false;
-    alert("REGISTRO FALLIDO. Correo invalido");
+    mostrarError("REGISTRO FALLIDO. Correo invalido");
     return;
   }
 
-  if (!regexSegura.test(valorPass)) {
+  const pacientesExist = obtenerPaciente();
+  const correoIngresado = correo.value.trim().toLowerCase();
+  const registrado = pacientesExist.some(
+    (p) => p.correo && p.correo.trim().toLowerCase() === correoIngresado
+  );
+
+  if (registrado) {
     flag = false;
-    alert("La contraseña requiere minimo 6 caracteres, 1 mayuscula, 1 minuscula y 1 numero");
+    mostrarError("Registro fallido. este correo ta se encuentra registrado.")
+    return;
+  }
+
+  if (!regexSegura.test(contrasena.value)) {
+    flag = false;
+    mostrarError("La contraseña requiere minimo 6 caracteres, 1 mayuscula, 1 minuscula y 1 numero");
     return;
   }
 
   if (edadUsuario() < 14) {
     flag = false;
-    alert("REGISTRO FALLIDO, Edad insuficiente");
+    mostrarError("REGISTRO FALLIDO, Edad insuficiente");
     return;
   }
   const nuevoPaciente = {
@@ -134,7 +151,42 @@ formulario.addEventListener("submit", (event) => {
 });
 
 btnCerrar.addEventListener("click", ()=>{
-   modal.style.display = "none";
-   document.body.classList.remove("modal-active");
+    modal.style.display = "none";
+    document.body.classList.remove("modal-active");
 }
 );
+
+
+function mostrarError(mensaje) {
+  let contenedor = document.getElementById("AlertaFlotanteError");
+
+  if (!contenedor) {
+    contenedor = document.createElement("div");
+    contenedor.id = "AlertaFlotanteError";
+    contenedor.className = "position-fixed top-0 start-50 translate-middle-x p-3";
+    contenedor.style.zIndex = "9999"; 
+    contenedor.style.width = "90%";
+    contenedor.style.maxWidth = "500px";
+    document.body.appendChild(contenedor);
+  }
+
+  contenedor.innerHTML = `
+    <div class="alert alert-danger alert-dismissible fade show shadow-lg border-2 border-danger-subtle rounded-3 d-flex align-items-center gap-2 mb-0" role="alert">
+      <span class="fs-4">⚠️</span>
+      <div class="fw-semibold small flex-grow-1">
+        ${mensaje}
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+
+  clearTimeout(window.timerAlertaError);
+  window.timerAlertaError = setTimeout(() => {
+    const alertEl = contenedor.querySelector(".alert");
+    if (alertEl) {
+      alertEl.classList.remove("show");
+      setTimeout(() => alertEl.remove(), 200);
+    }
+  }, 4000);
+
+}

@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnVaciar = document.getElementById("btnVaciar");
     const btnFinalizar = document.getElementById("btnFinalizar");
 
-    //reutilizar funcion de moenda
+    //reutilizar funcion de moneda
     const fmtCLP = (v) => `$${v.toLocaleString("es-CL")}`;
 
     function renderCarrito() {
@@ -30,14 +30,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         //recorrer producto y generar fila
         carrito.forEach((item) => {
-            const subtotal = item.precio * item.cantidad;
+            const cant = Number(item.cantidad) || 1;
+            const precio = Number(item.precio) || 0;
+            const subtotal = precio * cant;
             total += subtotal;
 
             cuerpoCarrito.innerHTML += `
                 <tr>
                     <td class="fw-semibold">${item.nombre}</td>
-                    <td>${fmtCLP(item.precio)}</td>
-                    <td>${item.cantidad}</td>
+                    <td>${fmtCLP(precio)}</td>
+                    <td>${cant}</td>
                     <td class="fw-bold text-success">${fmtCLP(subtotal)}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-danger" onclick="eliminarItem('${item.id}')">Eliminar</button>
@@ -79,9 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnVaciar) {
         btnVaciar.addEventListener("click", () => {
             let carrito = JSON.parse(localStorage.getItem(clave_carrito)) || [];
-            if (carrito.length === 0) return;
+            if (carrito.length === 0) {
+                mostrarMensaje("Tu carrito ya está vacío.", "error");
+                return;
+            }
 
-            if (confirm("¿Estás seguro de que deseas vaciar el carrito?")) {
+            mostrarConfirmacion("¿Estás seguro de que deseas vaciar el carrito?", () => {
                 let stockProductos = JSON.parse(localStorage.getItem(clave_stock)) || [];
                 carrito.forEach(itemCarrito => {
                     const productoCat = stockProductos.find(p => p.id === itemCarrito.id);
@@ -93,9 +98,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 //limpiar carrito y guardarlo en el localstorage
                 localStorage.setItem(clave_carrito, JSON.stringify([]));
                 localStorage.setItem(clave_stock, JSON.stringify(stockProductos));
-                
+
                 renderCarrito();
-            }
+                mostrarMensaje("El carrito ha sido vaciado correctamente.", "exito");
+            });
         });
     }
     if (btnFinalizar) {
@@ -104,20 +110,104 @@ document.addEventListener("DOMContentLoaded", () => {
             let carrito = JSON.parse(localStorage.getItem(clave_carrito)) || [];
             
             if (carrito.length === 0) {
-                alert("Tu carrito está vacío. Agrega productos desde el catálogo para comprar.");
+                mostrarMensaje("Tu carrito está vacío. Agrega productos desde el catálogo para comprar.", "error");
                 return;
             }
             
             //dar anuncio que todo salió con exito
-            alert("¡Compra realizada con éxito! Gracias por preferir NutriVida.");
+            mostrarMensaje("¡Compra realizada con éxito! Gracias por preferir NutriVida.");
             
             // Limpiar el carrito de compras
             //actualizar el stock restante con la compra existosa 
             localStorage.setItem(clave_carrito, JSON.stringify([]));
+            renderCarrito();
             
             // Retornar a la página principal
-            window.location.href = "../index.html"; 
+            setTimeout(() => {
+                window.location.href = "../index.html";
+            }, 1800); 
         });
     }
     renderCarrito();
+
+    
 });
+
+function mostrarMensaje(mensaje, tipo = "exito") {
+let contenedor = document.getElementById("AlertaFlotanteMensaje");
+
+if (!contenedor) {
+    contenedor = document.createElement("div");
+    contenedor.id = "AlertaFlotanteMensaje";
+    contenedor.className = "position-fixed top-0 start-50 translate-middle-x p-3";
+    contenedor.style.zIndex = "9999";
+    contenedor.style.width = "90%";
+    contenedor.style.maxWidth = "500px";
+    contenedor.style.marginTop = "5px";
+    document.body.appendChild(contenedor);
+}
+
+const esExito = tipo === "exito";
+const claseAlerta = esExito ? "alert-success border-success-subtle" : "alert-danger border-danger-subtle";
+const icono = esExito ? "✅" : "⚠️";
+
+contenedor.innerHTML = `
+    <div class="alert ${claseAlerta} alert-dismissible fade show shadow-lg border-2 rounded-3 d-flex align-items-center gap-2 mb-0" role="alert">
+    <span class="fs-4">${icono}</span>
+    <div class="fw-semibold small flex-grow-1">
+        ${mensaje}
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+`;
+
+clearTimeout(window.timerAlertaMensaje);
+window.timerAlertaMensaje = setTimeout(() => {
+    const alertEl = contenedor.querySelector(".alert");
+    if (alertEl) {
+        alertEl.classList.remove("show");
+        setTimeout(() => alertEl.remove(), 200);
+    }
+    }, 3500);
+}
+
+function mostrarConfirmacion(mensaje, callbackAceptar) {
+let contenedor = document.getElementById("AlertaFlotanteMensaje");
+
+if (!contenedor) {
+    contenedor = document.createElement("div");
+    contenedor.id = "AlertaFlotanteMensaje";
+    contenedor.className = "position-fixed top-0 start-50 translate-middle-x p-3";
+    contenedor.style.zIndex = "9999";
+    contenedor.style.width = "90%";
+    contenedor.style.maxWidth = "500px";
+    contenedor.style.marginTop = "5px";
+    document.body.appendChild(contenedor);
+}
+
+clearTimeout(window.timerAlertaMensaje);
+
+contenedor.innerHTML = `
+    <div class="alert alert-warning border-warning-subtle shadow-lg border-2 rounded-3 p-3 mb-0" role="alert">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="fs-4">⚠️</span>
+            <div class="fw-semibold small flex-grow-1 text-dark">
+                ${mensaje}
+            </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" id="btnCancelarConf" class="btn btn-sm btn-outline-secondary">Cancelar</button>
+            <button type="button" id="btnAceptarConf" class="btn btn-sm btn-danger fw-bold">Sí, vaciar</button>
+        </div>
+    </div>
+`;
+
+document.getElementById("btnCancelarConf").onclick = () => {
+    contenedor.innerHTML = "";
+};
+
+document.getElementById("btnAceptarConf").onclick = () => {
+    contenedor.innerHTML = "";
+    callbackAceptar();
+};
+}

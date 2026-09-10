@@ -39,10 +39,10 @@ const titulo = notificacion.querySelector(".toast-header strong");
 const cuerpo = notificacion.querySelector(".toast-body");
 
 const esExito = tipo === "exito";
-
+notificacion.className = "toast bg-white border border-3 border-success shadow-lg rounded-4";
 titulo.textContent = esExito ? "Carrito NutriVida" : "Aviso";
 cuerpo.textContent = mensaje;
-cabecera.className = `toast-header text-white border-0 rounded-top-3 ${esExito ? "bg-success" : "bg-danger"}`;
+cabecera.className = `toast-header text-white border-0 rounded-top-3 ${esExito ? "bg-secondary" : "bg-danger"}`;
 
 bootstrap.Toast.getOrCreateInstance(notificacion).show();
 }
@@ -101,7 +101,7 @@ function aplicarFiltros() {
 }
 
 window.agregarCarrito = (id) => {
-    const prod = totalProductos.find((p) => p.id === id);
+    const prod = totalProductos.find((p) => String(p.id).trim() === String(id).trim());
 
     if (!prod || prod.stock <= 0) {
         mostrarMensaje("No quedan más cupos para este servicio.", "error");
@@ -112,24 +112,27 @@ window.agregarCarrito = (id) => {
     localStorage.setItem(clave_stock, JSON.stringify(totalProductos));
 
     const carrito = JSON.parse(localStorage.getItem(clave_carrito)) || [];
-    const itemCarrito = carrito.find((item) => item.id === id);
+    const itemCarrito = carrito.find((item) => String(item.id).trim() === String(id).trim());
 
     if (itemCarrito) {
-        itemCarrito.cantidad += 1;
+        itemCarrito.cantidad = (Number(itemCarrito.cantidad) || 0) + 1;
     } else {
         carrito.push({
-        id: prod.id,
-        nombre: prod.nombre,
-        precio: prod.precio,
-        cantidad: 1,
-});
-}
+            id: String(prod.id).trim(),
+            nombre: prod.nombre,
+            precio: Number(prod.precio),
+            cantidad: 1,
+        });
+    }
 
     localStorage.setItem(clave_carrito, JSON.stringify(carrito));
     mostrarMensaje("Producto agregado correctamente.");
-    aplicarFiltros();
+    
+    if (typeof aplicarFiltros === "function") {
+        aplicarFiltros();
+    }
 
-const stockModal = document.getElementById("detalleStock");
+    const stockModal = document.getElementById("detalleStock");
     if (stockModal) {
         stockModal.textContent = prod.stock > 0 ? `${prod.stock} cupos` : "Agotado";
         stockModal.className = prod.stock > 0 ? "text-success fw-bold" : "text-danger fw-bold";

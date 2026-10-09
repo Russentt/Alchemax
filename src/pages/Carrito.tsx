@@ -3,7 +3,7 @@ import { useState } from "react";
 
 export default function Carrito() {
   // In your new architecture, initialize this state with your cart data
-  const [cartItems, setCartItems] = useState([]);
+  const [] = useState([]);
 
   return (
     <main className="container my-auto py-5">

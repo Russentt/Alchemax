@@ -1,7 +1,7 @@
 export interface Usuario {
   nombre: string;
   email: string;
-  fechaNacimiento: string; // Formato YYYY-MM-DD
+  fechaNacimiento: string;
   direccion: string;
 }
 
@@ -48,6 +48,24 @@ export interface Examen {
   nombre: string;
   fechaSubida: string;
   estado: "Revisado" | "Pendiente";
+}
+
+export interface Servicio {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  tipo: "evaluacion" | "plan" | "control";
+  icono: string;
+}
+
+export interface Compra {
+  id: string;
+  servicioId: string;
+  nombre: string;
+  fechaCompra: string;
+  monto: number;
+  estado: "Activo" | "Completado";
 }
 
 const SEED_DATA = {
@@ -130,7 +148,6 @@ export const StorageService = {
     }
   },
 
-  // User Profile CRUD
   getUsuario: (): Usuario =>
     JSON.parse(localStorage.getItem("db_usuario") || "{}"),
 
@@ -138,7 +155,6 @@ export const StorageService = {
     localStorage.setItem("db_usuario", JSON.stringify(usuarioActualizado));
   },
 
-  // Other Collections
   getCitas: (): Cita[] => JSON.parse(localStorage.getItem("db_citas") || "[]"),
   getPlan: (): PlanNutricional =>
     JSON.parse(localStorage.getItem("db_plan") || "{}"),
@@ -163,7 +179,48 @@ export const StorageService = {
 
   addCita: (cita: Cita): void => {
     const citas = StorageService.getCitas();
-    citas.unshift(cita); // Adds the newest appointment to the top of the list
+    citas.unshift(cita);
     localStorage.setItem("db_citas", JSON.stringify(citas));
+  },
+  getCarrito: (): Servicio[] =>
+    JSON.parse(localStorage.getItem("db_carrito") || "[]"),
+
+  agregarAlCarrito: (servicio: Servicio): void => {
+    const carrito = StorageService.getCarrito();
+    // Prevent duplicate exact items in the cart
+    if (!carrito.some((item) => item.id === servicio.id)) {
+      carrito.push(servicio);
+      localStorage.setItem("db_carrito", JSON.stringify(carrito));
+    }
+  },
+
+  vaciarCarrito: (): void => {
+    localStorage.setItem("db_carrito", JSON.stringify([]));
+  },
+
+  getCompras: (): Compra[] => {
+    // Seed default purchases if none exist to avoid empty states
+    const stored = localStorage.getItem("db_compras");
+    if (!stored) {
+      const defaultCompras: Compra[] = [
+        {
+          id: "comp-1",
+          servicioId: "srv-01",
+          nombre: "Evaluación Biométrica Presencial",
+          fechaCompra: "10 Oct 2026",
+          monto: 35000,
+          estado: "Activo",
+        },
+      ];
+      localStorage.setItem("db_compras", JSON.stringify(defaultCompras));
+      return defaultCompras;
+    }
+    return JSON.parse(stored);
+  },
+
+  registrarCompra: (compra: Compra): void => {
+    const compras = StorageService.getCompras();
+    compras.unshift(compra); // Add to the top of the history
+    localStorage.setItem("db_compras", JSON.stringify(compras));
   },
 };

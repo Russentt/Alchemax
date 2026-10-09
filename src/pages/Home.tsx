@@ -16,7 +16,6 @@ export default function Home(): JSX.Element {
         </p>
       </section>
 
-      {/* Servicios Section */}
       <div className="container my-5" id="servicios">
         <h2 className="text-center fw-bold mb-5 text-success">
           Nuestras Especialidades

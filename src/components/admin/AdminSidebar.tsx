@@ -1,6 +1,5 @@
-import React, { type JSX } from "react";
+import { type JSX } from "react";
 
-// Export the type so the parent Admin component can use it strictly
 export type AdminTab = "dashboard" | "products" | "categories" | "users";
 
 interface AdminSidebarProps {
@@ -12,7 +11,6 @@ export default function AdminSidebar({
   activeTab,
   onTabChange,
 }: AdminSidebarProps): JSX.Element {
-  // Utility function to apply dynamic active classes
   const getTabClass = (tabName: AdminTab) =>
     `nav-link fw-semibold rounded-3 px-3 py-2 text-start w-100 border-0 ${
       activeTab === tabName
@@ -39,7 +37,6 @@ export default function AdminSidebar({
         <hr className="text-muted mb-4 opacity-25" />
 
         <div className="nav flex-column nav-pills gap-2">
-          {/* Replaced <Link> with <button> to prevent URL navigation and handle local state instead */}
           <button
             type="button"
             onClick={() => onTabChange("dashboard")}

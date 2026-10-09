@@ -1,11 +1,10 @@
-import React, { type JSX } from "react";
+import { type JSX } from "react";
 
 export default function Footer(): JSX.Element {
   return (
     <footer className="bg-white border-top mt-auto py-5 shadow-sm">
       <div className="container-fluid px-4 px-md-5">
         <div className="row g-4 align-items-center">
-          {/* Brand & Copyright Column */}
           <div className="col-md-6 text-center text-md-start">
             <h5 className="fw-bold text-success mb-2">NutriVida</h5>
             <p className="text-muted small mb-0">
@@ -15,7 +14,6 @@ export default function Footer(): JSX.Element {
             </p>
           </div>
 
-          {/* Academic Information Column */}
           <div className="col-md-6 text-center text-md-end">
             <div className="d-inline-block text-start border-start border-success border-3 ps-3">
               <span className="badge bg-success-subtle text-success mb-2">

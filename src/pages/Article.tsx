@@ -1,15 +1,10 @@
-import React, { useEffect, type JSX } from "react";
+import { type JSX } from "react";
 import { useParams, Link } from "react-router";
 import { articlesDatabase } from "../data/articles";
 
 export default function Article(): JSX.Element {
   const { articleId } = useParams<{ articleId: string }>();
   const article = articleId ? articlesDatabase[articleId] : undefined;
-
-  // Intercepts the route change and forces the viewport to the top of the page
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [articleId]);
 
   if (!article) {
     return (
@@ -62,7 +57,6 @@ export default function Article(): JSX.Element {
               >
                 {article.badgeText}
               </span>
-              {/* Scaled down from display-5 to a standard h2 size for better proportion */}
               <h2 className="fw-bold text-dark mb-4">{article.title}</h2>
               <div className="d-flex align-items-center justify-content-center justify-content-md-start gap-3">
                 <div
@@ -86,7 +80,6 @@ export default function Article(): JSX.Element {
 
         <div className="p-4 p-md-5">
           <div className="mx-auto" style={{ maxWidth: "750px" }}>
-            {/* Removed fs-5 to return to standard 16px root font size for comfortable reading */}
             {article.content.map((paragraph, index) => (
               <p
                 key={index}

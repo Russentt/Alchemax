@@ -1,11 +1,10 @@
-import React, { type JSX } from "react";
+import { type JSX } from "react";
 import { Link } from "react-router";
 import ArticleCard from "../components/ArticleCard";
 
 export default function Blog(): JSX.Element {
   return (
     <main className="container my-5 px-3 px-md-4 flex-grow-1">
-      {/* Breadcrumb */}
       <nav aria-label="breadcrumb" className="mb-5">
         <ol className="breadcrumb p-3 bg-white rounded-3 shadow-sm flex-nowrap overflow-auto">
           <li className="breadcrumb-item text-nowrap">
@@ -30,7 +29,6 @@ export default function Blog(): JSX.Element {
         </p>
       </div>
 
-      {/* Featured Article - Now correctly wired to the dynamic article route */}
       <div className="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden bg-white">
         <div className="row g-0 align-items-center">
           <div className="col-lg-6 bg-success text-white p-5 d-flex flex-column justify-content-center min-vh-25">
@@ -71,7 +69,6 @@ export default function Blog(): JSX.Element {
               </p>
             </div>
 
-            {/* Critical Fix: Link targets the JSON key in your data layer */}
             <Link
               to="/blog/probioticos-insulina"
               className="btn btn-outline-success fw-bold align-self-start mt-3"
@@ -82,7 +79,6 @@ export default function Blog(): JSX.Element {
         </div>
       </div>
 
-      {/* Dynamic Grid mapped to the remaining articles */}
       <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
         <ArticleCard
           theme="success"
@@ -112,7 +108,6 @@ export default function Blog(): JSX.Element {
         />
       </div>
 
-      {/* Newsletter Section */}
       <section className="bg-success text-white p-4 p-md-5 rounded-4 shadow-lg mb-4 text-center">
         <div className="row justify-content-center">
           <div className="col-lg-8">

@@ -1,4 +1,4 @@
-import React, { useState, type JSX } from "react";
+import { useState, type JSX } from "react";
 import AdminSidebar, { type AdminTab } from "../components/admin/AdminSidebar";
 import AdminStatCard from "../components/admin/AdminStatCard";
 
@@ -41,7 +41,6 @@ export default function Admin(): JSX.Element {
     </>
   );
 
-  // Sub-view: Product Management
   const renderProducts = () => (
     <div className="bg-white p-4 rounded-4 shadow-sm border-0">
       <div className="d-flex justify-content-between align-items-center mb-4">

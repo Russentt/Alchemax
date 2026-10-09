@@ -14,10 +14,12 @@ import Blog from "./pages/Blog";
 import Admin from "./pages/Admin";
 import Article from "./pages/Article";
 import NotFound from "./pages/NotFound";
+import ScrollToTop from "./components/ScrollToTop";
 
 const App = () => {
   return (
     <BrowserRouter basename="/Alchemax">
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Layout></Layout>}>
           <Route index element={<Home />} />

@@ -1,4 +1,4 @@
-import React, { type JSX } from "react";
+import { type JSX } from "react";
 import { Link } from "react-router";
 
 interface ArticleCardProps {
@@ -18,7 +18,6 @@ export default function ArticleCard({
   readTime,
   linkTo,
 }: ArticleCardProps): JSX.Element {
-  // Utility mapping for dynamic Bootstrap badge colors
   const themeClasses = {
     success: "bg-success-subtle text-success",
     info: "bg-info-subtle text-info",

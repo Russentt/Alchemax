@@ -2,7 +2,6 @@ import { Link } from "react-router";
 import { useState } from "react";
 
 export default function Carrito() {
-  // In your new architecture, initialize this state with your cart data
   const [] = useState([]);
 
   return (
@@ -27,7 +26,7 @@ export default function Carrito() {
                     <th>Acción</th>
                   </tr>
                 </thead>
-                <tbody>{/* React will map over cartItems here */}</tbody>
+                <tbody></tbody>
               </table>
             </div>
 

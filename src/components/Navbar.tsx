@@ -8,14 +8,12 @@ export default function Navbar(): JSX.Element {
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState<boolean>(false);
 
-  // Authentication & Role Mocks
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<"patient" | "admin">("patient");
+  const [isAuthenticated] = useState<boolean>(false);
+  const [userRole] = useState<"patient" | "admin">("patient");
 
   const recursosRef = useRef<HTMLLIElement>(null);
   const perfilRef = useRef<HTMLDivElement>(null);
 
-  // 1. Scroll Event: Hides navbar on scroll down, reveals on scroll up
   useEffect(() => {
     let lastScrollY = window.scrollY;
 
@@ -35,7 +33,6 @@ export default function Navbar(): JSX.Element {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 2. Click Outside Event: Closes dropdowns if user clicks elsewhere
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -51,22 +48,19 @@ export default function Navbar(): JSX.Element {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Universal close function for when a route is clicked
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
     setIsUserDropdownOpen(false);
   };
 
-  // Safe toggle for the Recursos dropdown
   const toggleRecursos = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevents the mousedown event from instantly closing it
+    e.stopPropagation();
     setIsDropdownOpen((prev) => !prev);
     setIsUserDropdownOpen(false);
   };
 
-  // Safe toggle for the Profile dropdown
   const togglePerfil = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -119,7 +113,6 @@ export default function Navbar(): JSX.Element {
               className={`collapse navbar-collapse justify-content-end mt-3 mt-lg-0 ${
                 isMobileMenuOpen ? "show" : ""
               }`}
-              // CRITICAL FIX: Only apply overflowY on mobile. On desktop, this must remain visible so the dropdown doesn't get clipped.
               style={
                 isMobileMenuOpen
                   ? { maxHeight: "calc(100vh - 80px)", overflowY: "auto" }
@@ -155,7 +148,6 @@ export default function Navbar(): JSX.Element {
                   </Link>
                 </li>
 
-                {/* Refactored Dropdown */}
                 <li
                   className="nav-item dropdown w-100 w-lg-auto"
                   ref={recursosRef}

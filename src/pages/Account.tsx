@@ -30,7 +30,6 @@ export default function Account(): JSX.Element {
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [profileForm, setProfileForm] = useState<Usuario | null>(null);
 
-  // Booking Form State
   const [isBookingCita, setIsBookingCita] = useState<boolean>(false);
   const [bookingForm, setBookingForm] = useState({
     fecha: "",
@@ -39,7 +38,6 @@ export default function Account(): JSX.Element {
     profesional: "Nut. Andrea Valdés",
   });
 
-  // Custom Toast Notification State (Replaces alert)
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "danger" | "warning";
@@ -68,16 +66,13 @@ export default function Account(): JSX.Element {
         : "text-dark bg-light"
     }`;
 
-  // --- Notification Handler ---
   const showNotification = (
     message: string,
     type: "success" | "danger" | "warning",
   ) => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 4500); // Auto-hide after 4.5s
+    setTimeout(() => setNotification(null), 4500);
   };
-
-  // --- Interaction Handlers ---
 
   const handleCancelarCita = (id: string) => {
     StorageService.cancelarCita(id);
@@ -116,7 +111,6 @@ export default function Account(): JSX.Element {
     });
   };
 
-  // --- Appointment Booking Handlers ---
   const handleBookingChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
@@ -134,7 +128,7 @@ export default function Account(): JSX.Element {
       estado: "Programada",
     };
     StorageService.addCita(nuevaCita);
-    setCitas(StorageService.getCitas()); // Refresh view
+    setCitas(StorageService.getCitas());
     setIsBookingCita(false);
     showNotification("Cita agendada exitosamente.", "success");
     setBookingForm({
@@ -218,10 +212,7 @@ export default function Account(): JSX.Element {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // --- SUB-VIEWS ---
-
   const renderResumen = () => (
-    // Reusing the identical Resumen code from the previous turn
     <>
       <div className="row g-4 mb-4">
         <div className="col-md-4">
@@ -554,7 +545,6 @@ export default function Account(): JSX.Element {
   );
 
   const renderPlan = () => {
-    /* Identical to previous turn */
     if (!plan) return null;
     return (
       <div
@@ -613,7 +603,6 @@ export default function Account(): JSX.Element {
   };
 
   const renderEvolucion = () => {
-    /* Identical to previous turn */
     if (metricas.length === 0) return null;
     const pesoPerdido = (
       metricas[metricas.length - 1].peso - metricas[0].peso
@@ -721,7 +710,6 @@ export default function Account(): JSX.Element {
   );
 
   const renderCompras = () => {
-    /* Identical to previous turn */
     return (
       <div
         className="bg-white p-4 rounded-4 shadow-sm border-0 h-100"
@@ -786,7 +774,6 @@ export default function Account(): JSX.Element {
 
   return (
     <main className="container-fluid py-4 px-4 px-md-5 position-relative">
-      {/* GLOBAL TOAST NOTIFICATION OVERLAY */}
       {notification && (
         <div
           className="position-fixed top-0 end-0 p-4"

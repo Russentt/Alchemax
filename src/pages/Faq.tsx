@@ -1,12 +1,9 @@
-import React, { useState, type JSX } from "react";
+import { useState, type JSX } from "react";
 import { Link } from "react-router";
 
 export default function Faq(): JSX.Element {
-  // State to track which accordion item is open.
-  // Initialized to 'faq1' so the first item is open by default.
   const [openFaq, setOpenFaq] = useState<string | null>("faq1");
 
-  // Toggle function: if clicking the already open tab, close it (null), otherwise open the new one
   const toggleFaq = (id: string) => {
     setOpenFaq(openFaq === id ? null : id);
   };
@@ -24,7 +21,6 @@ export default function Faq(): JSX.Element {
           </div>
 
           <div className="accordion shadow-sm" id="accordionFaq">
-            {/* Pregunta 1 */}
             <div className="accordion-item border-0 border-bottom">
               <h2 className="accordion-header">
                 <button
@@ -55,7 +51,6 @@ export default function Faq(): JSX.Element {
               </div>
             </div>
 
-            {/* Pregunta 2 */}
             <div className="accordion-item border-0 border-bottom">
               <h2 className="accordion-header">
                 <button
@@ -85,7 +80,6 @@ export default function Faq(): JSX.Element {
               </div>
             </div>
 
-            {/* Pregunta 3 */}
             <div className="accordion-item border-0 border-bottom">
               <h2 className="accordion-header">
                 <button
@@ -116,7 +110,6 @@ export default function Faq(): JSX.Element {
               </div>
             </div>
 
-            {/* Pregunta 4 */}
             <div className="accordion-item border-0 border-bottom">
               <h2 className="accordion-header">
                 <button

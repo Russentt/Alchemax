@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function NotFound() {
   return (
     <main className="container my-5 py-5 text-center flex-grow-1">

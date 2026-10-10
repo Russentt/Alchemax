@@ -135,7 +135,7 @@ export default function Account(): JSX.Element {
   const handleBookingSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const nuevaCita: Cita = {
-      id: `c${Date.now()}`,
+      id: `c-${crypto.randomUUID()}`,
       fecha: formatearFecha(bookingForm.fecha),
       hora: bookingForm.hora,
       tipo: bookingForm.tipo,

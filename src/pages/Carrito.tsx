@@ -1,4 +1,4 @@
-import React, { useState, useEffect, type JSX } from "react";
+import { useState, useEffect, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Servicio, Compra } from "../data/types";
 
@@ -52,7 +52,7 @@ export default function Carrito(): JSX.Element {
 
     // Convert volatile cart items into permanent user purchases
     const nuevasCompras: Compra[] = carrito.map((item) => ({
-      id: `comp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      id: `c-${crypto.randomUUID()}`,
       servicioId: item.id,
       nombre: item.nombre,
       fechaCompra: new Date().toLocaleDateString("es-CL", {

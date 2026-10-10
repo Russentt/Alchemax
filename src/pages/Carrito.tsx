@@ -1,57 +1,263 @@
-import { Link } from "react-router";
-import { useState } from "react";
+import React, { useState, useEffect, type JSX } from "react";
+import { Link, useNavigate } from "react-router";
+import type { Servicio, Compra } from "../data/types";
 
-export default function Carrito() {
-  const [] = useState([]);
+export default function Carrito(): JSX.Element {
+  const [carrito, setCarrito] = useState<Servicio[]>([]);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "warning";
+  } | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedCart = JSON.parse(localStorage.getItem("db_carrito") || "[]");
+    setCarrito(storedCart);
+  }, []);
+
+  const showToast = (message: string, type: "success" | "warning") => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, 15000);
+  };
+
+  const handleRemoveItem = (id: string) => {
+    // Update state and simulated database simultaneously
+    const updatedCart = carrito.filter((item) => item.id !== id);
+    localStorage.setItem("db_carrito", JSON.stringify(updatedCart));
+    setCarrito(updatedCart);
+
+    showToast("Servicio removido del carrito de compras.", "warning");
+  };
+
+  const handleCheckout = () => {
+    if (carrito.length === 0) return;
+
+    // Verify session state using sessionStorage before allowing checkout
+    const sessionUser = sessionStorage.getItem("session_user");
+    if (!sessionUser) {
+      showToast(
+        "Debes iniciar sesión para procesar el pago y asignar los servicios.",
+        "warning",
+      );
+      setTimeout(() => navigate("/login"), 2500);
+      return;
+    }
+
+    // Retrieve existing purchases or initialize an empty array
+    const existingCompras: Compra[] = JSON.parse(
+      localStorage.getItem("db_compras") || "[]",
+    );
+
+    // Convert volatile cart items into permanent user purchases
+    const nuevasCompras: Compra[] = carrito.map((item) => ({
+      id: `comp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      servicioId: item.id,
+      nombre: item.nombre,
+      fechaCompra: new Date().toLocaleDateString("es-CL", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      monto: item.precio,
+      estado: "Activo",
+    }));
+
+    // Save the combined purchases to the database
+    localStorage.setItem(
+      "db_compras",
+      JSON.stringify([...nuevasCompras, ...existingCompras]),
+    );
+
+    // Clear the cart state and localStorage
+    localStorage.setItem("db_carrito", JSON.stringify([]));
+    setCarrito([]);
+
+    showToast(
+      "¡Pago procesado con éxito! Los servicios han sido asignados a tu Portal del Paciente.",
+      "success",
+    );
+
+    // Route the user to their account dashboard to view their new services
+    setTimeout(() => {
+      navigate("/account");
+    }, 2500);
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+    }).format(price);
+  };
+
+  const totalPagar = carrito.reduce((acc, item) => acc + item.precio, 0);
 
   return (
-    <main className="container my-auto py-5">
-      <div className="row justify-content-center">
-        <div className="col-lg-10">
-          <div className="bg-white p-5 rounded-4 shadow-sm border-0">
-            <div className="text-center mb-4">
-              <h2 className="fw-bold text-success">Mi Carrito de Compras</h2>
-              <p className="text-muted">
-                Revisa tus productos antes de finalizar la compra.
-              </p>
+    <main className="container my-5 flex-grow-1 position-relative">
+      {/* Global Toast Notification Overlay */}
+      {notification && (
+        <div
+          className="position-fixed top-0 end-0 p-4 animation-fade-in"
+          style={{ zIndex: 1100, marginTop: "80px" }}
+        >
+          <div
+            className={`toast show align-items-center text-white bg-${notification.type} border-0 shadow-lg rounded-4 p-3`}
+            role="alert"
+          >
+            <div className="d-flex">
+              <div className="toast-body fw-semibold px-2 fs-6 lh-base">
+                {notification.message}
+              </div>
+              <button
+                type="button"
+                className="btn-close btn-close-white me-2 m-auto"
+                onClick={() => setNotification(null)}
+                aria-label="Cerrar"
+              ></button>
             </div>
-            <div className="table-responsive">
-              <table className="table align-middle mt-4">
-                <thead className="table-light">
-                  <tr>
-                    <th>Producto</th>
-                    <th>Precio Unitario</th>
-                    <th>Cantidad</th>
-                    <th>Subtotal</th>
-                    <th>Acción</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+            {notification.type === "success" && (
+              <div className="px-3 pb-2 text-end mt-2">
+                <Link
+                  to="/account"
+                  className="btn btn-light btn-sm fw-bold text-success rounded-pill px-3 shadow-sm"
+                >
+                  Ver en mi perfil
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <nav aria-label="breadcrumb" className="mb-4">
+        <ol className="breadcrumb p-3 bg-white rounded-3 shadow-sm">
+          <li className="breadcrumb-item">
+            <Link to="/" className="text-success text-decoration-none">
+              Inicio
+            </Link>
+          </li>
+          <li className="breadcrumb-item">
+            <Link
+              to="/metodologia"
+              className="text-success text-decoration-none"
+            >
+              Metodología
+            </Link>
+          </li>
+          <li className="breadcrumb-item active text-dark fw-semibold">
+            Carrito de Compras
+          </li>
+        </ol>
+      </nav>
+
+      <div className="row g-4">
+        {/* Cart Items List */}
+        <div className="col-lg-8">
+          <div className="bg-white p-4 p-md-5 rounded-4 shadow-sm border-0 h-100">
+            <h2 className="fw-bold text-dark mb-4">
+              Tus Servicios Seleccionados
+            </h2>
+
+            {carrito.length === 0 ? (
+              <div className="text-center py-5">
+                <div className="fs-1 mb-3">🛒</div>
+                <h5 className="fw-bold text-dark mb-2">
+                  Tu carrito está vacío
+                </h5>
+                <p className="text-muted mb-4">
+                  Aún no has agregado ningún plan o evaluación clínica desde
+                  nuestro catálogo.
+                </p>
+                <Link
+                  to="/metodologia"
+                  className="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm"
+                >
+                  Explorar Metodología y Servicios
+                </Link>
+              </div>
+            ) : (
+              <div className="d-flex flex-column gap-3">
+                {carrito.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center"
+                  >
+                    <div className="d-flex align-items-center gap-3">
+                      <div className="fs-2">{item.icono}</div>
+                      <div>
+                        <h6 className="fw-bold text-dark mb-1">
+                          {item.nombre}
+                        </h6>
+                        <p className="text-muted small mb-0">
+                          {item.descripcion}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-end ms-3">
+                      <h5 className="fw-bold text-success mb-2">
+                        {formatPrice(item.precio)}
+                      </h5>
+                      <button
+                        onClick={() => handleRemoveItem(item.id)}
+                        className="btn btn-sm btn-outline-danger border-0 fw-semibold"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Order Summary & Checkout Action */}
+        <div className="col-lg-4">
+          <div className="bg-white p-4 rounded-4 shadow-sm border-0">
+            <h4 className="fw-bold text-dark mb-4">Resumen de Pago</h4>
+            <div className="d-flex justify-content-between mb-2 text-muted">
+              <span>Subtotal</span>
+              <span>{formatPrice(totalPagar)}</span>
+            </div>
+            <div className="d-flex justify-content-between mb-3 text-muted">
+              <span>Impuestos / Tasas Clínicas</span>
+              <span>$0</span>
+            </div>
+            <hr className="text-muted opacity-25 mb-3" />
+            <div className="d-flex justify-content-between mb-4">
+              <span className="fw-bold text-dark fs-5">Total</span>
+              <span className="fw-bold text-success fs-4">
+                {formatPrice(totalPagar)}
+              </span>
             </div>
 
-            <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
-              <h4 className="mb-3 mb-md-0">
-                Total: <span className="text-success fw-bold">$0</span>
-              </h4>
-              <div className="d-flex flex-wrap justify-content-center gap-2">
-                <Link
-                  to="/metodologia#servicios"
-                  className="btn btn-outline-secondary fw-bold"
-                >
-                  Volver al Catálogo
-                </Link>
-                <button className="btn btn-outline-danger">
-                  Vaciar Carrito
-                </button>
-                <button className="btn btn-success fw-bold">
-                  Finalizar Compra
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={handleCheckout}
+              disabled={carrito.length === 0}
+              className="btn btn-success w-100 fw-bold py-3 rounded-pill shadow-sm mb-3"
+            >
+              Proceder al Pago Seguro
+            </button>
+            <p className="text-muted text-center small mb-0">
+              🔒 Transacción encriptada bajo estándares de seguridad
+              clínico-financieros.
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Toast Animation CSS */}
+      <style>{`
+        .animation-fade-in {
+          animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </main>
   );
 }

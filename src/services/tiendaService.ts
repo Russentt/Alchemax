@@ -12,6 +12,12 @@ export const TiendaService = {
     }
   },
 
+  removerDelCarrito: (id: string): void => {
+    const carrito = TiendaService.getCarrito();
+    const updated = carrito.filter((item) => item.id !== id);
+    localStorage.setItem("db_carrito", JSON.stringify(updated));
+  },
+
   vaciarCarrito: (): void => {
     localStorage.setItem("db_carrito", JSON.stringify([]));
   },

@@ -1,6 +1,75 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useState } from "react";
+import { StorageUsuario } from "../services/storageUsuario";
 
 export default function Register() {
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    nombre: "",
+    fechaNacimiento: "",
+    genero: "",
+    email: "",
+    password: "",
+  });
+
+  // Estado para los mensajes de errores
+  const [error, setError] = useState<string | null>(null);
+
+  // Manejar el cambio de los input
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Manejar el vento del submit
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    // 1. Validacion de campos completados
+    if (
+      !formData.nombre.trim() ||
+      !formData.fechaNacimiento ||
+      !formData.genero ||
+      !formData.email.trim() ||
+      !formData.password.trim()
+    ) {
+      setError("Todos los campos son obligatorios");
+      return;
+    }
+
+    // 2. Validacion password
+    if (formData.password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    // 3. Guardar usuario en localStorage
+    const guardado = StorageUsuario.registrarUsuario({
+      nombre: formData.nombre.trim(),
+      fechaNacimiento: formData.fechaNacimiento,
+      genero: formData.genero,
+      email: formData.email.trim(),
+      password: formData.password,
+      rol: "usuario",
+    });
+
+    // 4. Si el registro no funciona muestra un mensaje de error
+    if (!guardado.success) {
+      setError(guardado.mensaje);
+      return;
+    }
+
+    // 5. Redireccion al login
+    navigate("/login");
+  };
+
   return (
     <main className="container my-5 py-4">
       <div className="row justify-content-center">
@@ -14,7 +83,14 @@ export default function Register() {
               </p>
             </div>
 
-            <form className="formulario">
+            {/* Mensaje de error */}
+            {error && (
+              <div className="alert alert-danger py-2 text-center" role="alert">
+                {error}
+              </div>
+            )}
+
+            <form className="formulario" onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label
                   htmlFor="regNombre"
@@ -26,7 +102,10 @@ export default function Register() {
                   type="text"
                   className="form-control"
                   id="regNombre"
+                  name="nombre"
                   placeholder="Ej. Camila Andrea Soto"
+                  value={formData.nombre}
+                  onChange={handleChange}
                   required
                 />
               </div>
@@ -43,6 +122,9 @@ export default function Register() {
                     type="date"
                     className="form-control"
                     id="regFechaNac"
+                    name="fechaNacimiento"
+                    value={formData.fechaNacimiento}
+                    onChange={handleChange}
                     required
                   />
                 </div>
@@ -56,6 +138,9 @@ export default function Register() {
                   <select
                     className="form-select border"
                     id="regGenero"
+                    name="genero"
+                    value={formData.genero}
+                    onChange={handleChange}
                     required
                     style={{
                       borderRadius: "8px",
@@ -90,12 +175,33 @@ export default function Register() {
                   type="email"
                   className="form-control"
                   id="regEmail"
+                  name="email"
                   placeholder="tucorreo@duocuc.cl"
+                  value={formData.email}
+                  onChange={handleChange}
                   required
                 />
               </div>
 
               {/* Password Fields Here */}
+              <div className="mb-3">
+                <label
+                  htmlFor="regPassword"
+                  className="form-label fw-semibold text-dark"
+                >
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  className="form-control"
+                  id="regPassword"
+                  name="password"
+                  placeholder="*******"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
               <div className="d-grid mt-4">
                 <button

@@ -23,7 +23,6 @@ export default function Carrito(): JSX.Element {
   };
 
   const handleRemoveItem = (id: string) => {
-    // Update state and simulated database simultaneously
     const updatedCart = carrito.filter((item) => item.id !== id);
     localStorage.setItem("db_carrito", JSON.stringify(updatedCart));
     setCarrito(updatedCart);
@@ -34,7 +33,6 @@ export default function Carrito(): JSX.Element {
   const handleCheckout = () => {
     if (carrito.length === 0) return;
 
-    // Verify session state using sessionStorage before allowing checkout
     const sessionUser = sessionStorage.getItem("session_user");
     if (!sessionUser) {
       showToast(
@@ -45,12 +43,10 @@ export default function Carrito(): JSX.Element {
       return;
     }
 
-    // Retrieve existing purchases or initialize an empty array
     const existingCompras: Compra[] = JSON.parse(
       localStorage.getItem("db_compras") || "[]",
     );
 
-    // Convert volatile cart items into permanent user purchases
     const nuevasCompras: Compra[] = carrito.map((item) => ({
       id: `c-${crypto.randomUUID()}`,
       servicioId: item.id,
@@ -64,13 +60,11 @@ export default function Carrito(): JSX.Element {
       estado: "Activo",
     }));
 
-    // Save the combined purchases to the database
     localStorage.setItem(
       "db_compras",
       JSON.stringify([...nuevasCompras, ...existingCompras]),
     );
 
-    // Clear the cart state and localStorage
     localStorage.setItem("db_carrito", JSON.stringify([]));
     setCarrito([]);
 
@@ -79,7 +73,6 @@ export default function Carrito(): JSX.Element {
       "success",
     );
 
-    // Route the user to their account dashboard to view their new services
     setTimeout(() => {
       navigate("/account");
     }, 2500);
@@ -139,8 +132,9 @@ export default function Carrito(): JSX.Element {
             </Link>
           </li>
           <li className="breadcrumb-item">
+            {/* 1. Actualización en el Breadcrumb */}
             <Link
-              to="/metodologia"
+              to="/metodologia#catalogo"
               className="text-success text-decoration-none"
             >
               Metodología
@@ -170,11 +164,12 @@ export default function Carrito(): JSX.Element {
                   Aún no has agregado ningún plan o evaluación clínica desde
                   nuestro catálogo.
                 </p>
+                {/* 2. Actualización cuando el carrito está vacío */}
                 <Link
-                  to="/metodologia"
+                  to="/metodologia#catalogo"
                   className="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm"
                 >
-                  Explorar Metodología y Servicios
+                  Explorar Catálogo de Servicios
                 </Link>
               </div>
             ) : (
@@ -208,6 +203,16 @@ export default function Carrito(): JSX.Element {
                     </div>
                   </div>
                 ))}
+
+                {/* 3. Nuevo botón para seguir comprando */}
+                <div className="mt-4 text-start">
+                  <Link
+                    to="/metodologia#catalogo"
+                    className="btn btn-outline-success fw-bold px-4 rounded-pill shadow-sm"
+                  >
+                    ← Seguir agregando servicios
+                  </Link>
+                </div>
               </div>
             )}
           </div>
@@ -223,7 +228,7 @@ export default function Carrito(): JSX.Element {
             </div>
             <div className="d-flex justify-content-between mb-3 text-muted">
               <span>Impuestos / Tasas Clínicas</span>
-              <span>$0</span>
+              <span>\$0</span>
             </div>
             <hr className="text-muted opacity-25 mb-3" />
             <div className="d-flex justify-content-between mb-4">

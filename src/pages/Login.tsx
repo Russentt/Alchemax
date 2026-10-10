@@ -1,6 +1,35 @@
 import { Link } from "react-router";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { StorageUsuario } from "../services/storageUsuario";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    //Capturar datos de los input
+    const form = new FormData(e.currentTarget);
+    const email = (form.get("email") as string).trim();
+    const password = form.get("password") as string;
+
+    // Validar con el localStorage
+    const usuarioValido = StorageUsuario.login(email, password);
+
+    if (!usuarioValido) {
+      setError("Correo o contraseña incorrectos.");
+      return;
+    }
+
+    if (usuarioValido.rol === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/account");
+    }
+  };
   return (
     <main className="container my-auto py-5">
       <div className="row justify-content-center">
@@ -11,7 +40,14 @@ export default function Login() {
               <p className="text-muted">Accede a tu Portal del Paciente.</p>
             </div>
 
-            <form className="formulario">
+            {/* error si las credenciales fallan */}
+            {error && (
+              <div className="alert alert-danger py-2 text-center" role="alert">
+                {error}
+              </div>
+            )}
+
+            <form className="formulario" onSubmit={handleSubmit}>
               <div className="mb-3">
                 <label
                   htmlFor="loginEmail"
@@ -21,6 +57,7 @@ export default function Login() {
                 </label>
                 <input
                   type="email"
+                  name="email"
                   className="form-control"
                   id="loginEmail"
                   placeholder="tucorreo@email.com"
@@ -44,6 +81,7 @@ export default function Login() {
                 </div>
                 <input
                   type="password"
+                  name="password"
                   className="form-control mt-2"
                   id="loginPassword"
                   placeholder="Ingresa tu contraseña"

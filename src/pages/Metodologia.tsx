@@ -1,6 +1,8 @@
 import React, { useState, type JSX } from "react";
 import { Link } from "react-router";
-import { StorageService, type Servicio } from "../services/StorageService";
+import type { Servicio } from "../data/types";
+
+import { TiendaService } from "../services/tiendaService";
 
 // The catalog is now strictly typed using the interface from StorageService
 const catalogoServicios: Servicio[] = [
@@ -108,7 +110,7 @@ export default function Metodologia(): JSX.Element {
 
   const handleAddToCart = (servicio: Servicio) => {
     // 1. Save to the database
-    StorageService.agregarAlCarrito(servicio);
+    TiendaService.agregarAlCarrito(servicio);
 
     // 2. Trigger highly visible notification
     setNotification({

@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef, type JSX } from "react";
 import { Link } from "react-router";
-import {
-  StorageService,
-  type Usuario,
-  type Cita,
-  type PlanNutricional,
-  type Metrica,
-  type Examen,
-} from "../services/StorageService";
+import type {
+  Usuario,
+  Cita,
+  PlanNutricional,
+  Metrica,
+  Examen,
+} from "../data/types";
+
+import { StorageInit } from "../services/storage_init";
+import { StorageUsuario } from "../services/storageUsuario";
+import { CitasService } from "../services/citasService";
+import { PlanService } from "../services/planService";
 
 export type AccountTab =
   | "resumen"
@@ -46,15 +50,26 @@ export default function Account(): JSX.Element {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    StorageService.initDB();
+    StorageInit.initDB();
     setTimeout(() => {
-      const dbUser = StorageService.getUsuario();
-      setUsuario(dbUser);
-      setProfileForm(dbUser);
-      setCitas(StorageService.getCitas());
-      setPlan(StorageService.getPlan());
-      setMetricas(StorageService.getMetricas());
-      setExamenes(StorageService.getExamenes());
+      const dbUser =
+        StorageUsuario.getUsuarioSesion() ||
+        StorageUsuario.getUsuarios()[0] ||
+        null;
+
+      if (dbUser) {
+        setUsuario(dbUser);
+        setProfileForm(dbUser);
+      }
+
+      // 2. Cargar citas desde CitasService
+      setCitas(CitasService.getCitas());
+
+      // Cargar datos desde PlanService
+      setPlan(PlanService.getPlan());
+      setMetricas(PlanService.getMetricas());
+      setExamenes(PlanService.getExamenes());
+
       setIsLoading(false);
     }, 600);
   }, []);
@@ -75,8 +90,8 @@ export default function Account(): JSX.Element {
   };
 
   const handleCancelarCita = (id: string) => {
-    StorageService.cancelarCita(id);
-    setCitas(StorageService.getCitas());
+    CitasService.cancelarCita(id);
+    setCitas(CitasService.getCitas());
     showNotification("Cita cancelada exitosamente.", "warning");
   };
 
@@ -89,7 +104,7 @@ export default function Account(): JSX.Element {
   const handleSaveProfile = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (profileForm) {
-      StorageService.updateUsuario(profileForm);
+      StorageUsuario.updateUsuario(profileForm);
       setUsuario(profileForm);
       setIsEditingProfile(false);
       showNotification("Perfil actualizado correctamente.", "success");
@@ -127,8 +142,8 @@ export default function Account(): JSX.Element {
       profesional: bookingForm.profesional,
       estado: "Programada",
     };
-    StorageService.addCita(nuevaCita);
-    setCitas(StorageService.getCitas());
+    CitasService.addCita(nuevaCita);
+    setCitas(CitasService.getCitas());
     setIsBookingCita(false);
     showNotification("Cita agendada exitosamente.", "success");
     setBookingForm({
@@ -202,8 +217,8 @@ export default function Account(): JSX.Element {
       estado: "Pendiente",
     };
 
-    StorageService.addExamen(nuevoExamen);
-    setExamenes(StorageService.getExamenes());
+    PlanService.addExamen(nuevoExamen);
+    setExamenes(PlanService.getExamenes());
     showNotification(
       `Documento "${sanitizedFileName}" subido correctamente.`,
       "success",
@@ -292,12 +307,6 @@ export default function Account(): JSX.Element {
                   </div>
                 </div>
                 <hr className="text-muted my-2 opacity-25" />
-                <div className="row">
-                  <div className="col-sm-4 text-muted fw-semibold">
-                    Dirección
-                  </div>
-                  <div className="col-sm-8 text-dark">{usuario?.direccion}</div>
-                </div>
               </>
             ) : (
               <form onSubmit={handleSaveProfile}>
@@ -370,16 +379,6 @@ export default function Account(): JSX.Element {
                   <label className="col-sm-4 col-form-label text-muted fw-semibold">
                     Dirección
                   </label>
-                  <div className="col-sm-8">
-                    <input
-                      type="text"
-                      name="direccion"
-                      className="form-control form-control-sm"
-                      value={profileForm?.direccion || ""}
-                      onChange={handleProfileChange}
-                      required
-                    />
-                  </div>
                 </div>
               </form>
             )}

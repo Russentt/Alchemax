@@ -1,8 +1,18 @@
 import { type JSX } from "react";
 import { Link } from "react-router";
 import ArticleCard from "../components/ArticleCard";
+import { articlesDatabase } from "../data/articles";
 
 export default function Blog(): JSX.Element {
+  // Convertimos el objeto de la base de datos en un array para iterar
+  const articlesList = Object.values(articlesDatabase);
+
+  // Separamos el artículo destacado del resto
+  const featuredArticle = articlesDatabase["probioticos-insulina"];
+  const gridArticles = articlesList.filter(
+    (article) => article.id !== featuredArticle.id,
+  );
+
   return (
     <main className="container my-5 px-3 px-md-4 flex-grow-1">
       <nav aria-label="breadcrumb" className="mb-5">
@@ -23,27 +33,20 @@ export default function Blog(): JSX.Element {
           Evidencia y Divulgación Nutricional
         </h1>
         <p className="text-muted fs-5 mx-auto" style={{ maxWidth: "700px" }}>
-          Artículos redactados por nuestro equipo clínico en Temuco para
-          desmitificar la nutrición y guiarte hacia un estilo de vida basado en
-          ciencia.
+          Artículos redactados por nuestro equipo clínico para desmitificar la
+          nutrición y guiarte hacia un estilo de vida basado en ciencia.
         </p>
       </div>
 
+      {/* Artículo Destacado Dinámico */}
       <div className="card border-0 shadow-sm rounded-4 mb-5 overflow-hidden bg-white">
         <div className="row g-0 align-items-center">
           <div className="col-lg-6 bg-success text-white p-5 d-flex flex-column justify-content-center min-vh-25">
             <span className="badge bg-light text-success align-self-start mb-3 px-3 py-2 rounded-pill">
-              Artículo Destacado
+              {featuredArticle.badgeText}
             </span>
-            <h2 className="fw-bold display-6 mb-3">
-              Impacto de los probióticos en la absorción intestinal y
-              resistencia a la insulina
-            </h2>
-            <p className="opacity-75 mb-0">
-              Una revisión de 12 semanas analizando la cepa Lactobacillus
-              reuteri y su modulación directa sobre el metabolismo de la glucosa
-              en pacientes de La Araucanía.
-            </p>
+            <h2 className="fw-bold display-6 mb-3">{featuredArticle.title}</h2>
+            <p className="opacity-75 mb-0">{featuredArticle.description}</p>
           </div>
           <div className="col-lg-6 p-4 p-md-5 d-flex flex-column justify-content-between h-100">
             <div>
@@ -57,20 +60,18 @@ export default function Blog(): JSX.Element {
                 <div>
                   <h6 className="mb-0 fw-bold text-dark">Equipo NutriVida</h6>
                   <small className="text-muted">
-                    Actualizado hace 2 días • 6 min de lectura
+                    {featuredArticle.date} • {featuredArticle.readTime} min de
+                    lectura
                   </small>
                 </div>
               </div>
               <p className="text-muted lh-lg mb-4">
-                La microbiota intestinal no solo regula la digestión; actúa como
-                un órgano endocrino secundario. Descubre cómo la selección
-                adecuada de cepas bacterianas optimiza la permeabilidad
-                intestinal y reduce la inflamación sistémica de bajo grado.
+                {featuredArticle.content[0]}
               </p>
             </div>
 
             <Link
-              to="/blog/probioticos-insulina"
+              to={`/blog/${featuredArticle.id}`}
               className="btn btn-outline-success fw-bold align-self-start mt-3"
             >
               Leer investigación completa
@@ -79,35 +80,22 @@ export default function Blog(): JSX.Element {
         </div>
       </div>
 
+      {/* Grilla Dinámica de Artículos */}
       <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
-        <ArticleCard
-          theme="success"
-          badgeText="Metabolismo"
-          title="¿Por qué el déficit calórico extremo arruina tu metabolismo basal?"
-          description="Analizamos la termogénesis adaptativa y cómo el cuerpo reduce el gasto energético espontáneo (NEAT) cuando restringimos calorías de forma agresiva sin supervisión clínica."
-          readTime={4}
-          linkTo="/blog/termogenesis-adaptativa"
-        />
-
-        <ArticleCard
-          theme="info"
-          badgeText="Deporte y Rendimiento"
-          title="Creatina monohidratada: más allá del rendimiento muscular"
-          description="Nuevos metaanálisis demuestran beneficios cognitivos, neuroprotectores y de modulación glucémica en adultos que no necesariamente realizan alta competición deportiva."
-          readTime={5}
-          linkTo="/blog/creatina-neuroproteccion"
-        />
-
-        <ArticleCard
-          theme="warning"
-          badgeText="Nutrición Basada en Plantas"
-          title="Planificación segura de dietas vegetarianas en invierno"
-          description="Estrategias clave para asegurar la biodisponibilidad de Hierro no hemo, Zinc y Vitamina B12 durante los meses de menor exposición solar en el sur de Chile."
-          readTime={7}
-          linkTo="/blog/dieta-vegetariana-invierno"
-        />
+        {gridArticles.map((article) => (
+          <ArticleCard
+            key={article.id}
+            theme={article.theme}
+            badgeText={article.badgeText}
+            title={article.title}
+            description={article.description}
+            readTime={article.readTime}
+            linkTo={`/blog/${article.id}`}
+          />
+        ))}
       </div>
 
+      {/* Sección de Suscripción */}
       <section className="bg-success text-white p-4 p-md-5 rounded-4 shadow-lg mb-4 text-center">
         <div className="row justify-content-center">
           <div className="col-lg-8">

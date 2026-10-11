@@ -5,6 +5,8 @@ import { StorageUsuario } from "../services/storageUsuario";
 export default function Register() {
   const navigate = useNavigate();
 
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+
   const [formData, setFormData] = useState({
     nombre: "",
     fechaNacimiento: "",
@@ -38,7 +40,8 @@ export default function Register() {
       !formData.fechaNacimiento ||
       !formData.genero ||
       !formData.email.trim() ||
-      !formData.password.trim()
+      !formData.password.trim() ||
+      !confirmPassword.trim()
     ) {
       setError("Todos los campos son obligatorios");
       return;
@@ -47,6 +50,30 @@ export default function Register() {
     // 2. Validacion password
     if (formData.password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    if (formData.password !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+
+    //Validacion de edad
+
+    const hoy = new Date();
+    const fechaNac = new Date(formData.fechaNacimiento + "T00:00:00");
+    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+    const mesDiferencia = hoy.getMonth() - fechaNac.getMonth();
+
+    if (
+      mesDiferencia < 0 ||
+      (mesDiferencia === 0 && hoy.getDate() < fechaNac.getDate())
+    ) {
+      edad--;
+    }
+
+    if (edad < 14) {
+      setError("Debes tener al menos 14 años para registrarte.");
       return;
     }
 
@@ -199,6 +226,21 @@ export default function Register() {
                   placeholder="*******"
                   value={formData.password}
                   onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label text-muted fw-semibold small">
+                  Confirmar Conraseña
+                </label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  className="form-control"
+                  placeholder="Repite tu contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
               </div>

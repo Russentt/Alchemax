@@ -1,18 +1,26 @@
 import React, { useState, useEffect, useRef, type JSX } from "react";
-import { Link } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
+import { StorageUsuario } from "../services/storageUsuario";
 
 export default function Navbar(): JSX.Element {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState<boolean>(false);
 
-  const [isAuthenticated] = useState<boolean>(false);
-  const [userRole] = useState<"patient" | "admin">("patient");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const recursosRef = useRef<HTMLLIElement>(null);
-  const perfilRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Sincroniza el estado de la sesión cada vez que el usuario navega entre páginas
+  useEffect(() => {
+    const sesion =
+      StorageUsuario.getUsuarioSesion() ||
+      sessionStorage.getItem("session_user");
+    setIsAuthenticated(!!sesion);
+  }, [location]);
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -24,7 +32,6 @@ export default function Navbar(): JSX.Element {
       } else {
         setIsVisible(false);
         setIsDropdownOpen(false);
-        setIsUserDropdownOpen(false);
       }
       lastScrollY = currentScrollY;
     };
@@ -39,9 +46,6 @@ export default function Navbar(): JSX.Element {
       if (recursosRef.current && !recursosRef.current.contains(target)) {
         setIsDropdownOpen(false);
       }
-      if (perfilRef.current && !perfilRef.current.contains(target)) {
-        setIsUserDropdownOpen(false);
-      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -51,22 +55,34 @@ export default function Navbar(): JSX.Element {
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
-    setIsUserDropdownOpen(false);
+  };
+
+  const handleLogout = () => {
+    StorageUsuario.logout();
+    sessionStorage.removeItem("session_user");
+    setIsAuthenticated(false);
+    handleLinkClick();
+    navigate("/login");
   };
 
   const toggleRecursos = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDropdownOpen((prev) => !prev);
-    setIsUserDropdownOpen(false);
   };
 
-  const togglePerfil = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsUserDropdownOpen((prev) => !prev);
-    setIsDropdownOpen(false);
+  // Funciones para pintar de verde la sección activa en el header
+  const getNavLinkClass = (path: string, hash: string = "") => {
+    const isActive = hash
+      ? location.pathname === path && location.hash === hash
+      : location.pathname === path && location.hash === "";
+    return `nav-link ${isActive ? "text-success fw-bold" : ""}`;
   };
+
+  const isRecursosActive =
+    location.pathname === "/faq" ||
+    location.pathname === "/telemedicina" ||
+    location.pathname.startsWith("/blog");
 
   const shouldShow = isVisible || isHovered || isMobileMenuOpen;
 
@@ -123,7 +139,7 @@ export default function Navbar(): JSX.Element {
                 <li className="nav-item w-100 w-lg-auto">
                   <Link
                     to="/#servicios"
-                    className="nav-link text-success fw-bold"
+                    className={getNavLinkClass("/", "#servicios")}
                     onClick={handleLinkClick}
                   >
                     Servicios
@@ -132,7 +148,7 @@ export default function Navbar(): JSX.Element {
                 <li className="nav-item w-100 w-lg-auto">
                   <Link
                     to="/metodologia"
-                    className="nav-link"
+                    className={getNavLinkClass("/metodologia")}
                     onClick={handleLinkClick}
                   >
                     Nuestro Método
@@ -141,7 +157,7 @@ export default function Navbar(): JSX.Element {
                 <li className="nav-item w-100 w-lg-auto">
                   <Link
                     to="/testimonios"
-                    className="nav-link"
+                    className={getNavLinkClass("/testimonios")}
                     onClick={handleLinkClick}
                   >
                     Testimonios
@@ -154,7 +170,9 @@ export default function Navbar(): JSX.Element {
                 >
                   <a
                     href="#recursos"
-                    className="nav-link dropdown-toggle w-100"
+                    className={`nav-link dropdown-toggle w-100 ${
+                      isRecursosActive ? "text-success fw-bold" : ""
+                    }`}
                     onClick={toggleRecursos}
                     aria-expanded={isDropdownOpen}
                   >
@@ -172,7 +190,11 @@ export default function Navbar(): JSX.Element {
                   >
                     <li>
                       <Link
-                        className="dropdown-item py-2"
+                        className={`dropdown-item py-2 ${
+                          location.pathname === "/faq"
+                            ? "text-success fw-bold bg-light"
+                            : ""
+                        }`}
                         to="/faq"
                         onClick={handleLinkClick}
                       >
@@ -181,7 +203,11 @@ export default function Navbar(): JSX.Element {
                     </li>
                     <li>
                       <Link
-                        className="dropdown-item py-2"
+                        className={`dropdown-item py-2 ${
+                          location.pathname === "/telemedicina"
+                            ? "text-success fw-bold bg-light"
+                            : ""
+                        }`}
                         to="/telemedicina"
                         onClick={handleLinkClick}
                       >
@@ -193,7 +219,11 @@ export default function Navbar(): JSX.Element {
                     </li>
                     <li>
                       <Link
-                        className="dropdown-item py-2"
+                        className={`dropdown-item py-2 ${
+                          location.pathname.startsWith("/blog")
+                            ? "text-success fw-bold bg-light"
+                            : ""
+                        }`}
                         to="/blog"
                         onClick={handleLinkClick}
                       >
@@ -223,71 +253,22 @@ export default function Navbar(): JSX.Element {
                     </Link>
                   </>
                 ) : (
-                  <div className="dropdown w-100 w-lg-auto" ref={perfilRef}>
-                    <a
-                      href="#perfil"
-                      className="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm dropdown-toggle w-100"
-                      onClick={togglePerfil}
+                  <>
+                    <Link
+                      to="/account"
+                      className="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto text-nowrap"
+                      onClick={handleLinkClick}
                     >
                       Mi Perfil
-                    </a>
-                    <ul
-                      className={`dropdown-menu dropdown-menu-end border-0 shadow-sm text-center text-lg-start ${
-                        isUserDropdownOpen ? "show" : ""
-                      }`}
-                      style={{
-                        display: isUserDropdownOpen ? "block" : "none",
-                        marginTop: "0.5rem",
-                        position: isMobileMenuOpen ? "static" : "absolute",
-                      }}
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto text-nowrap"
+                      onClick={handleLogout}
                     >
-                      <li>
-                        <Link
-                          className="dropdown-item py-2"
-                          to="/account"
-                          onClick={handleLinkClick}
-                        >
-                          Portal del Paciente
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className="dropdown-item py-2"
-                          to="/carrito"
-                          onClick={handleLinkClick}
-                        >
-                          Mi Carrito
-                        </Link>
-                      </li>
-                      {userRole === "admin" && (
-                        <>
-                          <li>
-                            <hr className="dropdown-divider" />
-                          </li>
-                          <li>
-                            <Link
-                              className="dropdown-item py-2 text-danger fw-bold"
-                              to="/admin"
-                              onClick={handleLinkClick}
-                            >
-                              Panel de Control
-                            </Link>
-                          </li>
-                        </>
-                      )}
-                      <li>
-                        <hr className="dropdown-divider" />
-                      </li>
-                      <li>
-                        <button
-                          className="dropdown-item py-2 text-muted"
-                          onClick={handleLinkClick}
-                        >
-                          Cerrar Sesión
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
+                      Cerrar Sesión
+                    </button>
+                  </>
                 )}
               </div>
             </div>

@@ -33,6 +33,7 @@ export default function Account(): JSX.Element {
 
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [profileForm, setProfileForm] = useState<Usuario | null>(null);
+  const [nuevaPassword, setNuevaPassword] = useState<string>("");
 
   const [isBookingCita, setIsBookingCita] = useState<boolean>(false);
   const [bookingForm, setBookingForm] = useState({
@@ -104,8 +105,15 @@ export default function Account(): JSX.Element {
   const handleSaveProfile = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (profileForm) {
-      StorageUsuario.updateUsuario(profileForm);
-      setUsuario(profileForm);
+      const updatedUser: Usuario = {
+        ...profileForm,
+        ...(nuevaPassword.trim() !== "" ? { password: nuevaPassword } : {}),
+      } as Usuario;
+
+      StorageUsuario.updateUsuario(updatedUser);
+      setUsuario(updatedUser);
+      setProfileForm(updatedUser);
+      setNuevaPassword("");
       setIsEditingProfile(false);
       showNotification("Perfil actualizado correctamente.", "success");
     }
@@ -113,6 +121,7 @@ export default function Account(): JSX.Element {
 
   const handleCancelEdit = () => {
     setProfileForm(usuario);
+    setNuevaPassword("");
     setIsEditingProfile(false);
   };
 
@@ -307,6 +316,13 @@ export default function Account(): JSX.Element {
                   </div>
                 </div>
                 <hr className="text-muted my-2 opacity-25" />
+                <div className="row mb-3">
+                  <div className="col-sm-4 text-muted fw-semibold">
+                    Contraseña
+                  </div>
+                  <div className="col-sm-8 text-muted">••••••••</div>
+                </div>
+                <hr className="text-muted my-2 opacity-25" />
               </>
             ) : (
               <form onSubmit={handleSaveProfile}>
@@ -360,6 +376,7 @@ export default function Account(): JSX.Element {
                     />
                   </div>
                 </div>
+                {/* 1. Fecha de nacimiento bloqueada y en gris */}
                 <div className="mb-3 row">
                   <label className="col-sm-4 col-form-label text-muted fw-semibold">
                     Fecha de Nac.
@@ -368,17 +385,35 @@ export default function Account(): JSX.Element {
                     <input
                       type="date"
                       name="fechaNacimiento"
-                      className="form-control form-control-sm"
+                      className="form-control form-control-sm bg-light text-muted"
                       value={profileForm?.fechaNacimiento || ""}
-                      onChange={handleProfileChange}
-                      required
+                      disabled
+                      readOnly
                     />
+                    <small
+                      className="text-muted"
+                      style={{ fontSize: "0.75rem" }}
+                    >
+                      La fecha de nacimiento no puede ser modificada.
+                    </small>
                   </div>
                 </div>
+                {/* 2. Campo para editar contraseña */}
                 <div className="mb-3 row">
                   <label className="col-sm-4 col-form-label text-muted fw-semibold">
-                    Dirección
+                    Nueva Contraseña
                   </label>
+                  <div className="col-sm-8">
+                    <input
+                      type="password"
+                      name="password"
+                      className="form-control form-control-sm"
+                      placeholder="Dejar en blanco para mantener la actual"
+                      value={nuevaPassword}
+                      onChange={(e) => setNuevaPassword(e.target.value)}
+                      minLength={6}
+                    />
+                  </div>
                 </div>
               </form>
             )}
@@ -435,7 +470,7 @@ export default function Account(): JSX.Element {
                       </span>
                     </div>
                     <p className="text-muted small mb-0">
-                      📅 {cita.fecha} a las {cita.hora} • 👩‍⚕️ {cita.profesional}
+                      📅 {cita.fecha} a las {cita.hora} 👩‍⚕️ {cita.profesional}
                     </p>
                   </div>
                   {cita.estado === "Programada" && (
@@ -747,7 +782,7 @@ export default function Account(): JSX.Element {
                 <td>
                   <span className="badge bg-success">Activo</span>
                 </td>
-                <td>$35.000</td>
+                <td>\$35.000</td>
                 <td>
                   <button className="btn btn-sm btn-light text-success fw-semibold border">
                     Agendar Hora

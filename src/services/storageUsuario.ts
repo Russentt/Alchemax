@@ -50,21 +50,42 @@ export const StorageUsuario = {
 
   updateUsuario: (usuarioActualizado: Usuario): void => {
     const usuarios = StorageUsuario.getUsuarios();
-    const usuariosNuevos = usuarios.map((u) =>
-      u.email.toLowerCase() === usuarioActualizado.email.toLowerCase()
-        ? { ...u, ...usuarioActualizado }
-        : u,
-    );
+    const sesionActual = StorageUsuario.getUsuarioSesion();
 
+    // Usamos el email de la sesión activa como referencia por si el usuario decidió cambiar su correo
+    const emailReferencia = sesionActual
+      ? sesionActual.email.toLowerCase()
+      : usuarioActualizado.email.toLowerCase();
+
+    let usuarioFusionado: Usuario = usuarioActualizado;
+
+    const usuariosNuevos = usuarios.map((u) => {
+      // Buscamos por ID (si existe) o por el email original de referencia
+      const coincideId =
+        u.id && usuarioActualizado.id && u.id === usuarioActualizado.id;
+      const coincideEmail = u.email.toLowerCase() === emailReferencia;
+
+      if (coincideId || coincideEmail) {
+        // Fusionamos los datos antiguos con los nuevos (incluyendo la nueva password si se ingresó)
+        usuarioFusionado = { ...u, ...usuarioActualizado };
+        return usuarioFusionado;
+      }
+      return u;
+    });
+
+    // 1. Guardamos la lista actualizada en la base de datos general
     localStorage.setItem("db_usuarios", JSON.stringify(usuariosNuevos));
 
-    const sesionActual = StorageUsuario.getUsuarioSesion();
+    // 2. Si el usuario editado es el que tiene la sesión iniciada, actualizamos su sesión activa
     if (
       sesionActual &&
-      sesionActual.email.toLowerCase() ===
-        usuarioActualizado.email.toLowerCase()
+      (sesionActual.email.toLowerCase() === emailReferencia ||
+        (sesionActual.id && sesionActual.id === usuarioActualizado.id))
     ) {
-      localStorage.setItem("db_sesion", JSON.stringify(usuarioActualizado));
+      localStorage.setItem(
+        "db_sesion",
+        JSON.stringify({ ...sesionActual, ...usuarioFusionado }),
+      );
     }
   },
 };

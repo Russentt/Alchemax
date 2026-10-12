@@ -48,44 +48,58 @@ export const StorageUsuario = {
     localStorage.removeItem("db_sesion");
   },
 
-  updateUsuario: (usuarioActualizado: Usuario): void => {
+  updateUsuario: (
+    usuarioActualizado: Usuario,
+    emailOriginal?: string,
+  ): { success: boolean; mensaje: string } => {
     const usuarios = StorageUsuario.getUsuarios();
     const sesionActual = StorageUsuario.getUsuarioSesion();
 
-    // Usamos el email de la sesión activa como referencia por si el usuario decidió cambiar su correo
-    const emailReferencia = sesionActual
-      ? sesionActual.email.toLowerCase()
-      : usuarioActualizado.email.toLowerCase();
+    const correoBuscar = (emailOriginal || usuarioActualizado.email).toLowerCase();
 
-    let usuarioFusionado: Usuario = usuarioActualizado;
+    // Validar si intentó cambiar a un correo que ya tiene otra persona
+    if (
+      emailOriginal &&
+      emailOriginal.toLowerCase() !== usuarioActualizado.email.toLowerCase()
+    ) {
+      const correoDuplicado = usuarios.some(
+        (u) => u.email.toLowerCase() === usuarioActualizado.email.toLowerCase(),
+      );
 
+      if (correoDuplicado) {
+        return {
+          success: false,
+          mensaje: "Correo invalido, intenta con otro.",
+        };
+      }
+    }
+
+    // Actualizar la lista mapeando por el correo de búsqueda
     const usuariosNuevos = usuarios.map((u) => {
-      // Buscamos por ID (si existe) o por el email original de referencia
-      const coincideId =
-        u.id && usuarioActualizado.id && u.id === usuarioActualizado.id;
-      const coincideEmail = u.email.toLowerCase() === emailReferencia;
-
-      if (coincideId || coincideEmail) {
-        // Fusionamos los datos antiguos con los nuevos (incluyendo la nueva password si se ingresó)
-        usuarioFusionado = { ...u, ...usuarioActualizado };
-        return usuarioFusionado;
+      if (u.email.toLowerCase() === correoBuscar) {
+        return { ...u, ...usuarioActualizado };
       }
       return u;
     });
 
-    // 1. Guardamos la lista actualizada en la base de datos general
     localStorage.setItem("db_usuarios", JSON.stringify(usuariosNuevos));
 
-    // 2. Si el usuario editado es el que tiene la sesión iniciada, actualizamos su sesión activa
-    if (
-      sesionActual &&
-      (sesionActual.email.toLowerCase() === emailReferencia ||
-        (sesionActual.id && sesionActual.id === usuarioActualizado.id))
-    ) {
+    // Si la sesión activa pertenecía a este usuario, actualizar también la sesion
+    if (sesionActual && sesionActual.email.toLowerCase() === correoBuscar) {
       localStorage.setItem(
         "db_sesion",
-        JSON.stringify({ ...sesionActual, ...usuarioFusionado }),
+        JSON.stringify({ ...sesionActual, ...usuarioActualizado }),
       );
     }
+
+    return { success: true, mensaje: "Usuario actualizado con éxito." };
+  },
+
+  deleteUsuario: (email: string): void => {
+    const usuarios = StorageUsuario.getUsuarios();
+    const filtrados = usuarios.filter(
+      (u) => u.email.toLowerCase() !== email.toLowerCase(),
+    );
+    localStorage.setItem("db_usuarios", JSON.stringify(filtrados));
   },
 };

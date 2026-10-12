@@ -3,7 +3,7 @@ export const SEED_DATA = {
     {
       id: "u-1",
       nombre: "Administrador",
-      email: "admin@duoc.cl",
+      email: "admin@gmail.com",
       password: "admin123",
       genero: "otro",
       fechaNacimiento: "1990-01-01",
@@ -12,7 +12,7 @@ export const SEED_DATA = {
     {
       id: "u-2",
       nombre: "Camila Andrea Soto",
-      email: "camila.soto@email.com",
+      email: "camila.soto@gmail.com",
       password: "user123",
       genero: "femenino",
       fechaNacimiento: "1994-05-12",

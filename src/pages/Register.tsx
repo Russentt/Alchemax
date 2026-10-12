@@ -80,10 +80,14 @@ export default function Register() {
 
     // 4. Validación de Correo electrónico
     const emailLimpio = formData.email.trim();
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailLimpio) {
       nuevosErrores.email = "El correo electrónico es obligatorio.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+\$/.test(emailLimpio)) {
-      nuevosErrores.email = "Ingresa un formato de correo electrónico válido.";
+    } else if (!emailRegex.test(emailLimpio)) {
+      nuevosErrores.email = "Ingresa un correo válido.";
+      //Solo acepta gmail
+    } else if (!emailLimpio.toLowerCase().endsWith("@gmail.com")) {
+      nuevosErrores.email = "Solo se permiten correos @gmail.com.";
     }
 
     // 5. Validación de Contraseña (longitud)

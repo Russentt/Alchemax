@@ -1,6 +1,7 @@
 import { useState, useEffect, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Servicio, Compra } from "../data/types";
+import { StorageUsuario } from "../services/storageUsuario";
 
 export default function Carrito(): JSX.Element {
   const [carrito, setCarrito] = useState<Servicio[]>([]);
@@ -33,7 +34,11 @@ export default function Carrito(): JSX.Element {
   const handleCheckout = () => {
     if (carrito.length === 0) return;
 
-    const sessionUser = sessionStorage.getItem("session_user");
+    // Verificamos la sesión activa desde StorageUsuario (o sessionStorage como respaldo)
+    const sessionUser =
+      StorageUsuario.getUsuarioSesion() ||
+      sessionStorage.getItem("session_user");
+
     if (!sessionUser) {
       showToast(
         "Debes iniciar sesión para procesar el pago y asignar los servicios.",

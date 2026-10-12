@@ -1,10 +1,76 @@
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import AdminSidebar, { type AdminTab } from "../components/admin/AdminSidebar";
 import AdminStatCard from "../components/admin/AdminStatCard";
+import type { Usuario } from "../data/types";
+import { StorageUsuario } from "../services/storageUsuario";
 
 export default function Admin(): JSX.Element {
   // State controls which administrative view is currently rendered
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
+
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [emailOriginal, setEmailOriginal] = useState<string>("");
+
+  const [notificacion, setNotificacion] = useState<{
+    texto: string;
+    tipo: "info" | "success" | "danger";
+  } | null>(null);
+
+  const [usuarioAEditar, setUsuarioAEditar] = useState<Usuario | null>(null);
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
+
+  const cargarUsuario = () => {
+    setUsuarios(StorageUsuario.getUsuarios());
+  };
+
+  useEffect(() => {
+    cargarUsuario();
+  }, []);
+
+  const mostrarNotificacion = (
+    texto: string,
+    tipo: "info" | "success" | "danger" = "info"
+  ) => {
+    setNotificacion({ texto, tipo });
+    setTimeout(() => setNotificacion(null), 3500);
+  };
+
+  
+  const confirmarEliminacion = () => {
+    if (!usuarioAEliminar) return;
+    StorageUsuario.deleteUsuario(usuarioAEliminar.email);
+    cargarUsuario();
+    mostrarNotificacion(
+      `Usuario ${usuarioAEliminar.nombre} eliminado.`,
+      "success"
+    );
+    setUsuarioAEliminar(null);
+  };
+
+  const guardarEdicion = (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!usuarioAEditar) return;
+
+  const respuesta = StorageUsuario.updateUsuario(usuarioAEditar, emailOriginal);
+
+  if (!respuesta.success) {
+    mostrarNotificacion(respuesta.mensaje, "danger");
+    return;
+  }
+
+  cargarUsuario();
+  mostrarNotificacion("Usuario actualizado con éxito.", "success");
+  setUsuarioAEditar(null);
+};
+
+  const usuariosFiltrados = usuarios.filter((u) => {
+    const termino = busqueda.toLowerCase();
+    return (
+      u.nombre.toLowerCase().includes(termino) ||
+      u.email.toLowerCase().includes(termino)
+    );
+  });
 
   // Sub-view: Dashboard (Metrics & Previews)
   const renderDashboard = () => (
@@ -24,7 +90,7 @@ export default function Admin(): JSX.Element {
         />
         <AdminStatCard
           title="Pacientes Registrados"
-          value={142}
+          value={usuarios.length}
           icon="👥"
           theme="warning"
         />
@@ -152,6 +218,8 @@ export default function Admin(): JSX.Element {
             type="search"
             className="form-control form-control-sm"
             placeholder="Buscar usuario..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
           />
           <button
             type="button"
@@ -161,6 +229,23 @@ export default function Admin(): JSX.Element {
           </button>
         </div>
       </div>
+
+      {notificacion && (
+        <div
+          className={`alert alert-${notificacion.tipo} py-2 px-3 small d-flex justify-content-between align-items-center mb-3 border-0`}
+          role="alert"
+        >
+          <span>{notificacion.texto}</span>
+          <button
+            type="button"
+            className="btn-close small"
+            style={{ fontSize: "0.65rem" }}
+            aria-label="Cerrar"
+            onClick={() => setNotificacion(null)}
+          ></button>
+        </div>
+      )}
+
       <div className="table-responsive">
         <table className="table align-middle">
           <thead className="table-light">
@@ -173,75 +258,199 @@ export default function Admin(): JSX.Element {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="fw-semibold">Alexander Mejias</td>
-              <td className="text-muted">a.mejias@admin.cl</td>
-              <td>
-                <span className="badge bg-danger-subtle text-danger">
-                  Product Owner
-                </span>
-              </td>
-              <td>
-                <span className="badge bg-success">Activo</span>
-              </td>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-light text-primary me-2"
-                >
-                  Permisos
-                </button>
-              </td>
-            </tr>
-            <tr>
-              <td className="fw-semibold">Lucas Ortiz</td>
-              <td className="text-muted">l.ortiz@admin.cl</td>
-              <td>
-                <span className="badge bg-dark-subtle text-dark">
-                  Backend Dev
-                </span>
-              </td>
-              <td>
-                <span className="badge bg-success">Activo</span>
-              </td>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-light text-primary me-2"
-                >
-                  Permisos
-                </button>
-              </td>
-            </tr>
-            <tr>
-              <td className="fw-semibold">Camila Soto</td>
-              <td className="text-muted">camila.soto@email.com</td>
-              <td>
-                <span className="badge bg-primary-subtle text-primary">
-                  Paciente
-                </span>
-              </td>
-              <td>
-                <span className="badge bg-success">Activo</span>
-              </td>
-              <td>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-light text-primary me-2"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-light text-danger"
-                >
-                  Suspender
-                </button>
-              </td>
-            </tr>
+            {usuariosFiltrados.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center py-4 text-muted">
+                  No se encontraron usuarios registrados.
+                </td>
+              </tr>
+            ) : (
+              usuariosFiltrados.map((u) => (
+                <tr key={u.email}>
+                  <td className="fw-semibold">{u.nombre}</td>
+                  <td className="text-muted">{u.email}</td>
+                  <td>
+                    <span
+                      className={`badge ${
+                        u.rol === "admin"
+                          ? "bg-danger-subtle text-danger"
+                          : "bg-primary-subtle text-primary"
+                      }`}
+                    >
+                      {u.rol === "admin" ? "Administrador" : "Paciente"}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="badge bg-success">Activo</span>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-light text-primary me-2"
+                      onClick={() => {
+                        setUsuarioAEditar({ ...u });
+                        setEmailOriginal(u.email);
+                      }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-light text-danger"
+                      onClick={() => setUsuarioAEliminar(u)}
+                    >
+                      Eliminar
+                    </button>
+                </td>
+              </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+
+        {/* Box Para editar usuario  */}    
+        {usuarioAEditar && (
+        <div
+          className="modal fade show d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 border-0 shadow">
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold">Editar Usuario</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setUsuarioAEditar(null)}
+                ></button>
+              </div>
+              <form onSubmit={guardarEdicion}>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold text-muted">
+                      Nombre Completo
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={usuarioAEditar.nombre}
+                      onChange={(e) =>
+                        setUsuarioAEditar({
+                          ...usuarioAEditar,
+                          nombre: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold text-muted">
+                      Correo Electrónico
+                    </label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={usuarioAEditar.email}
+                      onChange={(e) =>
+                        setUsuarioAEditar({
+                          ...usuarioAEditar,
+                          email: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold text-muted">
+                      Rol en el Sistema
+                    </label>
+                    <select
+                      className="form-select"
+                      value={usuarioAEditar.rol}
+                      onChange={(e) =>
+                        setUsuarioAEditar({
+                          ...usuarioAEditar,
+                          rol: e.target.value as "admin" | "usuario",
+                        })
+                      }
+                    >
+                      <option value="usuario">Paciente / Usuario</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer border-0 pt-0">
+                  <button
+                    type="button"
+                    className="btn btn-light"
+                    onClick={() => setUsuarioAEditar(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-success fw-bold">
+                    Guardar Cambios
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Box para eliminacion de usuario */}
+      {usuarioAEliminar && (
+        <div
+          className="modal fade show d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content rounded-4 border-0 shadow">
+              <div className="modal-header border-0 pb-0">
+                <h5 className="modal-title fw-bold text-danger">
+                  Eliminar Usuario
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setUsuarioAEliminar(null)}
+                ></button>
+              </div>
+              <div className="modal-body py-3">
+                <p className="mb-1 text-dark">
+                  ¿Seguro que deseas eliminar a{" "}
+                  <strong>{usuarioAEliminar.nombre}</strong>?
+                </p>
+                <small className="text-muted">
+                  Correo: {usuarioAEliminar.email}. Esta acción no se puede deshacer.
+                </small>
+              </div>
+              <div className="modal-footer border-0 pt-0">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  onClick={() => setUsuarioAEliminar(null)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger fw-bold"
+                  onClick={confirmarEliminacion}
+                >
+                  Sí, eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 

@@ -60,6 +60,10 @@ export interface Servicio {
   precio: number;
   tipo: "evaluacion" | "plan" | "control";
   icono: string;
+  categoriaId: string;
+  categoriaNombre?: string;
+  estado: "Activo" | "Inactivo";
+  planNutricional?: PlanNutricional;
 }
 
 export interface Compra {
@@ -69,4 +73,11 @@ export interface Compra {
   fechaCompra: string;
   monto: number;
   estado: "Activo" | "Completado";
+}
+
+export interface Categoria {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  serviciosAsociados?: number;
 }

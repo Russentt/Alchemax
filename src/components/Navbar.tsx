@@ -62,7 +62,7 @@ export default function Navbar(): JSX.Element {
     sessionStorage.removeItem("session_user");
     setIsAuthenticated(false);
     handleLinkClick();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   const toggleRecursos = (e: React.MouseEvent<HTMLAnchorElement>) => {

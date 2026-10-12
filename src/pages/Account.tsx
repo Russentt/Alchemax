@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, type JSX } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import type {
   Usuario,
   Cita,
@@ -22,6 +22,7 @@ export type AccountTab =
   | "compras";
 
 export default function Account(): JSX.Element {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AccountTab>("resumen");
 
   const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -33,7 +34,13 @@ export default function Account(): JSX.Element {
 
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [profileForm, setProfileForm] = useState<Usuario | null>(null);
+
+  // Estados para el cambio de contraseña
+  const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
+  const [passwordActual, setPasswordActual] = useState<string>("");
   const [nuevaPassword, setNuevaPassword] = useState<string>("");
+  const [confirmarPassword, setConfirmarPassword] = useState<string>("");
+  const [passwordError, setPasswordError] = useState<string>("");
 
   const [isBookingCita, setIsBookingCita] = useState<boolean>(false);
   const [bookingForm, setBookingForm] = useState({
@@ -52,16 +59,24 @@ export default function Account(): JSX.Element {
 
   useEffect(() => {
     StorageInit.initDB();
-    setTimeout(() => {
-      const dbUser =
-        StorageUsuario.getUsuarioSesion() ||
-        StorageUsuario.getUsuarios()[0] ||
-        null;
 
-      if (dbUser) {
-        setUsuario(dbUser);
-        setProfileForm(dbUser);
+    // 1. Verificamos de inmediato si existe una sesión activa real
+    const sesionActiva = StorageUsuario.getUsuarioSesion();
+    if (!sesionActiva) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const dbUser = StorageUsuario.getUsuarioSesion();
+
+      if (!dbUser) {
+        navigate("/login", { replace: true });
+        return;
       }
+
+      setUsuario(dbUser);
+      setProfileForm(dbUser);
 
       // 2. Cargar citas desde CitasService
       setCitas(CitasService.getCitas());
@@ -73,7 +88,9 @@ export default function Account(): JSX.Element {
 
       setIsLoading(false);
     }, 600);
-  }, []);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   const getTabClass = (tabName: AccountTab) =>
     `nav-link fw-semibold rounded-3 px-3 py-2 text-start w-100 border-0 ${
@@ -102,26 +119,77 @@ export default function Account(): JSX.Element {
     }
   };
 
+  const resetPasswordFields = () => {
+    setIsChangingPassword(false);
+    setPasswordActual("");
+    setNuevaPassword("");
+    setConfirmarPassword("");
+    setPasswordError("");
+  };
+
   const handleSaveProfile = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setPasswordError("");
+
     if (profileForm) {
+      // Si el usuario activó el botón "Cambiar contraseña", validamos las 3 casillas
+      if (isChangingPassword) {
+        if (
+          !passwordActual.trim() ||
+          !nuevaPassword.trim() ||
+          !confirmarPassword.trim()
+        ) {
+          setPasswordError(
+            "Por favor, completa los 3 campos para cambiar tu contraseña.",
+          );
+          return;
+        }
+
+        if (passwordActual !== usuario?.password) {
+          setPasswordError("La contraseña actual ingresada es incorrecta.");
+          return;
+        }
+
+        if (nuevaPassword.length < 6) {
+          setPasswordError(
+            "La nueva contraseña debe tener al menos 6 caracteres.",
+          );
+          return;
+        }
+
+        if (nuevaPassword !== confirmarPassword) {
+          setPasswordError(
+            "La nueva contraseña y su confirmación no coinciden.",
+          );
+          return;
+        }
+      }
+
       const updatedUser: Usuario = {
         ...profileForm,
-        ...(nuevaPassword.trim() !== "" ? { password: nuevaPassword } : {}),
+        ...(isChangingPassword && nuevaPassword.trim() !== ""
+          ? { password: nuevaPassword }
+          : {}),
       } as Usuario;
 
       StorageUsuario.updateUsuario(updatedUser);
       setUsuario(updatedUser);
       setProfileForm(updatedUser);
-      setNuevaPassword("");
+      resetPasswordFields();
       setIsEditingProfile(false);
-      showNotification("Perfil actualizado correctamente.", "success");
+
+      showNotification(
+        isChangingPassword
+          ? "Perfil actualizado y cambio de contraseña confirmado correctamente."
+          : "Perfil actualizado correctamente.",
+        "success",
+      );
     }
   };
 
   const handleCancelEdit = () => {
     setProfileForm(usuario);
-    setNuevaPassword("");
+    resetPasswordFields();
     setIsEditingProfile(false);
   };
 
@@ -398,23 +466,102 @@ export default function Account(): JSX.Element {
                     </small>
                   </div>
                 </div>
-                {/* 2. Campo para editar contraseña */}
-                <div className="mb-3 row">
+
+                {/* 2. Sección desplegable para cambiar contraseña */}
+                <div className="mb-3 row align-items-center">
                   <label className="col-sm-4 col-form-label text-muted fw-semibold">
-                    Nueva Contraseña
+                    Contraseña
                   </label>
                   <div className="col-sm-8">
-                    <input
-                      type="password"
-                      name="password"
-                      className="form-control form-control-sm"
-                      placeholder="Dejar en blanco para mantener la actual"
-                      value={nuevaPassword}
-                      onChange={(e) => setNuevaPassword(e.target.value)}
-                      minLength={6}
-                    />
+                    {!isChangingPassword ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsChangingPassword(true);
+                          setPasswordError("");
+                        }}
+                        className="btn btn-outline-success btn-sm fw-semibold"
+                      >
+                        🔒 Cambiar contraseña
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={resetPasswordFields}
+                        className="btn btn-outline-secondary btn-sm"
+                      >
+                        Cancelar cambio de contraseña
+                      </button>
+                    )}
                   </div>
                 </div>
+
+                {isChangingPassword && (
+                  <div className="p-3 bg-light rounded-3 border mb-3">
+                    {passwordError && (
+                      <div
+                        className="alert alert-danger py-2 px-3 small mb-3 border-0 shadow-sm"
+                        role="alert"
+                      >
+                        ⚠️ {passwordError}
+                      </div>
+                    )}
+
+                    <div className="mb-2 row">
+                      <label className="col-sm-4 col-form-label text-muted fw-semibold small">
+                        Contraseña Actual
+                      </label>
+                      <div className="col-sm-8">
+                        <input
+                          type="password"
+                          className="form-control form-control-sm"
+                          placeholder="Ingresa tu contraseña actual"
+                          value={passwordActual}
+                          onChange={(e) => {
+                            setPasswordActual(e.target.value);
+                            if (passwordError) setPasswordError("");
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-2 row">
+                      <label className="col-sm-4 col-form-label text-muted fw-semibold small">
+                        Nueva Contraseña
+                      </label>
+                      <div className="col-sm-8">
+                        <input
+                          type="password"
+                          className="form-control form-control-sm"
+                          placeholder="Mínimo 6 caracteres"
+                          value={nuevaPassword}
+                          onChange={(e) => {
+                            setNuevaPassword(e.target.value);
+                            if (passwordError) setPasswordError("");
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-0 row">
+                      <label className="col-sm-4 col-form-label text-muted fw-semibold small">
+                        Confirmar Nueva
+                      </label>
+                      <div className="col-sm-8">
+                        <input
+                          type="password"
+                          className="form-control form-control-sm"
+                          placeholder="Repite la nueva contraseña"
+                          value={confirmarPassword}
+                          onChange={(e) => {
+                            setConfirmarPassword(e.target.value);
+                            if (passwordError) setPasswordError("");
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </form>
             )}
           </div>
@@ -805,6 +952,8 @@ export default function Account(): JSX.Element {
         </p>
       </main>
     );
+
+  if (!usuario) return <></>;
 
   return (
     <main className="container-fluid py-4 px-4 px-md-5 position-relative">

@@ -69,6 +69,36 @@ export default function Home(): JSX.Element {
             <div className="card h-100 shadow-sm border-0 service-card">
               <div className="card-body text-center p-4">
                 <h5 className="card-title fw-bold text-dark">
+                  Nutrición en el Adulto Mayor
+                </h5>
+                <p className="card-text text-muted mt-3">
+                  Planes adaptados para preservar la masa muscular, fortalecer
+                  la salud ósea y prevenir el deterioro cognitivo, mejorando la
+                  vitalidad, autonomía y calidad de vida durante el
+                  envejecimiento activo.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card h-100 shadow-sm border-0 service-card">
+              <div className="card-body text-center p-4">
+                <h5 className="card-title fw-bold text-dark">
+                  Salud Digestiva y Microbiota
+                </h5>
+                <p className="card-text text-muted mt-3">
+                  Manejo nutricional especializado para patologías
+                  gastrointestinales como síndrome de intestino irritable,
+                  gastritis, reflujo e intolerancias alimentarias, enfocado en
+                  reducir la inflamación y restaurar tu bienestar digestivo.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card h-100 shadow-sm border-0 service-card">
+              <div className="card-body text-center p-4">
+                <h5 className="card-title fw-bold text-dark">
                   Alimentación Vegana / Vegetariana
                 </h5>
                 <p className="card-text text-muted mt-3">

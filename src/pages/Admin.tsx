@@ -6,6 +6,10 @@ import { StorageUsuario } from "../services/storageUsuario";
 import { useNavigate } from "react-router";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
+import ModalProducto from "../components/admin/ModalProducto";
+import ModalCategoria from "../components/admin/ModalCategoria";
+import ModalUsuario from "../components/admin/ModalUsuario";
+import ModalCrearUsuario from "../components/admin/ModalCrearUsuario";
 
 
 export default function Admin(): JSX.Element {
@@ -31,7 +35,7 @@ export default function Admin(): JSX.Element {
   const [categoriaEditar, setCategoriaEditar] = useState<Categoria | null>(null);
   const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(null);
   const [modalCrearCategoria, setModalCrearCategoria] = useState(false);
-  const [nuevaCategoria, setNuevaCategoria] = useState({ nombre: "", descripcion: "" });
+  
 
   const cargarCategorias = () => {
     setCategorias(StorageCategorias.getCategorias());
@@ -41,43 +45,42 @@ export default function Admin(): JSX.Element {
     cargarCategorias();
   }, []);
 
-  const CrearCategoria = (e: React.FormEvent) => {
-    e.preventDefault();
-    if(!nuevaCategoria.nombre.trim()) return;
+  const handleGuardarCategoria = (
+    datos: Omit<Categoria, "id" | "serviciosAsociados">
+  ) => {
+    if (categoriaEditar) {
+      const res = StorageCategorias.updateCategoria({
+        ...categoriaEditar,
+        ...datos,
+      });
 
-    const res = StorageCategorias.crearCategoria(nuevaCategoria);
-    if(!res.success) {
-      mostrarNotificacion(res.mensaje, "danger");
-      return;
+      if (!res.success) {
+        mostrarNotificacion(res.mensaje, "danger");
+        return;
+      }
+      mostrarNotificacion("Categoría actualizada", "success");
+    } else {
+      const res = StorageCategorias.crearCategoria(datos);
+
+      if (!res.success) {
+        mostrarNotificacion(res.mensaje, "danger");
+        return;
+      }
+      mostrarNotificacion("Categoría creada", "success");
     }
 
     cargarCategorias();
-    setNuevaCategoria({ nombre: "", descripcion: "" });
     setModalCrearCategoria(false);
-    mostrarNotificacion("Categoria creada", "success");
-  };
-
-  const gardarEdicionCategoria = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!categoriaEditar) return;
-
-    const res = StorageCategorias.updateCategoria(categoriaEditar);
-    if (!res.success) {
-      mostrarNotificacion(res.mensaje, "danger");
-      return;
-    }
-
-    cargarCategorias();
     setCategoriaEditar(null);
-    mostrarNotificacion("Categoria actualizada", "success");
   };
 
+  // Esta se mantiene igual (la invoca el modal en onDeleteConfirm):
   const EliminarCategoria = () => {
     if (!categoriaEliminar) return;
 
     StorageCategorias.deleteCategoria(categoriaEliminar.id);
     cargarCategorias();
-    mostrarNotificacion(`Categoria "${categoriaEliminar.nombre}" eliminada`, "success" );
+    mostrarNotificacion(`Categoría "${categoriaEliminar.nombre}" eliminada`, "success");
     setCategoriaEliminar(null);
   };
 
@@ -92,14 +95,7 @@ export default function Admin(): JSX.Element {
   const [modalProducto, setModalProducto] = useState(false);
   const [servicioAEditar, setServicioAEditar] = useState<Servicio | null>(null);
 
-  const [formServicio, setFormServicio] = useState({
-    nombre: "",
-    descripcion: "",
-    precio: 0,
-    tipo: "plan" as "evaluacion" | "plan" | "control",
-    icono: "🥗",
-    categoriaId: "",
-  });
+  
 
   const cargarServicios = () => {
     setServicios(StorageServicios.getServicios());
@@ -112,42 +108,26 @@ export default function Admin(): JSX.Element {
   // Crear servicio en modal
   const abrirCrearServicio = () => {
     setServicioAEditar(null);
-    setFormServicio({
-      nombre: "",
-      descripcion: "",
-      precio: 0,
-      tipo: "plan",
-      icono: "🥗",
-      categoriaId: categorias.length > 0 ? categorias[0].id : "",
-    });
     setModalProducto(true);
   };
 
   // Edicion en modal
   const abrirEditarServicio = (item: Servicio) => {
     setServicioAEditar(item);
-    setFormServicio({
-      nombre: item.nombre,
-      descripcion: item.descripcion || "",
-      precio: item.precio,
-      tipo: item.tipo,
-      icono: item.icono || "🥗",
-      categoriaId: item.categoriaId,
-    });
     setModalProducto(true);
   };
 
   // Guardar (Crear o Modificar)
-  const handleGuardarServicio = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const categoriaEncontrada = categorias.find((c) => c.id === formServicio.categoriaId);
+  const handleGuardarServicio = (
+    datos: Omit<Servicio, "id" | "estado">
+  ) => {
+    const categoriaEncontrada = categorias.find((c) => c.id === datos.categoriaId);
     const nombreCategoria = categoriaEncontrada ? categoriaEncontrada.nombre : "General";
 
     if (servicioAEditar) {
       const res = StorageServicios.updateServicio({
         ...servicioAEditar,
-        ...formServicio,
+        ...datos,
         categoriaNombre: nombreCategoria,
       });
 
@@ -158,7 +138,7 @@ export default function Admin(): JSX.Element {
       mostrarNotificacion("Servicio actualizado", "success");
     } else {
       const res = StorageServicios.crearServicio({
-        ...formServicio,
+        ...datos,
         categoriaNombre: nombreCategoria,
         estado: "Activo",
       });
@@ -174,6 +154,7 @@ export default function Admin(): JSX.Element {
     cargarCategorias();
     setModalProducto(false);
     setServicioAEditar(null);
+      
   };
 
   // Alternar Activo / Inactivo
@@ -217,21 +198,18 @@ export default function Admin(): JSX.Element {
     setUsuarioAEliminar(null);
   };
 
-  const guardarEdicion = (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!usuarioAEditar) return;
+  const guardarEdicion = (usuarioActualizado: Usuario) => {
+    const respuesta = StorageUsuario.updateUsuario(usuarioActualizado, emailOriginal);
 
-  const respuesta = StorageUsuario.updateUsuario(usuarioAEditar, emailOriginal);
+    if (!respuesta.success) {
+      mostrarNotificacion(respuesta.mensaje, "danger");
+      return;
+    }
 
-  if (!respuesta.success) {
-    mostrarNotificacion(respuesta.mensaje, "danger");
-    return;
-  }
-
-  cargarUsuario();
-  mostrarNotificacion("Usuario actualizado con éxito.", "success");
-  setUsuarioAEditar(null);
-};
+    cargarUsuario();
+    mostrarNotificacion("Usuario actualizado con éxito.", "success");
+    setUsuarioAEditar(null);
+  };
 
   const usuariosFiltrados = usuarios.filter((u) => {
     const termino = busqueda.toLowerCase();
@@ -240,6 +218,27 @@ export default function Admin(): JSX.Element {
       u.email.toLowerCase().includes(termino)
     );
   });
+
+  const [modalCrearUsuario, setModalCrearUsuario] = useState(false);
+
+  const handleCrearUsuario = (nuevoUsuario: Usuario) => {
+  const usuariosActuales = StorageUsuario.getUsuarios();
+  const existe = usuariosActuales.some(
+    (u) => u.email.toLowerCase() === nuevoUsuario.email.toLowerCase()
+  );
+
+  if (existe) {
+    mostrarNotificacion("Ese correo electrónico ya está registrado.", "danger");
+    return;
+  }
+
+  usuariosActuales.push(nuevoUsuario);
+  localStorage.setItem("db_usuarios", JSON.stringify(usuariosActuales));
+
+  cargarUsuario();
+  setModalCrearUsuario(false);
+  mostrarNotificacion("Usuario registrado exitosamente.", "success");
+};
 
   // Sub-view: Dashboard (Metrics & Previews)
   const renderDashboard = () => (
@@ -358,102 +357,13 @@ export default function Admin(): JSX.Element {
       </div>
 
       {/* Modal de productos */}
-      {modalProducto && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4 border-0 p-3 shadow">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h6 className="fw-bold mb-0">
-                  {servicioAEditar ? "Modificar Plan" : "Nuevo Plan / Servicio"}
-                </h6>
-                <button
-                  type="button"
-                  className="btn-close small"
-                  onClick={() => setModalProducto(false)}
-                />
-              </div>
-
-              <form onSubmit={handleGuardarServicio} className="d-flex flex-column gap-2">
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Nombre del Plan"
-                  value={formServicio.nombre}
-                  onChange={(e) => setFormServicio({ ...formServicio, nombre: e.target.value })}
-                  required
-                />
-
-                <select
-                  className="form-select form-select-sm"
-                  value={formServicio.categoriaId}
-                  onChange={(e) => setFormServicio({ ...formServicio, categoriaId: e.target.value })}
-                  required
-                >
-                  <option value="">Seleccionar categoría...</option>
-                  {categorias.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.nombre}
-                    </option>
-                  ))}
-                </select>
-
-                <div className="row g-2">
-                  <div className="col-7">
-                    <input
-                      type="number"
-                      className="form-control form-control-sm"
-                      placeholder="Precio ($ CLP)"
-                      value={formServicio.precio || ""}
-                      onChange={(e) =>
-                        setFormServicio({ ...formServicio, precio: Number(e.target.value) })
-                      }
-                      min={0}
-                      required
-                    />
-                  </div>
-                  <div className="col-5">
-                    <select
-                      className="form-select form-select-sm"
-                      value={formServicio.tipo}
-                      onChange={(e) =>
-                        setFormServicio({
-                          ...formServicio,
-                          tipo: e.target.value as "evaluacion" | "plan" | "control",
-                        })
-                      }
-                    >
-                      <option value="plan">Plan</option>
-                      <option value="evaluacion">Evaluación</option>
-                      <option value="control">Control</option>
-                    </select>
-                  </div>
-                </div>
-
-                <textarea
-                  className="form-control form-control-sm"
-                  rows={2}
-                  placeholder="Descripción breve..."
-                  value={formServicio.descripcion}
-                  onChange={(e) => setFormServicio({ ...formServicio, descripcion: e.target.value })}
-                />
-
-                <div className="d-flex justify-content-end gap-2 mt-2">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-light"
-                    onClick={() => setModalProducto(false)}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-sm btn-success fw-bold">
-                    {servicioAEditar ? "Guardar" : "Crear"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalProducto
+        isOpen={modalProducto}
+        servicioEditar={servicioAEditar}
+        categorias={categorias}
+        onClose={() => setModalProducto(false)}
+        onSave={handleGuardarServicio}
+      />
     </div>
   );
 
@@ -525,108 +435,20 @@ export default function Admin(): JSX.Element {
           </tbody>
         </table>
       </div>
-
-
-      {/* 1. Modal Crear / Editar Categoría */}
-      {(modalCrearCategoria || categoriaEditar) && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4 border-0 p-3 shadow">
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <h5 className="fw-bold mb-0">
-                  {categoriaEditar ? "Modificar Categoría" : "Nueva Categoría"}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close small"
-                  onClick={() => {
-                    setModalCrearCategoria(false);
-                    setCategoriaEditar(null);
-                  }}
-                />
-              </div>
-
-              <form onSubmit={categoriaEditar ? gardarEdicionCategoria : CrearCategoria}>
-                <div className="mb-2">
-                  <label className="form-label small fw-semibold text-muted">Nombre</label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    value={categoriaEditar ? categoriaEditar.nombre : nuevaCategoria.nombre}
-                    onChange={(e) =>
-                      categoriaEditar
-                        ? setCategoriaEditar({ ...categoriaEditar, nombre: e.target.value })
-                        : setNuevaCategoria({ ...nuevaCategoria, nombre: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label small fw-semibold text-muted">Descripción</label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    value={categoriaEditar ? (categoriaEditar.descripcion || "") : nuevaCategoria.descripcion}
-                    onChange={(e) =>
-                      categoriaEditar
-                        ? setCategoriaEditar({ ...categoriaEditar, descripcion: e.target.value })
-                        : setNuevaCategoria({ ...nuevaCategoria, descripcion: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="d-flex justify-content-end gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-light"
-                    onClick={() => {
-                      setModalCrearCategoria(false);
-                      setCategoriaEditar(null);
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-sm btn-success fw-bold">
-                    {categoriaEditar ? "Guardar Cambios" : "Crear"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Modal Eliminar */}
-      {categoriaEliminar && (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-dialog-centered modal-sm">
-            <div className="modal-content rounded-4 border-0 p-3 shadow text-center">
-              <h6 className="fw-bold text-danger mb-2">Eliminar Categoría</h6>
-              <p className="small text-muted mb-3">
-                ¿Seguro que deseas eliminar <strong>{categoriaEliminar.nombre}</strong>?
-              </p>
-              <div className="d-flex justify-content-center gap-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-light"
-                  onClick={() => setCategoriaEliminar(null)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-danger fw-bold"
-                  onClick={EliminarCategoria}
-                >
-                  Eliminar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      
+      {/* Modal de Categorías */}
+      <ModalCategoria
+        isOpen={modalCrearCategoria || Boolean(categoriaEditar)}
+        categoriaEditar={categoriaEditar}
+        categoriaEliminar={categoriaEliminar}
+        onClose={() => {
+          setModalCrearCategoria(false);
+          setCategoriaEditar(null);
+          setCategoriaEliminar(null);
+        }}
+        onSave={handleGuardarCategoria}
+        onDeleteConfirm={EliminarCategoria}
+      />
     </div>
   );
 
@@ -646,6 +468,7 @@ export default function Admin(): JSX.Element {
           <button
             type="button"
             className="btn btn-outline-success btn-sm fw-bold text-nowrap"
+            onClick={() => setModalCrearUsuario(true)}
           >
             + Nuevo Usuario
           </button>
@@ -730,151 +553,27 @@ export default function Admin(): JSX.Element {
           </tbody>
         </table>
       </div>
+        
+        {/* Modal Crear Usuario */}
+        <ModalCrearUsuario
+          isOpen={modalCrearUsuario}
+          onClose={() => setModalCrearUsuario(false)}
+          onSave={handleCrearUsuario}
+        />
 
-
-        {/* Box Para editar usuario  */}    
-        {usuarioAEditar && (
-        <div
-          className="modal fade show d-block"
-          tabIndex={-1}
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4 border-0 shadow">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold">Editar Usuario</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setUsuarioAEditar(null)}
-                ></button>
-              </div>
-              <form onSubmit={guardarEdicion}>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label small fw-semibold text-muted">
-                      Nombre Completo
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={usuarioAEditar.nombre}
-                      onChange={(e) =>
-                        setUsuarioAEditar({
-                          ...usuarioAEditar,
-                          nombre: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label small fw-semibold text-muted">
-                      Correo Electrónico
-                    </label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      value={usuarioAEditar.email}
-                      onChange={(e) =>
-                        setUsuarioAEditar({
-                          ...usuarioAEditar,
-                          email: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label small fw-semibold text-muted">
-                      Rol en el Sistema
-                    </label>
-                    <select
-                      className="form-select"
-                      value={usuarioAEditar.rol}
-                      onChange={(e) =>
-                        setUsuarioAEditar({
-                          ...usuarioAEditar,
-                          rol: e.target.value as "admin" | "usuario",
-                        })
-                      }
-                    >
-                      <option value="usuario">Paciente / Usuario</option>
-                      <option value="admin">Administrador</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="modal-footer border-0 pt-0">
-                  <button
-                    type="button"
-                    className="btn btn-light"
-                    onClick={() => setUsuarioAEditar(null)}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-success fw-bold">
-                    Guardar Cambios
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+        {/* Modal de usuarios (Editar/ Eliminar)  */}    
+        <ModalUsuario
+            usuarioEditar={usuarioAEditar}
+            usuarioEliminar={usuarioAEliminar}
+            onClose={() => {
+              setUsuarioAEditar(null);
+              setUsuarioAEliminar(null);
+            }}
+            onSave={guardarEdicion}
+            onDeleteConfirm={confirmarEliminacion}
+          />
         </div>
-      )}
-
-      {/* Box para eliminacion de usuario */}
-      {usuarioAEliminar && (
-        <div
-          className="modal fade show d-block"
-          tabIndex={-1}
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4 border-0 shadow">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold text-danger">
-                  Eliminar Usuario
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setUsuarioAEliminar(null)}
-                ></button>
-              </div>
-              <div className="modal-body py-3">
-                <p className="mb-1 text-dark">
-                  ¿Seguro que deseas eliminar a{" "}
-                  <strong>{usuarioAEliminar.nombre}</strong>?
-                </p>
-                <small className="text-muted">
-                  Correo: {usuarioAEliminar.email}. Esta acción no se puede deshacer.
-                </small>
-              </div>
-              <div className="modal-footer border-0 pt-0">
-                <button
-                  type="button"
-                  className="btn btn-light"
-                  onClick={() => setUsuarioAEliminar(null)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger fw-bold"
-                  onClick={confirmarEliminacion}
-                >
-                  Sí, eliminar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
+      );
 
   // Dynamic router logic to swap the main content
   const renderActiveContent = () => {

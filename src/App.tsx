@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import Article from "./pages/Article";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
+import Nutricionista from "./pages/Nutricionista"
 
 const App = () => {
   return (
@@ -32,7 +33,7 @@ const App = () => {
           <Route path="faq" element={<Faq />} />
           <Route path="testimonios" element={<Testimonios />} />
           <Route path="admin" element={<Admin />} />
-
+          <Route path="nutricionista" element={<Nutricionista />} />
           <Route path="blog" element={<Blog />} />
           <Route path="blog/:articleId" element={<Article />} />
 

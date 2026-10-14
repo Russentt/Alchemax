@@ -26,8 +26,10 @@ export default function Login() {
 
     if (usuarioValido.rol === "admin") {
       navigate("/admin");
+    } else if (usuarioValido.rol === "nutricionista") {
+      navigate("/nutricionista");
     } else {
-      navigate("/account");
+      navigate("/account")
     }
   };
   return (

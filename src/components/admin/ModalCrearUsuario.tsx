@@ -18,7 +18,7 @@ export default function ModalCrearUsuario({
         genero: "otro" as "masculino" | "femenino" | "otro",
         email: "",
         password: "",
-        rol: "usuario" as "admin" | "usuario",
+        rol: "usuario" as "admin" | "usuario" | "nutricionista",
     });
 
     if (!isOpen) return null;
@@ -130,13 +130,14 @@ export default function ModalCrearUsuario({
                     onChange={(e) =>
                         setForm({
                         ...form,
-                        rol: e.target.value as "admin" | "usuario",
+                        rol: e.target.value as "admin" | "usuario" | "nutricionista",
                         })
                     }
                     required
                     >
                     <option value="usuario">Paciente / Usuario</option>
                     <option value="admin">Administrador</option>
+                    <option value="nutricionista">Nutricionista</option>
                     </select>
                 </div>
                 </div>

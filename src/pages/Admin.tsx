@@ -519,10 +519,16 @@ export default function Admin(): JSX.Element {
                       className={`badge ${
                         u.rol === "admin"
                           ? "bg-danger-subtle text-danger"
+                          : u.rol === "nutricionista"
+                          ? "bg-success-subtle text-success fw-bold"
                           : "bg-primary-subtle text-primary"
                       }`}
                     >
-                      {u.rol === "admin" ? "Administrador" : "Paciente"}
+                      {u.rol === "admin" 
+                      ? "Administrador"
+                      : u.rol === "nutricionista"
+                      ? "nutricionista"
+                      : "Paciente"}
                     </span>
                   </td>
                   <td>

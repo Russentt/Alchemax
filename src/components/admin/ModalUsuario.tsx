@@ -135,12 +135,13 @@ export default function ModalUsuario({
                     onChange={(e) =>
                         setForm({
                         ...form,
-                        rol: e.target.value as "admin" | "usuario",
+                        rol: e.target.value as "admin" | "usuario" | "nutricionista",
                         })
                     }
                     >
                     <option value="usuario">Paciente / Usuario</option>
                     <option value="admin">Administrador</option>
+                    <option value="nutricionista">Nutricionista</option>
                     </select>
                 </div>
                 </div>

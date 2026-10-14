@@ -4,7 +4,7 @@ export interface Usuario {
   email: string;
   genero: "masculino" | "femenino" | "otro" | string;
   password?: string;
-  rol: "admin" | "usuario";
+  rol: "admin" | "usuario" | "nutricionista";
   fechaNacimiento: string;
 }
 

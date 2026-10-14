@@ -254,7 +254,7 @@ export default function Register() {
                   className={`form-control ${errors.email ? "is-invalid" : ""}`}
                   id="regEmail"
                   name="email"
-                  placeholder="tucorreo@duocuc.cl"
+                  placeholder="tucorreo@gmail.com"
                   value={formData.email}
                   onChange={handleChange}
                   required

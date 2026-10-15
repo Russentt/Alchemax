@@ -10,8 +10,7 @@ const catalogoServiciosPorDefecto: Servicio[] = [
   {
     id: "srv-01",
     nombre: "Evaluación Biométrica Inicial",
-    descripcion:
-      "Análisis InBody, revisión de exámenes y diagnóstico metabólico presencial.",
+    descripcion: "Análisis InBody, revisión de exámenes y diagnóstico metabólico presencial.",
     precio: 35000,
     tipo: "evaluacion",
     icono: "⚖️",
@@ -21,8 +20,7 @@ const catalogoServiciosPorDefecto: Servicio[] = [
   {
     id: "srv-02",
     nombre: "Plan Nutricional Deportivo",
-    descripcion:
-      "Pauta estructurada para recomposición corporal y rendimiento físico. Incluye 2 controles.",
+    descripcion: "Pauta estructurada para recomposición corporal y rendimiento físico. Incluye 2 controles.",
     precio: 120000,
     tipo: "plan",
     icono: "🏋️",
@@ -32,8 +30,7 @@ const catalogoServiciosPorDefecto: Servicio[] = [
   {
     id: "srv-03",
     nombre: "Control Telemedicina",
-    descripcion:
-      "Ajuste de pauta y seguimiento de progreso mediante videollamada de 30 minutos.",
+    descripcion: "Ajuste de pauta y seguimiento de progreso mediante videollamada de 30 minutos.",
     precio: 25000,
     tipo: "control",
     icono: "💻",
@@ -43,14 +40,73 @@ const catalogoServiciosPorDefecto: Servicio[] = [
   {
     id: "srv-04",
     nombre: "Plan Nutricional Clínico",
-    descripcion:
-      "Diseñado para patologías específicas (Resistencia a la insulina, hipertensión, celiaquía).",
+    descripcion: "Diseñado para patologías específicas (Resistencia a la insulina, hipertensión, celiaquía).",
     precio: 85000,
     tipo: "plan",
     icono: "🩺",
     categoriaId: "cat-04",
     estado: "Activo",
   },
+  {
+    id: "srv-05",
+    nombre: "Evaluación Antropométrica Avanzada",
+    descripcion: "Medición de pliegues cutáneos y perímetros mediante protocolo ISAK.",
+    precio: 45000,
+    tipo: "evaluacion",
+    icono: "📏",
+    categoriaId: "cat-01",
+    estado: "Activo",
+  },
+  {
+    id: "srv-06",
+    nombre: "Plan Familiar Mensual",
+    descripcion: "Pauta adaptada para todo el grupo familiar, optimizando la compra y preparación de alimentos.",
+    precio: 150000,
+    tipo: "plan",
+    icono: "👨‍👩‍👧‍👦",
+    categoriaId: "cat-02",
+    estado: "Activo",
+  },
+  {
+    id: "srv-07",
+    nombre: "Control Presencial",
+    descripcion: "Revisión presencial de avances, re-pesaje y ajuste de objetivos.",
+    precio: 30000,
+    tipo: "control",
+    icono: "🏥",
+    categoriaId: "cat-03",
+    estado: "Activo",
+  },
+  {
+    id: "srv-08",
+    nombre: "Asesoría en Suplementación",
+    descripcion: "Revisión y prescripción de suplementos deportivos y vitaminas según exámenes.",
+    precio: 40000,
+    tipo: "asesoria",
+    icono: "💊",
+    categoriaId: "cat-05",
+    estado: "Activo",
+  },
+  {
+    id: "srv-09",
+    nombre: "Plan Nutricional Vegano",
+    descripcion: "Transición y mantenimiento de dieta basada en plantas sin deficiencias nutricionales.",
+    precio: 90000,
+    tipo: "plan",
+    icono: "🌱",
+    categoriaId: "cat-02",
+    estado: "Activo",
+  },
+  {
+    id: "srv-10",
+    nombre: "Lectura Rápida de Exámenes",
+    descripcion: "Análisis preventivo de exámenes de sangre recientes vía telemedicina (15 min).",
+    precio: 15000,
+    tipo: "asesoria",
+    icono: "📄",
+    categoriaId: "cat-05",
+    estado: "Activo",
+  }
 ];
 
 export default function Metodologia(): JSX.Element {
@@ -86,6 +142,7 @@ export default function Metodologia(): JSX.Element {
     altura: "",
     objetivo: "mantener",
   });
+
   const [triageResult, setTriageResult] = useState<{
     imc: number;
     diagnostico: string;
@@ -97,6 +154,8 @@ export default function Metodologia(): JSX.Element {
     message: string;
     type: "success" | "warning";
   } | null>(null);
+
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todos");
 
   const handleTriageChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -177,6 +236,21 @@ export default function Metodologia(): JSX.Element {
       currency: "CLP",
     }).format(price);
   };
+
+  const serviciosFiltrados = catalogoServicios.filter((servicio) => {
+    if (filtroCategoria === "todos") return true;
+    return servicio.tipo === filtroCategoria;
+  });
+
+  const chunkArray = (arr: Servicio[], size: number) => {
+    const chunkedArr = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunkedArr.push(arr.slice(i, i + size));
+    }
+    return chunkedArr;
+  };
+
+  const carruselChunks = chunkArray(serviciosFiltrados, 4);
 
   return (
     <main className="flex-grow-1 bg-light position-relative">
@@ -373,84 +447,136 @@ export default function Metodologia(): JSX.Element {
       {/* CATÁLOGO CON MENÚ DESPLEGABLE DE CATEGORÍAS */}
       <section id="catalogo" className="py-5">
         <div className="container px-4 px-md-5">
-          <div className="row justify-content-between align-items-center mb-4">
-            <div className="col-md-8 text-center text-md-start mb-3 mb-md-0">
-              <h2 className="fw-bold text-dark mb-2">
-                Catálogo de Servicios Clínicos
-              </h2>
-              <p className="text-muted mb-0">
-                Selecciona el plan sugerido en tu Triage o filtra por categoría según tus metas.
-              </p>
-            </div>
-
-            <div className="col-md-4 col-lg-3">
-              <label
-                htmlFor="selectCategoria"
-                className="form-label text-muted fw-semibold small mb-1"
-              >
-                Filtrar por Categoría:
-              </label>
-              <select
-                id="selectCategoria"
-                className="form-select border-success border-opacity-50 rounded-pill shadow-sm py-2 px-3 fw-semibold text-secondary"
-                value={categoriaSeleccionada}
-                onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-              >
-                <option value="todas">📁 Todas las categorías</option>
-                {categorias.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="text-center mb-4">
+            <h2 className="fw-bold text-dark mb-3">
+              Catálogo de Servicios Clínicos
+            </h2>
+            <p className="text-muted">
+              Selecciona el plan sugerido en tu Triage o inicia con una evaluación general.
+            </p>
           </div>
 
-          <div className="row g-4 justify-content-center">
-            {serviciosFiltrados.length === 0 ? (
-              <div className="col-12 text-center py-5">
-                <div className="fs-1 text-muted mb-2">🔍</div>
-                <h5 className="text-muted fw-semibold">
-                  No hay servicios disponibles en esta categoría.
-                </h5>
-              </div>
-            ) : (
-              serviciosFiltrados.map((servicio) => (
-                <div key={servicio.id} className="col-12 col-md-6 col-lg-3">
-                  <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
-                    <div className="card-body p-4 d-flex flex-column">
-                      <div className="fs-1 mb-3">{servicio.icono}</div>
-                      <span
-                        className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
-                        style={{ fontSize: "0.65rem" }}
-                      >
-                        {servicio.tipo}
-                      </span>
-                      <h5 className="fw-bold text-dark mb-3">
-                        {servicio.nombre}
-                      </h5>
-                      <p className="text-muted small mb-4 flex-grow-1">
-                        {servicio.descripcion}
-                      </p>
-                      <div>
-                        <h4 className="fw-bold text-success mb-3">
-                          {formatPrice(servicio.precio)}
-                        </h4>
-                        <button
-                          onClick={() => handleAddToCart(servicio)}
-                          className="btn btn-outline-success w-100 fw-bold rounded-pill"
-                        >
-                          Agregar al Carrito
-                        </button>
-                      </div>
+          <div className="d-flex justify-content-center flex-wrap gap-2 mb-5">
+            <button
+              onClick={() => setFiltroCategoria("todos")}
+              className={`btn rounded-pill px-4 fw-semibold ${filtroCategoria === "todos" ? "btn-success" : "btn-outline-success"}`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setFiltroCategoria("evaluacion")}
+              className={`btn rounded-pill px-4 fw-semibold ${filtroCategoria === "evaluacion" ? "btn-success" : "btn-outline-success"}`}
+            >
+              Evaluaciones
+            </button>
+            <button
+              onClick={() => setFiltroCategoria("plan")}
+              className={`btn rounded-pill px-4 fw-semibold ${filtroCategoria === "plan" ? "btn-success" : "btn-outline-success"}`}
+            >
+              Planes Nutricionales
+            </button>
+            <button
+              onClick={() => setFiltroCategoria("control")}
+              className={`btn rounded-pill px-4 fw-semibold ${filtroCategoria === "control" ? "btn-success" : "btn-outline-success"}`}
+            >
+              Controles
+            </button>
+            <button
+              onClick={() => setFiltroCategoria("asesoria")}
+              className={`btn rounded-pill px-4 fw-semibold ${filtroCategoria === "asesoria" ? "btn-success" : "btn-outline-success"}`}
+            >
+              Asesorías
+            </button>
+          </div>
+
+          <div id="carruselServicios" className="carousel slide pb-5" data-bs-ride="false">
+            <div className="carousel-inner px-2 py-3">
+              {carruselChunks.length > 0 ? (
+                carruselChunks.map((chunk, index) => (
+                  <div key={index} className={`carousel-item ${index === 0 ? "active" : ""}`}>
+                    <div className="row g-4 justify-content-center">
+                      {chunk.map((servicio) => (
+                        <div key={servicio.id} className="col-12 col-md-6 col-lg-3">
+                          <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
+                            <div className="card-body p-4 d-flex flex-column">
+                              <div className="fs-1 mb-3">{servicio.icono}</div>
+                              <span
+                                className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
+                                style={{ fontSize: "0.65rem" }}
+                              >
+                                {servicio.tipo}
+                              </span>
+                              <h5 className="fw-bold text-dark mb-3">
+                                {servicio.nombre}
+                              </h5>
+                              <p className="text-muted small mb-4 flex-grow-1">
+                                {servicio.descripcion}
+                              </p>
+                              <div>
+                                <h4 className="fw-bold text-success mb-3">
+                                  {formatPrice(servicio.precio)}
+                                </h4>
+                                <button
+                                  onClick={() => handleAddToCart(servicio)}
+                                  className="btn btn-outline-success w-100 fw-bold rounded-pill"
+                                >
+                                  Agregar al Carrito
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center text-muted py-5">
+                  <p>No hay servicios disponibles en esta categoría.</p>
                 </div>
-              ))
+              )}
+            </div>
+
+            {carruselChunks.length > 1 && (
+              <>
+                <button
+                  className="carousel-control-prev"
+                  type="button"
+                  data-bs-target="#carruselServicios"
+                  data-bs-slide="prev"
+                  style={{ width: "5%", filter: "invert(100%)" }}
+                >
+                  <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+                  <span className="visually-hidden">Anterior</span>
+                </button>
+                <button
+                  className="carousel-control-next"
+                  type="button"
+                  data-bs-target="#carruselServicios"
+                  data-bs-slide="next"
+                  style={{ width: "5%", filter: "invert(100%)" }}
+                >
+                  <span className="carousel-control-next-icon" aria-hidden="true"></span>
+                  <span className="visually-hidden">Siguiente</span>
+                </button>
+                <div className="carousel-indicators" style={{ bottom: "-20px", filter: "invert(100%)" }}>
+                  {carruselChunks.map((_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      data-bs-target="#carruselServicios"
+                      data-bs-slide-to={index}
+                      className={index === 0 ? "active" : ""}
+                      aria-current={index === 0 ? "true" : "false"}
+                      aria-label={`Slide ${index + 1}`}
+                    ></button>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
-          <div className="text-center mt-5">
+          <div className="text-center mt-4">
             <Link
               to="/carrito"
               className="btn btn-dark btn-lg fw-bold px-5 rounded-pill shadow-sm"

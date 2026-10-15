@@ -332,11 +332,13 @@ export default function Navbar(): JSX.Element {
                 ) : (
                   <>
                     <Link
-                      to="/account"
+                      to={rutaPerfil}
                       className="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto text-nowrap"
                       onClick={handleLinkClick}
                     >
-                      Mi Perfil
+                      {sesionActual?.rol === "nutricionista" || sesionActual?.rol === "admin"
+                        ? "Mi Perfil"
+                        : "Mi Perfil"}
                     </Link>
                     <button
                       type="button"

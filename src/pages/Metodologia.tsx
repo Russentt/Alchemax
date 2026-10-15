@@ -1,10 +1,12 @@
-import React, { useState, type JSX } from "react";
+import React, { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { Servicio } from "../data/types";
+import type { Categoria, Servicio } from "../data/types";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
+import { StorageCategorias } from "../services/storageCategorias";
+import { StorageServicios } from "../services/storageProductos";
 
-const catalogoServicios: Servicio[] = [
+const catalogoServiciosPorDefecto: Servicio[] = [
   {
     id: "srv-01",
     nombre: "Evaluación Biométrica Inicial",
@@ -109,6 +111,31 @@ const catalogoServicios: Servicio[] = [
 
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
+
+  // Estados de servicios y categorías cargados de Storage
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>("todas");
+
+  useEffect(() => {
+    //  Obtener categorías desde db_categorias
+    const catsGuardadas = StorageCategorias.getCategorias();
+    setCategorias(catsGuardadas || []);
+
+    //  Obtener servicios desde db_servicios o catálogo por defecto
+    const srvsGuardados = StorageServicios.getServicios();
+    if (srvsGuardados && srvsGuardados.length > 0) {
+      setServicios(srvsGuardados.filter((s) => s.estado === "Activo"));
+    } else {
+      setServicios(catalogoServiciosPorDefecto);
+    }
+  }, []);
+
+  // Filtrado según la categoría elegida en el menú desplegable
+  const serviciosFiltrados = servicios.filter((servicio) => {
+    if (categoriaSeleccionada === "todas") return true;
+    return servicio.categoriaId === categoriaSeleccionada;
+  });
 
   const [triageForm, setTriageForm] = useState({
     peso: "",
@@ -281,7 +308,7 @@ export default function Metodologia(): JSX.Element {
               </p>
             </div>
             <div className="col-lg-5 offset-lg-1 d-none d-lg-block text-center">
-              <div className="fs-1" style={{ fontSize: "8rem !important" }}>
+              <div className="fs-1" style={{ fontSize: "8rem" }}>
                 🧬
               </div>
             </div>
@@ -417,6 +444,7 @@ export default function Metodologia(): JSX.Element {
         </div>
       </section>
 
+      {/* CATÁLOGO CON MENÚ DESPLEGABLE DE CATEGORÍAS */}
       <section id="catalogo" className="py-5">
         <div className="container px-4 px-md-5">
           <div className="text-center mb-4">

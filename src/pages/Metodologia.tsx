@@ -1,10 +1,9 @@
 import React, { useState, type JSX } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import type { Servicio } from "../data/types";
-
 import { TiendaService } from "../services/tiendaService";
+import { StorageUsuario } from "../services/storageUsuario";
 
-// The catalog is now strictly typed using the interface from StorageService
 const catalogoServicios: Servicio[] = [
   {
     id: "srv-01",
@@ -14,6 +13,8 @@ const catalogoServicios: Servicio[] = [
     precio: 35000,
     tipo: "evaluacion",
     icono: "⚖️",
+    categoriaId: "cat-01",
+    estado: "Activo",
   },
   {
     id: "srv-02",
@@ -23,6 +24,8 @@ const catalogoServicios: Servicio[] = [
     precio: 120000,
     tipo: "plan",
     icono: "🏋️",
+    categoriaId: "cat-02",
+    estado: "Activo",
   },
   {
     id: "srv-03",
@@ -32,6 +35,8 @@ const catalogoServicios: Servicio[] = [
     precio: 25000,
     tipo: "control",
     icono: "💻",
+    categoriaId: "cat-03",
+    estado: "Activo",
   },
   {
     id: "srv-04",
@@ -41,10 +46,14 @@ const catalogoServicios: Servicio[] = [
     precio: 85000,
     tipo: "plan",
     icono: "🩺",
+    categoriaId: "cat-04",
+    estado: "Activo",
   },
 ];
 
 export default function Metodologia(): JSX.Element {
+  const navigate = useNavigate();
+
   const [triageForm, setTriageForm] = useState({
     peso: "",
     altura: "",
@@ -57,7 +66,6 @@ export default function Metodologia(): JSX.Element {
     recomendacion: string;
   } | null>(null);
 
-  // Highly visible Toast state
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "warning";
@@ -109,16 +117,28 @@ export default function Metodologia(): JSX.Element {
   };
 
   const handleAddToCart = (servicio: Servicio) => {
-    // 1. Save to the database
+    const sesionActual = StorageUsuario.getUsuarioSesion();
+
+    if (!sesionActual) {
+      setNotification({
+        message: "Debes iniciar sesión para agregar servicios al carrito.",
+        type: "warning",
+      });
+
+      setTimeout(() => {
+        setNotification(null);
+        navigate("/login");
+      }, 2500);
+      return;
+    }
+
     TiendaService.agregarAlCarrito(servicio);
 
-    // 2. Trigger highly visible notification
     setNotification({
       message: `¡"${servicio.nombre}" se ha añadido a tu carrito correctamente! Puedes ir a pagar para asignarlo a tu cuenta.`,
       type: "success",
     });
 
-    // 3. Persist for 15 seconds
     setTimeout(() => {
       setNotification(null);
     }, 15000);
@@ -133,7 +153,6 @@ export default function Metodologia(): JSX.Element {
 
   return (
     <main className="flex-grow-1 bg-light position-relative">
-      {/* GLOBAL TOAST NOTIFICATION OVERLAY - Persists for 15s */}
       {notification && (
         <div
           className="position-fixed top-0 end-0 p-4 animation-fade-in"
@@ -156,19 +175,20 @@ export default function Metodologia(): JSX.Element {
                 aria-label="Close"
               ></button>
             </div>
-            <div className="px-3 pb-2 text-end">
-              <Link
-                to="/carrito"
-                className="btn btn-light btn-sm fw-bold text-success rounded-pill px-3 shadow-sm"
-              >
-                Ir al carrito ahora
-              </Link>
-            </div>
+            {notification.type === "success" && (
+              <div className="px-3 pb-2 text-end">
+                <Link
+                  to="/carrito"
+                  className="btn btn-light btn-sm fw-bold text-success rounded-pill px-3 shadow-sm"
+                >
+                  Ir al carrito ahora
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* HERO / METHODOLOGY EXPLANATION */}
       <section className="bg-success text-white py-5">
         <div className="container py-4 px-4 px-md-5">
           <div className="row align-items-center">
@@ -195,7 +215,6 @@ export default function Metodologia(): JSX.Element {
         </div>
       </section>
 
-      {/* CLINICAL TRIAGE CALCULATOR */}
       <section className="py-5 bg-white border-bottom">
         <div className="container px-4 px-md-5">
           <div className="row justify-content-center">
@@ -324,7 +343,6 @@ export default function Metodologia(): JSX.Element {
         </div>
       </section>
 
-      {/* DYNAMIC SERVICE CATALOG */}
       <section id="catalogo" className="py-5">
         <div className="container px-4 px-md-5">
           <div className="text-center mb-5">

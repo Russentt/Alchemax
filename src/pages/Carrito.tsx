@@ -2,6 +2,8 @@ import { useState, useEffect, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Servicio, Compra } from "../data/types";
 import { StorageUsuario } from "../services/storageUsuario";
+// 1. [SOLID] Importamos nuestro servicio que ahora es la única "fuente de la verdad"
+import { TiendaService } from "../services/tiendaService";
 
 export default function Carrito(): JSX.Element {
   const [carrito, setCarrito] = useState<Servicio[]>([]);
@@ -12,8 +14,9 @@ export default function Carrito(): JSX.Element {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem("db_carrito") || "[]");
-    setCarrito(storedCart);
+    // 2. [KISS] En lugar de parsear localStorage, le pedimos los datos al servicio.
+    // El servicio ya se encarga de filtrar por el usuario logeado y desempaquetar la data.
+    setCarrito(TiendaService.getCarrito());
   }, []);
 
   const showToast = (message: string, type: "success" | "warning") => {
@@ -24,9 +27,10 @@ export default function Carrito(): JSX.Element {
   };
 
   const handleRemoveItem = (id: string) => {
-    const updatedCart = carrito.filter((item) => item.id !== id);
-    localStorage.setItem("db_carrito", JSON.stringify(updatedCart));
-    setCarrito(updatedCart);
+    // 3. [DRY] Usamos la lógica centralizada del servicio para eliminar de la DB
+    TiendaService.removerDelCarrito(id);
+    // Luego actualizamos la vista pidiendo de nuevo el carrito actualizado
+    setCarrito(TiendaService.getCarrito());
 
     showToast("Servicio removido del carrito de compras.", "warning");
   };
@@ -34,10 +38,8 @@ export default function Carrito(): JSX.Element {
   const handleCheckout = () => {
     if (carrito.length === 0) return;
 
-    // Verificamos la sesión activa desde StorageUsuario (o sessionStorage como respaldo)
-    const sessionUser =
-      StorageUsuario.getUsuarioSesion() ||
-      sessionStorage.getItem("session_user");
+    // Verificamos la sesión activa desde StorageUsuario
+    const sessionUser = StorageUsuario.getUsuarioSesion();
 
     if (!sessionUser) {
       showToast(
@@ -47,10 +49,6 @@ export default function Carrito(): JSX.Element {
       setTimeout(() => navigate("/login"), 2500);
       return;
     }
-
-    const existingCompras: Compra[] = JSON.parse(
-      localStorage.getItem("db_compras") || "[]",
-    );
 
     const nuevasCompras: Compra[] = carrito.map((item) => ({
       id: `c-${crypto.randomUUID()}`,
@@ -65,12 +63,13 @@ export default function Carrito(): JSX.Element {
       estado: "Activo",
     }));
 
-    localStorage.setItem(
-      "db_compras",
-      JSON.stringify([...nuevasCompras, ...existingCompras]),
-    );
+    // 4. [SOLID] Registramos cada compra a través del servicio, él se encarga de la estructura relacional
+    nuevasCompras.forEach((compra) => {
+      TiendaService.registrarCompra(compra);
+    });
 
-    localStorage.setItem("db_carrito", JSON.stringify([]));
+    // 5. Vaciamos el carrito en la DB usando el servicio y luego limpiamos el estado local
+    TiendaService.vaciarCarrito();
     setCarrito([]);
 
     showToast(
@@ -137,7 +136,6 @@ export default function Carrito(): JSX.Element {
             </Link>
           </li>
           <li className="breadcrumb-item">
-            {/* 1. Actualización en el Breadcrumb */}
             <Link
               to="/metodologia#catalogo"
               className="text-success text-decoration-none"
@@ -169,7 +167,6 @@ export default function Carrito(): JSX.Element {
                   Aún no has agregado ningún plan o evaluación clínica desde
                   nuestro catálogo.
                 </p>
-                {/* 2. Actualización cuando el carrito está vacío */}
                 <Link
                   to="/metodologia#catalogo"
                   className="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm"
@@ -209,7 +206,6 @@ export default function Carrito(): JSX.Element {
                   </div>
                 ))}
 
-                {/* 3. Nuevo botón para seguir comprando */}
                 <div className="mt-4 text-start">
                   <Link
                     to="/metodologia#catalogo"

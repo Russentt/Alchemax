@@ -6,12 +6,15 @@ import type {
   PlanNutricional,
   Metrica,
   Examen,
+  Compra,
 } from "../data/types";
 
 import { StorageInit } from "../services/storage_init";
 import { StorageUsuario } from "../services/storageUsuario";
 import { CitasService } from "../services/citasService";
 import { PlanService } from "../services/planService";
+// 1. [SOLID] Importamos TiendaService para leer las compras reales
+import { TiendaService } from "../services/tiendaService";
 
 export type AccountTab =
   | "resumen"
@@ -30,6 +33,8 @@ export default function Account(): JSX.Element {
   const [plan, setPlan] = useState<PlanNutricional | null>(null);
   const [metricas, setMetricas] = useState<Metrica[]>([]);
   const [examenes, setExamenes] = useState<Examen[]>([]);
+  // 2. Estado para almacenar las compras reales
+  const [compras, setCompras] = useState<Compra[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
@@ -60,7 +65,6 @@ export default function Account(): JSX.Element {
   useEffect(() => {
     StorageInit.initDB();
 
-    // 1. Verificamos de inmediato si existe una sesión activa real
     const sesionActiva = StorageUsuario.getUsuarioSesion();
     if (!sesionActiva) {
       navigate("/login", { replace: true });
@@ -78,13 +82,13 @@ export default function Account(): JSX.Element {
       setUsuario(dbUser);
       setProfileForm(dbUser);
 
-      // 2. Cargar citas desde CitasService
       setCitas(CitasService.getCitas());
-
-      // Cargar datos desde PlanService
       setPlan(PlanService.getPlan());
       setMetricas(PlanService.getMetricas());
       setExamenes(PlanService.getExamenes());
+
+      // 3. Obtenemos las compras reales de este usuario
+      setCompras(TiendaService.getCompras());
 
       setIsLoading(false);
     }, 600);
@@ -93,10 +97,9 @@ export default function Account(): JSX.Element {
   }, [navigate]);
 
   const getTabClass = (tabName: AccountTab) =>
-    `nav-link fw-semibold rounded-3 px-3 py-2 text-start w-100 border-0 ${
-      activeTab === tabName
-        ? "active bg-success text-white"
-        : "text-dark bg-light"
+    `nav-link fw-semibold rounded-3 px-3 py-2 text-start w-100 border-0 ${activeTab === tabName
+      ? "active bg-success text-white"
+      : "text-dark bg-light"
     }`;
 
   const showNotification = (
@@ -132,7 +135,6 @@ export default function Account(): JSX.Element {
     setPasswordError("");
 
     if (profileForm) {
-      // Si el usuario activó el botón "Cambiar contraseña", validamos las 3 casillas
       if (isChangingPassword) {
         if (
           !passwordActual.trim() ||
@@ -304,6 +306,14 @@ export default function Account(): JSX.Element {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // 4. [KISS] Helper para formatear los precios
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+    }).format(price);
+  };
+
   const renderResumen = () => (
     <>
       <div className="row g-4 mb-4">
@@ -444,7 +454,6 @@ export default function Account(): JSX.Element {
                     />
                   </div>
                 </div>
-                {/* 1. Fecha de nacimiento bloqueada y en gris */}
                 <div className="mb-3 row">
                   <label className="col-sm-4 col-form-label text-muted fw-semibold">
                     Fecha de Nac.
@@ -467,7 +476,6 @@ export default function Account(): JSX.Element {
                   </div>
                 </div>
 
-                {/* 2. Sección desplegable para cambiar contraseña */}
                 <div className="mb-3 row align-items-center">
                   <label className="col-sm-4 col-form-label text-muted fw-semibold">
                     Contraseña
@@ -909,36 +917,51 @@ export default function Account(): JSX.Element {
             Ver Catálogo
           </Link>
         </div>
-        <div className="table-responsive">
-          <table className="table align-middle">
-            <thead className="table-light">
-              <tr>
-                <th>Producto / Servicio</th>
-                <th>Fecha de Compra</th>
-                <th>Estado</th>
-                <th>Monto</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="fw-semibold">
-                  Evaluación Biométrica Presencial
-                </td>
-                <td className="text-muted">10 Oct 2026</td>
-                <td>
-                  <span className="badge bg-success">Activo</span>
-                </td>
-                <td>\$35.000</td>
-                <td>
-                  <button className="btn btn-sm btn-light text-success fw-semibold border">
-                    Agendar Hora
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+
+        {/* 5. Agregamos validación visual si no hay compras */}
+        {compras.length === 0 ? (
+          <div className="text-center py-5">
+            <div className="fs-1 mb-3">🛍️</div>
+            <h6 className="fw-bold text-dark mb-2">Aún no tienes servicios activos</h6>
+            <p className="text-muted small">Explora nuestro catálogo y comienza tu tratamiento.</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>Producto / Servicio</th>
+                  <th>Fecha de Compra</th>
+                  <th>Estado</th>
+                  <th>Monto</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* 6. [DRY] Mapeamos las compras reales obtenidas del servicio */}
+                {compras.map((compra) => (
+                  <tr key={compra.id}>
+                    <td className="fw-semibold">
+                      {compra.nombre}
+                    </td>
+                    <td className="text-muted">{compra.fechaCompra}</td>
+                    <td>
+                      <span className={`badge ${compra.estado === "Activo" ? "bg-success" : "bg-secondary"}`}>
+                        {compra.estado}
+                      </span>
+                    </td>
+                    <td>{formatPrice(compra.monto)}</td>
+                    <td>
+                      <button className="btn btn-sm btn-light text-success fw-semibold border">
+                        Agendar Hora
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   };

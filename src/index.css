@@ -1,10 +1,4 @@
-/* ==========================================================================
-   NUTRIVIDA / ALCHEMAX - CORE DESIGN SYSTEM
-   Powered by CSS Variables & Hardware-Accelerated Animations
-   ========================================================================== */
-
 :root {
-  /* Paleta de Colores (Salud, Vitalidad, Minimalismo) */
   --color-bg-base: #fafafa;
   --color-surface: #ffffff;
   --color-text-primary: #1d1d1f;
@@ -15,14 +9,12 @@
   --color-brand-light: #e8f5e9;
   --color-brand-glass: rgba(46, 204, 113, 0.08);
 
-  /* Tokens de Diseño (Apple Style) */
   --radius-sm: 12px;
   --radius-lg: 32px;
   --shadow-sm: 0 4px 15px rgba(0,0,0,0.03);
   --shadow-glass: 0 10px 40px rgba(0,0,0,0.04);
   --shadow-kinetic: 0 10px 30px rgba(39, 174, 96, 0.35);
   
-  /* Curvas de Animación Cinética */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: ease-in-out;
 }

@@ -58,7 +58,7 @@ export interface Servicio {
   nombre: string;
   descripcion: string;
   precio: number;
-  tipo: "evaluacion" | "plan" | "control";
+  tipo: "evaluacion" | "plan" | "control" | "asesoria";
   icono: string;
   categoriaId: string;
   categoriaNombre?: string;

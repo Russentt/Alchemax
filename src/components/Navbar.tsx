@@ -8,13 +8,16 @@ export default function Navbar(): JSX.Element {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
+  const [isMethodDropdownOpen, setIsMethodDropdownOpen] = useState<boolean>(false);
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const recursosRef = useRef<HTMLLIElement>(null);
+  const metodRef = useRef<HTMLLIElement>(null);
+  const timeoutRef = useRef<number | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Sincroniza el estado de la sesión cada vez que el usuario navega entre páginas
   useEffect(() => {
     const sesion =
       StorageUsuario.getUsuarioSesion() ||
@@ -32,6 +35,7 @@ export default function Navbar(): JSX.Element {
       } else {
         setIsVisible(false);
         setIsDropdownOpen(false);
+        setIsMethodDropdownOpen(false);
       }
       lastScrollY = currentScrollY;
     };
@@ -46,6 +50,9 @@ export default function Navbar(): JSX.Element {
       if (recursosRef.current && !recursosRef.current.contains(target)) {
         setIsDropdownOpen(false);
       }
+      if (metodRef.current && !metodRef.current.contains(target)) {
+        setIsMethodDropdownOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -55,6 +62,7 @@ export default function Navbar(): JSX.Element {
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
+    setIsMethodDropdownOpen(false);
   };
 
   const handleLogout = () => {
@@ -71,7 +79,36 @@ export default function Navbar(): JSX.Element {
     setIsDropdownOpen((prev) => !prev);
   };
 
-  // Funciones para pintar de verde la sección activa en el header
+  const handleMethodMouseEnter = () => {
+    if (window.innerWidth >= 992) {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = window.setTimeout(() => {
+        setIsMethodDropdownOpen(true);
+      }, 500);
+    }
+  };
+
+  const handleMethodMouseLeave = () => {
+    if (window.innerWidth >= 992) {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = window.setTimeout(() => {
+        setIsMethodDropdownOpen(false);
+      }, 300);
+    }
+  };
+
+  const toggleMetodologiaMobile = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (window.innerWidth < 992) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsMethodDropdownOpen((prev) => !prev);
+    }
+  };
+
   const getNavLinkClass = (path: string, hash: string = "") => {
     const isActive = hash
       ? location.pathname === path && location.hash === hash
@@ -83,6 +120,10 @@ export default function Navbar(): JSX.Element {
     location.pathname === "/faq" ||
     location.pathname === "/telemedicina" ||
     location.pathname.startsWith("/blog");
+
+  const isMetodologiaActive =
+    location.pathname === "/metodologia" ||
+    location.pathname === "/carrito";
 
   const shouldShow = isVisible || isHovered || isMobileMenuOpen;
 
@@ -126,9 +167,8 @@ export default function Navbar(): JSX.Element {
             </button>
 
             <div
-              className={`collapse navbar-collapse justify-content-end mt-3 mt-lg-0 ${
-                isMobileMenuOpen ? "show" : ""
-              }`}
+              className={`collapse navbar-collapse justify-content-end mt-3 mt-lg-0 ${isMobileMenuOpen ? "show" : ""
+                }`}
               style={
                 isMobileMenuOpen
                   ? { maxHeight: "calc(100vh - 80px)", overflowY: "auto" }
@@ -145,15 +185,57 @@ export default function Navbar(): JSX.Element {
                     Servicios
                   </Link>
                 </li>
-                <li className="nav-item w-100 w-lg-auto">
+
+                <li
+                  className="nav-item dropdown w-100 w-lg-auto"
+                  ref={metodRef}
+                  onMouseEnter={handleMethodMouseEnter}
+                  onMouseLeave={handleMethodMouseLeave}
+                >
                   <Link
                     to="/metodologia"
-                    className={getNavLinkClass("/metodologia")}
-                    onClick={handleLinkClick}
+                    className={`nav-link w-100 ${isMetodologiaActive ? "text-success fw-bold" : ""}`}
+                    onClick={toggleMetodologiaMobile}
+                    aria-expanded={isMethodDropdownOpen}
                   >
                     Nuestro Método
                   </Link>
+                  <ul
+                    className={`dropdown-menu border-0 shadow-sm text-center text-lg-start ${isMethodDropdownOpen ? "show" : ""
+                      }`}
+                    style={{
+                      display: isMethodDropdownOpen ? "block" : "none",
+                      marginTop: "0.5rem",
+                      position: isMobileMenuOpen ? "static" : "absolute",
+                    }}
+                  >
+                    <li>
+                      <Link
+                        className={`dropdown-item py-2 ${location.pathname === "/metodologia"
+                          ? "text-success fw-bold bg-light"
+                          : ""
+                          }`}
+                        to="/metodologia"
+                        onClick={handleLinkClick}
+                      >
+                        Ver Catálogo
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        className={`dropdown-item py-2 ${location.pathname === "/carrito"
+                          ? "text-success fw-bold bg-light"
+                          : ""
+                          }`}
+                        to="/carrito"
+                        onClick={handleLinkClick}
+                      >
+                        Ir al Carrito 🛒
+                      </Link>
+                    </li>
+                  </ul>
                 </li>
+
                 <li className="nav-item w-100 w-lg-auto">
                   <Link
                     to="/testimonios"
@@ -170,18 +252,16 @@ export default function Navbar(): JSX.Element {
                 >
                   <a
                     href="#recursos"
-                    className={`nav-link dropdown-toggle w-100 ${
-                      isRecursosActive ? "text-success fw-bold" : ""
-                    }`}
+                    className={`nav-link dropdown-toggle w-100 ${isRecursosActive ? "text-success fw-bold" : ""
+                      }`}
                     onClick={toggleRecursos}
                     aria-expanded={isDropdownOpen}
                   >
                     Recursos
                   </a>
                   <ul
-                    className={`dropdown-menu border-0 shadow-sm text-center text-lg-start ${
-                      isDropdownOpen ? "show" : ""
-                    }`}
+                    className={`dropdown-menu border-0 shadow-sm text-center text-lg-start ${isDropdownOpen ? "show" : ""
+                      }`}
                     style={{
                       display: isDropdownOpen ? "block" : "none",
                       marginTop: "0.5rem",
@@ -190,11 +270,10 @@ export default function Navbar(): JSX.Element {
                   >
                     <li>
                       <Link
-                        className={`dropdown-item py-2 ${
-                          location.pathname === "/faq"
-                            ? "text-success fw-bold bg-light"
-                            : ""
-                        }`}
+                        className={`dropdown-item py-2 ${location.pathname === "/faq"
+                          ? "text-success fw-bold bg-light"
+                          : ""
+                          }`}
                         to="/faq"
                         onClick={handleLinkClick}
                       >
@@ -203,11 +282,10 @@ export default function Navbar(): JSX.Element {
                     </li>
                     <li>
                       <Link
-                        className={`dropdown-item py-2 ${
-                          location.pathname === "/telemedicina"
-                            ? "text-success fw-bold bg-light"
-                            : ""
-                        }`}
+                        className={`dropdown-item py-2 ${location.pathname === "/telemedicina"
+                          ? "text-success fw-bold bg-light"
+                          : ""
+                          }`}
                         to="/telemedicina"
                         onClick={handleLinkClick}
                       >
@@ -219,11 +297,10 @@ export default function Navbar(): JSX.Element {
                     </li>
                     <li>
                       <Link
-                        className={`dropdown-item py-2 ${
-                          location.pathname.startsWith("/blog")
-                            ? "text-success fw-bold bg-light"
-                            : ""
-                        }`}
+                        className={`dropdown-item py-2 ${location.pathname.startsWith("/blog")
+                          ? "text-success fw-bold bg-light"
+                          : ""
+                          }`}
                         to="/blog"
                         onClick={handleLinkClick}
                       >

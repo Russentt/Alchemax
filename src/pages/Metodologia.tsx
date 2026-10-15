@@ -1,10 +1,12 @@
-import React, { useState, type JSX } from "react";
+import React, { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { Servicio } from "../data/types";
+import type { Categoria, Servicio } from "../data/types";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
+import { StorageCategorias } from "../services/storageCategorias";
+import { StorageServicios } from "../services/storageProductos";
 
-const catalogoServicios: Servicio[] = [
+const catalogoServiciosPorDefecto: Servicio[] = [
   {
     id: "srv-01",
     nombre: "Evaluación Biométrica Inicial",
@@ -53,6 +55,31 @@ const catalogoServicios: Servicio[] = [
 
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
+
+  // Estados de servicios y categorías cargados de Storage
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>("todas");
+
+  useEffect(() => {
+    //  Obtener categorías desde db_categorias
+    const catsGuardadas = StorageCategorias.getCategorias();
+    setCategorias(catsGuardadas || []);
+
+    //  Obtener servicios desde db_servicios o catálogo por defecto
+    const srvsGuardados = StorageServicios.getServicios();
+    if (srvsGuardados && srvsGuardados.length > 0) {
+      setServicios(srvsGuardados.filter((s) => s.estado === "Activo"));
+    } else {
+      setServicios(catalogoServiciosPorDefecto);
+    }
+  }, []);
+
+  // Filtrado según la categoría elegida en el menú desplegable
+  const serviciosFiltrados = servicios.filter((servicio) => {
+    if (categoriaSeleccionada === "todas") return true;
+    return servicio.categoriaId === categoriaSeleccionada;
+  });
 
   const [triageForm, setTriageForm] = useState({
     peso: "",
@@ -207,7 +234,7 @@ export default function Metodologia(): JSX.Element {
               </p>
             </div>
             <div className="col-lg-5 offset-lg-1 d-none d-lg-block text-center">
-              <div className="fs-1" style={{ fontSize: "8rem !important" }}>
+              <div className="fs-1" style={{ fontSize: "8rem" }}>
                 🧬
               </div>
             </div>
@@ -343,51 +370,84 @@ export default function Metodologia(): JSX.Element {
         </div>
       </section>
 
+      {/* CATÁLOGO CON MENÚ DESPLEGABLE DE CATEGORÍAS */}
       <section id="catalogo" className="py-5">
         <div className="container px-4 px-md-5">
-          <div className="text-center mb-5">
-            <h2 className="fw-bold text-dark mb-3">
-              Catálogo de Servicios Clínicos
-            </h2>
-            <p className="text-muted">
-              Selecciona el plan sugerido en tu Triage o inicia con una
-              evaluación general.
-            </p>
+          <div className="row justify-content-between align-items-center mb-4">
+            <div className="col-md-8 text-center text-md-start mb-3 mb-md-0">
+              <h2 className="fw-bold text-dark mb-2">
+                Catálogo de Servicios Clínicos
+              </h2>
+              <p className="text-muted mb-0">
+                Selecciona el plan sugerido en tu Triage o filtra por categoría según tus metas.
+              </p>
+            </div>
+
+            <div className="col-md-4 col-lg-3">
+              <label
+                htmlFor="selectCategoria"
+                className="form-label text-muted fw-semibold small mb-1"
+              >
+                Filtrar por Categoría:
+              </label>
+              <select
+                id="selectCategoria"
+                className="form-select border-success border-opacity-50 rounded-pill shadow-sm py-2 px-3 fw-semibold text-secondary"
+                value={categoriaSeleccionada}
+                onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+              >
+                <option value="todas">📁 Todas las categorías</option>
+                {categorias.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="row g-4 justify-content-center">
-            {catalogoServicios.map((servicio) => (
-              <div key={servicio.id} className="col-12 col-md-6 col-lg-3">
-                <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
-                  <div className="card-body p-4 d-flex flex-column">
-                    <div className="fs-1 mb-3">{servicio.icono}</div>
-                    <span
-                      className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
-                      style={{ fontSize: "0.65rem" }}
-                    >
-                      {servicio.tipo}
-                    </span>
-                    <h5 className="fw-bold text-dark mb-3">
-                      {servicio.nombre}
-                    </h5>
-                    <p className="text-muted small mb-4 flex-grow-1">
-                      {servicio.descripcion}
-                    </p>
-                    <div>
-                      <h4 className="fw-bold text-success mb-3">
-                        {formatPrice(servicio.precio)}
-                      </h4>
-                      <button
-                        onClick={() => handleAddToCart(servicio)}
-                        className="btn btn-outline-success w-100 fw-bold rounded-pill"
+            {serviciosFiltrados.length === 0 ? (
+              <div className="col-12 text-center py-5">
+                <div className="fs-1 text-muted mb-2">🔍</div>
+                <h5 className="text-muted fw-semibold">
+                  No hay servicios disponibles en esta categoría.
+                </h5>
+              </div>
+            ) : (
+              serviciosFiltrados.map((servicio) => (
+                <div key={servicio.id} className="col-12 col-md-6 col-lg-3">
+                  <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
+                    <div className="card-body p-4 d-flex flex-column">
+                      <div className="fs-1 mb-3">{servicio.icono}</div>
+                      <span
+                        className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
+                        style={{ fontSize: "0.65rem" }}
                       >
-                        Agregar al Carrito
-                      </button>
+                        {servicio.tipo}
+                      </span>
+                      <h5 className="fw-bold text-dark mb-3">
+                        {servicio.nombre}
+                      </h5>
+                      <p className="text-muted small mb-4 flex-grow-1">
+                        {servicio.descripcion}
+                      </p>
+                      <div>
+                        <h4 className="fw-bold text-success mb-3">
+                          {formatPrice(servicio.precio)}
+                        </h4>
+                        <button
+                          onClick={() => handleAddToCart(servicio)}
+                          className="btn btn-outline-success w-100 fw-bold rounded-pill"
+                        >
+                          Agregar al Carrito
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           <div className="text-center mt-5">

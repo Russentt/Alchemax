@@ -49,17 +49,6 @@ const catalogoServicios: Servicio[] = [
     categoriaId: "cat-04",
     estado: "Activo",
   },
-  {
-    id: "srv-05",
-    nombre: "Plan Nutricional Clínico",
-    descripcion:
-      "Diseñado para patologías específicas (Resistencia a la insulina, hipertensión, celiaquía).",
-    precio: 85000,
-    tipo: "plan",
-    icono: "🩺",
-    categoriaId: "cat-05",
-    estado: "Activo",
-  },
 ];
 
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {

@@ -14,6 +14,24 @@ export default function Navbar(): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // obtener datos de la sesión para saber el rol
+  const sesionActual = StorageUsuario.getUsuarioSesion();
+
+  useEffect(() => {
+    const sesion =
+      StorageUsuario.getUsuarioSesion() ||
+      sessionStorage.getItem("session_user");
+    setIsAuthenticated(!!sesion);
+  }, [location]);
+
+  // ruta de perfil según el rol
+  const rutaPerfil =
+    sesionActual?.rol === "admin"
+      ? "/admin"
+      : sesionActual?.rol === "nutricionista"
+      ? "/nutricionista"
+      : "/account";
+
   // Sincroniza el estado de la sesión cada vez que el usuario navega entre páginas
   useEffect(() => {
     const sesion =
@@ -255,11 +273,13 @@ export default function Navbar(): JSX.Element {
                 ) : (
                   <>
                     <Link
-                      to="/account"
+                      to={rutaPerfil}
                       className="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto text-nowrap"
                       onClick={handleLinkClick}
                     >
-                      Mi Perfil
+                      {sesionActual?.rol === "nutricionista" || sesionActual?.rol === "admin"
+                        ? "Mi Perfil"
+                        : "Mi Perfil"}
                     </Link>
                     <button
                       type="button"

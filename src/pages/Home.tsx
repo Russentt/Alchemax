@@ -1,7 +1,34 @@
-import { type JSX } from "react";
+import { useState, type JSX } from "react";
 import { Link } from "react-router";
 
 export default function Home(): JSX.Element {
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [mostrarExito, setMostrarExito] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); 
+    setError(null);
+
+
+    if (nombre.trim().length < 3) {
+      setError("EL nombre debe contener (3 caracteres o más).");
+      return;
+    }
+
+    const emailNormalizado = email.trim().toLowerCase();
+    const regexGmail = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+
+    if (!regexGmail.test(emailNormalizado)) {
+      setError("El corrreo debe ser @gmail.com");
+      return;
+    }
+
+    setMostrarExito(true);
+    setError(null);
+  };
   return (
     <main>
       <section className="container text-center my-5 py-4">
@@ -158,7 +185,12 @@ export default function Home(): JSX.Element {
         <div className="row g-4 justify-content-center">
           <div className="col-lg-6">
             <div className="contenedor-formulario bg-white p-4 rounded-4 shadow-sm">
-              <form className="formulario">
+              <form className="formulario" onSubmit={handleSubmit}>
+                  {error && (
+                    <div className="alert alert-danger py-2 px-3 small border-0 mb-3" role="alert">
+                      ⚠️ {error}
+                    </div>
+                  )}
                 <div className="form-group mb-3">
                   <label htmlFor="inputNombre" className="fw-semibold">
                     Nombre completo
@@ -168,6 +200,8 @@ export default function Home(): JSX.Element {
                     id="inputNombre"
                     className="form-control"
                     placeholder="Ej. María Pérez"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
                     required
                   />
                 </div>
@@ -179,7 +213,9 @@ export default function Home(): JSX.Element {
                     type="email"
                     id="inputEmail"
                     className="form-control"
-                    placeholder="tucorreo@email.com"
+                    placeholder="tucorreo@gmail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
@@ -193,13 +229,28 @@ export default function Home(): JSX.Element {
                     placeholder="Brevemente, cuéntanos cuál es tu objetivo nutricional..."
                     maxLength={1000}
                     rows={5}
+                    value={mensaje}
+                    onChange={(e) => setMensaje(e.target.value)}
                     required
                   />
                 </div>
                 <div className="d-grid">
-                  <button className="btn btn-success btn-lg" type="submit">
-                    Enviar Solicitud de Agendamiento
-                  </button>
+                  <button 
+                      className="btn btn-success btn-lg" 
+                      type="submit"
+                    >
+                      Enviar Solicitud de Agendamiento
+                    </button>
+
+                    {mostrarExito && (
+                      <div className="card border-0 shadow-sm rounded-4 p-4 text-center bg-white mt-4">
+                        <div className="text-success fs-1 mb-2">✅</div>
+                        <h4 className="fw-bold text-dark">¡Solicitud Recibida!</h4>
+                        <p className="text-muted small mb-0">
+                          Tu solicitud fue recibida con éxito. Pronto nos pondremos en contacto con usted.
+                        </p>
+                      </div>
+                    )}
                 </div>
               </form>
             </div>

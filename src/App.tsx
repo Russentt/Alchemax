@@ -1,4 +1,3 @@
-
 import Home from "./pages/Home";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router";
@@ -19,6 +18,9 @@ import ScrollToTop from "./components/ScrollToTop";
 import Nutricionista from "./pages/Nutricionista";
 import { StorageUsuario } from "./services/storageUsuario";
 import type { JSX } from "react/jsx-runtime";
+
+//carrusel
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const usuario = StorageUsuario.getUsuarioSesion();

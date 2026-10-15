@@ -1,6 +1,7 @@
+
 import Home from "./pages/Home";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router";
 import Layout from "./components/Layout";
 import Metodologia from "./pages/Metodologia";
 import Account from "./pages/Account";
@@ -15,7 +16,17 @@ import Admin from "./pages/Admin";
 import Article from "./pages/Article";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
-import Nutricionista from "./pages/Nutricionista"
+import Nutricionista from "./pages/Nutricionista";
+import { StorageUsuario } from "./services/storageUsuario";
+import type { JSX } from "react/jsx-runtime";
+
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const usuario = StorageUsuario.getUsuarioSesion();
+  if (!usuario) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
 
 const App = () => {
   return (
@@ -26,7 +37,14 @@ const App = () => {
           <Route index element={<Home />} />
           <Route path="account" element={<Account />} />
           <Route path="register" element={<Register />} />
-          <Route path="carrito" element={<Carrito />} />
+          <Route
+            path="carrito"
+            element={
+              <ProtectedRoute>
+                <Carrito />
+              </ProtectedRoute>
+            }
+          />
           <Route path="login" element={<Login />} />
           <Route path="metodologia" element={<Metodologia />} />
           <Route path="telemedicina" element={<Telemedicina />} />

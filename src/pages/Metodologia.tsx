@@ -40,17 +40,6 @@ const catalogoServiciosPorDefecto: Servicio[] = [
     categoriaId: "cat-03",
     estado: "Activo",
   },
-  {
-    id: "srv-04",
-    nombre: "Plan Nutricional Clínico",
-    descripcion:
-      "Diseñado para patologías específicas (Resistencia a la insulina, hipertensión, celiaquía).",
-    precio: 85000,
-    tipo: "plan",
-    icono: "🩺",
-    categoriaId: "cat-04",
-    estado: "Activo",
-  },
 ];
 
 export default function Metodologia(): JSX.Element {
@@ -158,6 +147,7 @@ export default function Metodologia(): JSX.Element {
       }, 2500);
       return;
     }
+
 
     TiendaService.agregarAlCarrito(servicio);
 

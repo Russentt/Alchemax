@@ -1,55 +1,11 @@
-import React, { useState, type JSX } from "react";
+import React, { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { Servicio } from "../data/types";
+import type { Categoria, Servicio } from "../data/types";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
+import { StorageCategorias } from "../services/storageCategorias";
+import { StorageServicios } from "../services/storageProductos";
 
-const catalogoServicios: Servicio[] = [
-  {
-    id: "srv-01",
-    nombre: "Evaluación Biométrica Inicial",
-    descripcion:
-      "Análisis InBody, revisión de exámenes y diagnóstico metabólico presencial.",
-    precio: 35000,
-    tipo: "evaluacion",
-    icono: "⚖️",
-    categoriaId: "cat-01",
-    estado: "Activo",
-  },
-  {
-    id: "srv-02",
-    nombre: "Plan Nutricional Deportivo",
-    descripcion:
-      "Pauta estructurada para recomposición corporal y rendimiento físico. Incluye 2 controles.",
-    precio: 120000,
-    tipo: "plan",
-    icono: "🏋️",
-    categoriaId: "cat-02",
-    estado: "Activo",
-  },
-  {
-    id: "srv-03",
-    nombre: "Control Telemedicina",
-    descripcion:
-      "Ajuste de pauta y seguimiento de progreso mediante videollamada de 30 minutos.",
-    precio: 25000,
-    tipo: "control",
-    icono: "💻",
-    categoriaId: "cat-03",
-    estado: "Activo",
-  },
-  {
-    id: "srv-04",
-    nombre: "Plan Nutricional Clínico",
-    descripcion:
-      "Diseñado para patologías específicas (Resistencia a la insulina, hipertensión, celiaquía).",
-    precio: 85000,
-    tipo: "plan",
-    icono: "🩺",
-    categoriaId: "cat-04",
-    estado: "Activo",
-  },
-];
 
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
   return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
@@ -59,6 +15,35 @@ const chunkArray = <T,>(arr: T[], size: number): T[][] => {
 
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
+
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
+
+  useEffect(() => {
+    // Cargar categorías creadas
+    const catsGuardadas = StorageCategorias.getCategorias();
+    if (catsGuardadas && catsGuardadas.length > 0) {
+      setCategorias(catsGuardadas);
+    }
+
+    // Cargar servicios/productos 
+    const srvsGuardados = StorageServicios.getServicios();
+    if (srvsGuardados && srvsGuardados.length > 0) {
+      // Mostrar servicios activos
+      const activos = srvsGuardados.filter(
+        (s) => !s.estado || s.estado === "Activo"
+      );
+      setServicios(activos); 
+    } else {
+      setServicios([]); 
+    }
+  }, []);
+
+  const serviciosFiltrados = servicios.filter((servicio) => {
+    if (categoriaActiva === "todas") return true;
+    return String(servicio.categoriaId) === String(categoriaActiva);
+  });
 
   const [triageForm, setTriageForm] = useState({
     peso: "",
@@ -375,109 +360,76 @@ export default function Metodologia(): JSX.Element {
             </p>
           </div>
 
-          <div className="d-flex justify-content-center gap-2 mb-5 flex-wrap">
-            {categoriasUnicas.map((categoria) => (
+          {/* Botones de categorías horizontales */}
+          <div className="d-flex flex-wrap justify-content-center gap-2 mb-5">
+            <button
+              type="button"
+              className={`btn btn-sm rounded-pill px-3 py-2 fw-semibold ${
+                categoriaActiva === "todas"
+                  ? "btn-success text-white shadow-sm"
+                  : "btn-outline-secondary"
+              }`}
+              onClick={() => setCategoriaActiva("todas")}
+            >
+              Todos los Servicios
+            </button>
+            {categorias.map((cat) => (
               <button
-                key={categoria}
-                onClick={() => setFiltroCategoria(categoria)}
-                className={`btn rounded-pill text-uppercase px-4 ${filtroCategoria === categoria ? "btn-success" : "btn-outline-secondary"}`}
-                style={{ fontSize: "0.85rem", fontWeight: "600" }}
+                key={cat.id}
+                type="button"
+                className={`btn btn-sm rounded-pill px-3 py-2 fw-semibold ${
+                  categoriaActiva === cat.id
+                    ? "btn-success text-white shadow-sm"
+                    : "btn-outline-secondary"
+                }`}
+                onClick={() => setCategoriaActiva(cat.id)}
               >
-                {categoria}
+                {cat.nombre}
               </button>
             ))}
           </div>
 
-          <div
-            id="catalogoCarousel"
-            className="carousel slide"
-            data-bs-ride="false"
-            data-bs-interval="false"
-          >
-            <div className="carousel-inner px-2 py-4">
-              {serviciosChunked.map((chunk, index) => (
-                <div
-                  key={index}
-                  className={`carousel-item ${index === 0 ? "active" : ""}`}
-                >
-                  <div className="row g-4 justify-content-center">
-                    {chunk.map((servicio) => (
-                      <div
-                        key={servicio.id}
-                        className="col-12 col-md-6 col-lg-3"
+          <div className="row g-4 justify-content-center">
+            {serviciosFiltrados.length === 0 ? (
+              <div className="col-12 text-center py-5">
+                <div className="fs-1 text-muted mb-2">🔍</div>
+                <h5 className="text-muted fw-semibold">
+                  No hay servicios disponibles en esta categoría.
+                </h5>
+              </div>
+            ) : (
+              serviciosFiltrados.map((servicio) => (
+                <div key={servicio.id} className="col-12 col-md-6 col-lg-3">
+                  <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
+                    <div className="card-body p-4 d-flex flex-column">
+                      <div className="fs-1 mb-3">{servicio.icono}</div>
+                      <span
+                        className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
+                        style={{ fontSize: "0.65rem" }}
                       >
-                        <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
-                          <div className="card-body p-4 d-flex flex-column">
-                            <div className="fs-1 mb-3">{servicio.icono}</div>
-                            <span
-                              className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
-                              style={{ fontSize: "0.65rem" }}
-                            >
-                              {servicio.tipo}
-                            </span>
-                            <h5 className="fw-bold text-dark mb-3">
-                              {servicio.nombre}
-                            </h5>
-                            <p className="text-muted small mb-4 flex-grow-1">
-                              {servicio.descripcion}
-                            </p>
-                            <div>
-                              <h4 className="fw-bold text-success mb-3">
-                                {formatPrice(servicio.precio)}
-                              </h4>
-                              <button
-                                onClick={() => handleAddToCart(servicio)}
-                                className="btn btn-outline-success w-100 fw-bold rounded-pill"
-                              >
-                                Agregar al Carrito
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                        {servicio.tipo}
+                      </span>
+                      <h5 className="fw-bold text-dark mb-3">
+                        {servicio.nombre}
+                      </h5>
+                      <p className="text-muted small mb-4 flex-grow-1">
+                        {servicio.descripcion}
+                      </p>
+                      <div>
+                        <h4 className="fw-bold text-success mb-3">
+                          {formatPrice(servicio.precio)}
+                        </h4>
+                        <button
+                          onClick={() => handleAddToCart(servicio)}
+                          className="btn btn-outline-success w-100 fw-bold rounded-pill"
+                        >
+                          Agregar al Carrito
+                        </button>
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
-              ))}
-
-              {serviciosChunked.length === 0 && (
-                <div className="text-center text-muted py-5">
-                  <p>
-                    No hay servicios disponibles en esta categoría actualmente.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {serviciosChunked.length > 1 && (
-              <>
-                <button
-                  className="carousel-control-prev"
-                  type="button"
-                  data-bs-target="#catalogoCarousel"
-                  data-bs-slide="prev"
-                  style={{ width: "5%", left: "-5%" }}
-                >
-                  <span
-                    className="carousel-control-prev-icon bg-dark rounded-circle p-3 shadow"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="visually-hidden">Anterior</span>
-                </button>
-                <button
-                  className="carousel-control-next"
-                  type="button"
-                  data-bs-target="#catalogoCarousel"
-                  data-bs-slide="next"
-                  style={{ width: "5%", right: "-5%" }}
-                >
-                  <span
-                    className="carousel-control-next-icon bg-dark rounded-circle p-3 shadow"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="visually-hidden">Siguiente</span>
-                </button>
-              </>
+              ))
             )}
           </div>
 

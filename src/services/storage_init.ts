@@ -41,45 +41,11 @@ export const StorageInit = {
       localStorage.setItem("db_compras", JSON.stringify(SEED_DATA.compras));
     }
     if (!localStorage.getItem("db_categorias")) {
-      const categoriasBase = [
-        { id: "CAT-01", nombre: "Evaluación Biométrica", descripcion: "Medición y pesajes", serviciosAsociados: 12 },
-        { id: "CAT-02", nombre: "Planes Especializados", descripcion: "Planes personalizados", serviciosAsociados: 8 },
-      ];
-      localStorage.setItem("db_categorias", JSON.stringify(categoriasBase));
+      localStorage.setItem("db_categorias", JSON.stringify(SEED_DATA.categorias));
     }
 
     if (!localStorage.getItem("db_servicios")) {
-      const serviciosBase = [
-        {
-          id: "PROD-101",
-          nombre: "Plan Nutricional Deportivo",
-          descripcion: "Plan enfocado en ganancia muscular y rendimiento",
-          precio: 45000,
-          tipo: "plan" as const,
-          icono: "🥗",
-          categoriaId: "CAT-01",
-          categoriaNombre: "Planes Especializados",
-          estado: "Activo" as const,
-          planNutricional: {
-            caloriasDiarias: 2400,
-            objetivo: "Aumento de masa muscular magra",
-            macros: [
-              { nombre: "Proteínas", gramos: 180, porcentaje: 30, color: "success" },
-              { nombre: "Carbohidratos", gramos: 280, porcentaje: 50, color: "info" },
-              { nombre: "Grasas", gramos: 55, porcentaje: 20, color: "warning" },
-            ],
-            comidas: [
-              {
-                id: "com-1",
-                tipo: "Desayuno",
-                horario: "08:00",
-                descripcion: "Avena con claras de huevo, plátano y nueces",
-              },
-            ],
-          },
-        },
-      ];
-      localStorage.setItem("db_servicios", JSON.stringify(serviciosBase));
+      localStorage.setItem("db_servicios", JSON.stringify(SEED_DATA.servicios));
     }
   },
 };

@@ -246,7 +246,7 @@ export default function Admin(): JSX.Element {
       <div className="row g-4 mb-4">
         <AdminStatCard
           title="Total Productos"
-          value={servicios.length}
+          value={servicios.filter((s) => s.estado === 'Activo').length}
           icon="🛒"
           theme="success"
         />

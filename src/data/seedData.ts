@@ -18,6 +18,15 @@ export const SEED_DATA = {
       fechaNacimiento: "1994-05-12",
       rol: "usuario" as const,
     },
+    {
+      id: "u-3",
+      nombre: "Michael Jackson",
+      email: "michael@gmail.com",
+      password: "nutri123",
+      genero: "masculino",
+      fechaNacimiento: "1958-08-29",
+      rol: "nutricionista" as const,
+    },
   ],
   citas: [
     {
@@ -99,4 +108,99 @@ export const SEED_DATA = {
       estado: "Activo" as const,
     },
   ],
+  categorias: [
+    {
+      id: "CAT-01",
+      nombre: "Evaluación Biométrica",
+      descripcion: "Medición y pesajes presenciales",
+      serviciosAsociados: 1,
+    },
+    {
+      id: "CAT-02",
+      nombre: "Planes Especializados",
+      descripcion: "Planes personalizados y deportivos",
+      serviciosAsociados: 1,
+    },
+    {
+      id: "CAT-03",
+      nombre: "Telemedicina y Controles",
+      descripcion: "Consultas y seguimiento virtual",
+      serviciosAsociados: 1,
+    },
+    {
+      id: "CAT-04",
+      nombre: "Nutrición Clínica",
+      descripcion: "Tratamiento de patologías crónicas y metabólicas",
+      serviciosAsociados: 1,
+    },
+  ],
+  // Servicios base vinculados a sus categorías
+  servicios: [
+    {
+      id: "PROD-101",
+      nombre: "Evaluación Biométrica Inicial",
+      descripcion:
+        "Análisis InBody, revisión de exámenes y diagnóstico metabólico presencial.",
+      precio: 35000,
+      tipo: "evaluacion" as const,
+      icono: "⚖️",
+      categoriaId: "CAT-01",
+      categoriaNombre: "Evaluación Biométrica",
+      estado: "Activo" as const,
+    },
+    {
+      id: "PROD-102",
+      nombre: "Plan Nutricional Deportivo",
+      descripcion:
+        "Pauta estructurada para recomposición corporal y rendimiento físico. Incluye 2 controles.",
+      precio: 120000,
+      tipo: "plan" as const,
+      icono: "🏋️",
+      categoriaId: "CAT-02",
+      categoriaNombre: "Planes Especializados",
+      estado: "Activo" as const,
+      planNutricional: {
+        caloriasDiarias: 2400,
+        objetivo: "Aumento de masa muscular magra",
+        macros: [
+          { nombre: "Proteínas", gramos: 180, porcentaje: 30, color: "success" as const },
+          { nombre: "Carbohidratos", gramos: 280, porcentaje: 50, color: "info" as const },
+          { nombre: "Grasas", gramos: 55, porcentaje: 20, color: "warning" as const },
+        ],
+        comidas: [
+          {
+            id: "com-1",
+            tipo: "Desayuno",
+            horario: "08:00",
+            descripcion: "Avena con claras de huevo, plátano y nueces",
+          },
+        ],
+      },
+    },
+    {
+      id: "PROD-103",
+      nombre: "Control Telemedicina",
+      descripcion:
+        "Ajuste de pauta y seguimiento de progreso mediante videollamada de 30 minutos.",
+      precio: 25000,
+      tipo: "control" as const,
+      icono: "💻",
+      categoriaId: "CAT-03",
+      categoriaNombre: "Telemedicina y Controles",
+      estado: "Activo" as const,
+    },
+    {
+      id: "PROD-104",
+      nombre: "Plan Nutricional Clínico",
+      descripcion:
+        "Diseñado para patologías específicas (Resistencia a la insulina, hipertensión, celiaquía).",
+      precio: 85000,
+      tipo: "plan" as const,
+      icono: "🩺",
+      categoriaId: "CAT-04",
+      categoriaNombre: "Nutrición Clínica",
+      estado: "Activo" as const,
+    },
+  ],
 };
+

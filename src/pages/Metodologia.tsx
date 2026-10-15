@@ -7,6 +7,12 @@ import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 
 
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+    arr.slice(i * size, i * size + size),
+  );
+};
+
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
 
@@ -55,6 +61,20 @@ export default function Metodologia(): JSX.Element {
     message: string;
     type: "success" | "warning";
   } | null>(null);
+
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todos");
+
+  const categoriasUnicas = [
+    "todos",
+    ...new Set(catalogoServicios.map((s) => s.tipo)),
+  ];
+
+  const serviciosFiltrados =
+    filtroCategoria === "todos"
+      ? catalogoServicios
+      : catalogoServicios.filter((s) => s.tipo === filtroCategoria);
+
+  const serviciosChunked = chunkArray(serviciosFiltrados, 4);
 
   const handleTriageChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -435,6 +455,10 @@ export default function Metodologia(): JSX.Element {
         .hover-lift:hover {
           transform: translateY(-5px);
           box-shadow: 0 1rem 3rem rgba(0,0,0,.15)!important;
+        }
+        .carousel-control-prev-icon, .carousel-control-next-icon {
+          background-size: 50%;
+          opacity: 0.8;
         }
       `}</style>
     </main>

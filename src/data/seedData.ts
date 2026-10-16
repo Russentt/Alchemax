@@ -100,12 +100,16 @@ export const SEED_DATA = {
   ],
   compras: [
     {
-      id: "comp-1",
-      servicioId: "srv-01",
-      nombre: "Evaluación Biométrica Presencial",
-      fechaCompra: "10 Oct 2026",
-      monto: 35000,
-      estado: "Activo" as const,
+      registroId: "reg-comp-1",
+      usuarioId: "camila.soto@gmail.com",
+      data: {
+        id: "comp-1",
+        servicioId: "PROD-101",
+        nombre: "Evaluación Biométrica Presencial",
+        fechaCompra: "10 Oct 2026",
+        monto: 35000,
+        estado: "Activo" as const,
+      },
     },
   ],
   categorias: [

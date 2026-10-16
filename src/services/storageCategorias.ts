@@ -1,50 +1,54 @@
-import type { Categoria } from "../types/index"; 
+import type { Categoria } from "../types/index";
 
+const normalizarNombre = (nombre: string): string => nombre.trim().toLowerCase();
 
 export const StorageCategorias = {
-    getCategorias: (): Categoria[] => {
-        return JSON.parse(localStorage.getItem("db_categorias")|| "[]");
-    },
+    getCategorias: (): Categoria[] =>
+        JSON.parse(localStorage.getItem("db_categorias") || "[]"),
 
     crearCategoria: (
-        categoria: Omit<Categoria, "id">
-    ): {success: boolean; mensaje: string} => {
+        categoria: Omit<Categoria, "id">,
+    ): { success: boolean; mensaje: string } => {
         const categorias = StorageCategorias.getCategorias();
+        const nombreNormalizado = normalizarNombre(categoria.nombre);
+        const existe = categorias.some(
+            (actual) => normalizarNombre(actual.nombre) === nombreNormalizado,
+        );
 
-    const existe = categorias.some(
-        (c) => c.nombre.trim().toLowerCase() === categoria.nombre.trim().toLowerCase()
-    );
+        if (existe) {
+            return { success: false, mensaje: "Ya existe esta categoria" };
+        }
 
-    if (existe) {
-        return { success: false, mensaje: "Ya existe esta categoria" };
-    }
+        const nuevaCategoria: Categoria = {
+            ...categoria,
+            id: `cat-${Date.now()}`,
+            serviciosAsociados: 0,
+        };
 
-    const nuevaCategoria: Categoria = {
-        ...categoria,
-        id: `cat-${Date.now()}`,
-        serviciosAsociados: 0,
-    };
-
-    categorias.push(nuevaCategoria);
-    localStorage.setItem("db_categorias", JSON.stringify(categorias));
-    return { success: true, mensaje: "Categoria creada con exito" };
+        categorias.push(nuevaCategoria);
+        localStorage.setItem("db_categorias", JSON.stringify(categorias));
+        return { success: true, mensaje: "Categoria creada con exito" };
     },
 
     updateCategoria: (
-        categoriaActualizada: Categoria
+        categoriaActualizada: Categoria,
     ): { success: boolean; mensaje: string } => {
         const categorias = StorageCategorias.getCategorias();
-
+        const nombreNormalizado = normalizarNombre(categoriaActualizada.nombre);
         const existeNombre = categorias.some(
-            (c) => c.nombre.trim().toLowerCase() === categoriaActualizada.nombre.trim().toLowerCase()
+            (actual) =>
+                actual.id !== categoriaActualizada.id &&
+                normalizarNombre(actual.nombre) === nombreNormalizado,
         );
 
         if (existeNombre) {
-            return { success: false, mensaje: "Ese nombre ya esta en uso" }
+            return { success: false, mensaje: "Ese nombre ya esta en uso" };
         }
 
-        const nuevasCategorias = categorias.map(
-            (c) => c.id === categoriaActualizada.id ? { ...c, ...categoriaActualizada }: c
+        const nuevasCategorias = categorias.map((actual) =>
+            actual.id === categoriaActualizada.id
+                ? { ...actual, ...categoriaActualizada }
+                : actual,
         );
 
         localStorage.setItem("db_categorias", JSON.stringify(nuevasCategorias));
@@ -52,10 +56,8 @@ export const StorageCategorias = {
     },
 
     deleteCategoria: (id: string): void => {
-        const categoria = StorageCategorias.getCategorias();
-        const filtro = categoria.filter(
-            (c) => c.id !== id
-        );
-        localStorage.setItem("db_categorias", JSON.stringify(filtro))
+        const categorias = StorageCategorias.getCategorias();
+        const nuevasCategorias = categorias.filter((categoria) => categoria.id !== id);
+        localStorage.setItem("db_categorias", JSON.stringify(nuevasCategorias));
     },
 };

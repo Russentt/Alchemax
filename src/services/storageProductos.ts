@@ -29,7 +29,7 @@ export const StorageServicios = {
     servicios.push(nuevoServicio);
     localStorage.setItem("db_servicios", JSON.stringify(servicios));
 
-    StorageServicios.actualizarContadorCat();
+    StorageServicios.actualizarContadorCat(servicios);
 
     return { success: true, mensaje: "Servicio creado exitosamente." };
   },
@@ -55,7 +55,7 @@ export const StorageServicios = {
     );
 
     localStorage.setItem("db_servicios", JSON.stringify(nuevosServicios));
-    StorageServicios.actualizarContadorCat();
+    StorageServicios.actualizarContadorCat(nuevosServicios);
 
     return { success: true, mensaje: "Servicio actualizado" };
   },
@@ -82,11 +82,12 @@ export const StorageServicios = {
     const filtrados = servicios.filter((s) => s.id !== id);
     localStorage.setItem("db_servicios", JSON.stringify(filtrados));
 
-    StorageServicios.actualizarContadorCat();
+    StorageServicios.actualizarContadorCat(filtrados);
   },
 
-  actualizarContadorCat: (): void => {
-    const servicios = StorageServicios.getServicios();
+  actualizarContadorCat: (
+    servicios: Servicio[] = StorageServicios.getServicios(),
+  ): void => {
     const categorias = StorageCategorias.getCategorias();
     const conteoPorCategoria = servicios.reduce(
       (acc, s) => {

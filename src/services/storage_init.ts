@@ -1,6 +1,9 @@
 import { SEED_DATA } from "../data/seedData";
 import { StorageUsuario } from "./storageUsuario";
 
+type CompraInicial = (typeof SEED_DATA.compras)[number];
+type CompraPersistida = CompraInicial | CompraInicial["data"];
+
 export const StorageInit = {
   initDB: (): void => {
 
@@ -37,8 +40,26 @@ export const StorageInit = {
     if (!localStorage.getItem("db_examenes")) {
       localStorage.setItem("db_examenes", JSON.stringify(SEED_DATA.examenes));
     }
-    if (!localStorage.getItem("db_compras")) {
+    const comprasGuardadas = localStorage.getItem("db_compras");
+    if (!comprasGuardadas) {
       localStorage.setItem("db_compras", JSON.stringify(SEED_DATA.compras));
+    } else {
+      const compras = JSON.parse(comprasGuardadas) as CompraPersistida[];
+      const comprasMigradas = compras.map((compra) => {
+        if ("data" in compra) {
+          return compra;
+        }
+
+        return (
+          SEED_DATA.compras.find(
+            (compraSemilla) => compraSemilla.data.id === compra.id,
+          ) ?? compra
+        );
+      });
+
+      if (comprasMigradas.some((compra, index) => compra !== compras[index])) {
+        localStorage.setItem("db_compras", JSON.stringify(comprasMigradas));
+      }
     }
     if (!localStorage.getItem("db_categorias")) {
       localStorage.setItem("db_categorias", JSON.stringify(SEED_DATA.categorias));

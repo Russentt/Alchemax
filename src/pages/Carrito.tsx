@@ -229,7 +229,7 @@ export default function Carrito(): JSX.Element {
             </div>
             <div className="d-flex justify-content-between mb-3 text-muted">
               <span>Impuestos / Tasas Clínicas</span>
-              <span>\$0</span>
+              <span>$0</span>
             </div>
             <hr className="text-muted opacity-25 mb-3" />
             <div className="d-flex justify-content-between mb-4">

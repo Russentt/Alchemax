@@ -6,6 +6,13 @@ import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 
+// Carrusel añadido: Función auxiliar para dividir los servicios en grupos
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+    arr.slice(i * size, i * size + size),
+  );
+};
+
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
 
@@ -37,6 +44,9 @@ export default function Metodologia(): JSX.Element {
     if (categoriaActiva === "todas") return true;
     return String(servicio.categoriaId) === String(categoriaActiva);
   });
+
+  // Carrusel añadido: Agrupamos los servicios filtrados de 4 en 4
+  const serviciosChunked = chunkArray(serviciosFiltrados, 4);
 
   const [triageForm, setTriageForm] = useState({
     peso: "",
@@ -191,9 +201,7 @@ export default function Metodologia(): JSX.Element {
               </p>
             </div>
             <div className="col-lg-5 offset-lg-1 d-none d-lg-block text-center">
-              <div className="fs-1" style={{ fontSize: "8rem !important" }}>
-                🧬
-              </div>
+              <div style={{ fontSize: "8rem", lineHeight: "1" }}>🧬</div>
             </div>
           </div>
         </div>
@@ -339,7 +347,6 @@ export default function Metodologia(): JSX.Element {
             </p>
           </div>
 
-          {/* Botones de categorías horizontales */}
           <div className="d-flex flex-wrap justify-content-center gap-2 mb-5">
             <button
               type="button"
@@ -368,47 +375,99 @@ export default function Metodologia(): JSX.Element {
             ))}
           </div>
 
-          <div className="row g-4 justify-content-center">
-            {serviciosFiltrados.length === 0 ? (
-              <div className="col-12 text-center py-5">
-                <div className="fs-1 text-muted mb-2">🔍</div>
-                <h5 className="text-muted fw-semibold">
-                  No hay servicios disponibles en esta categoría.
-                </h5>
-              </div>
-            ) : (
-              serviciosFiltrados.map((servicio) => (
-                <div key={servicio.id} className="col-12 col-md-6 col-lg-3">
-                  <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
-                    <div className="card-body p-4 d-flex flex-column">
-                      <div className="fs-1 mb-3">{servicio.icono}</div>
-                      <span
-                        className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
-                        style={{ fontSize: "0.65rem" }}
-                      >
-                        {servicio.tipo}
-                      </span>
-                      <h5 className="fw-bold text-dark mb-3">
-                        {servicio.nombre}
-                      </h5>
-                      <p className="text-muted small mb-4 flex-grow-1">
-                        {servicio.descripcion}
-                      </p>
-                      <div>
-                        <h4 className="fw-bold text-success mb-3">
-                          {formatPrice(servicio.precio)}
-                        </h4>
-                        <button
-                          onClick={() => handleAddToCart(servicio)}
-                          className="btn btn-outline-success w-100 fw-bold rounded-pill"
+          {/* FIX: Añadimos key={categoriaActiva} para forzar a React a recrear el carrusel al filtrar */}
+          <div
+            key={categoriaActiva}
+            id="catalogoCarousel"
+            className="carousel slide"
+            data-bs-ride="false"
+            data-bs-interval="false"
+          >
+            <div className="carousel-inner px-2 py-4">
+              {serviciosChunked.length === 0 ? (
+                <div className="col-12 text-center py-5">
+                  <div className="fs-1 text-muted mb-2">🔍</div>
+                  <h5 className="text-muted fw-semibold">
+                    No hay servicios disponibles en esta categoría.
+                  </h5>
+                </div>
+              ) : (
+                serviciosChunked.map((chunk, index) => (
+                  <div
+                    key={index}
+                    className={`carousel-item ${index === 0 ? "active" : ""}`}
+                  >
+                    <div className="row g-4 justify-content-center">
+                      {chunk.map((servicio) => (
+                        <div
+                          key={servicio.id}
+                          className="col-12 col-md-6 col-lg-3"
                         >
-                          Agregar al Carrito
-                        </button>
-                      </div>
+                          <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
+                            <div className="card-body p-4 d-flex flex-column">
+                              <div className="fs-1 mb-3">{servicio.icono}</div>
+                              <span
+                                className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
+                                style={{ fontSize: "0.65rem" }}
+                              >
+                                {servicio.tipo}
+                              </span>
+                              <h5 className="fw-bold text-dark mb-3">
+                                {servicio.nombre}
+                              </h5>
+                              <p className="text-muted small mb-4 flex-grow-1">
+                                {servicio.descripcion}
+                              </p>
+                              <div>
+                                <h4 className="fw-bold text-success mb-3">
+                                  {formatPrice(servicio.precio)}
+                                </h4>
+                                <button
+                                  onClick={() => handleAddToCart(servicio)}
+                                  className="btn btn-outline-success w-100 fw-bold rounded-pill"
+                                >
+                                  Agregar al Carrito
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
-              ))
+                ))
+              )}
+            </div>
+
+            {serviciosChunked.length > 1 && (
+              <>
+                <button
+                  className="carousel-control-prev"
+                  type="button"
+                  data-bs-target="#catalogoCarousel"
+                  data-bs-slide="prev"
+                  style={{ width: "5%", left: "-5%" }}
+                >
+                  <span
+                    className="carousel-control-prev-icon bg-dark rounded-circle p-3 shadow"
+                    aria-hidden="true"
+                  ></span>
+                  <span className="visually-hidden">Anterior</span>
+                </button>
+                <button
+                  className="carousel-control-next"
+                  type="button"
+                  data-bs-target="#catalogoCarousel"
+                  data-bs-slide="next"
+                  style={{ width: "5%", right: "-5%" }}
+                >
+                  <span
+                    className="carousel-control-next-icon bg-dark rounded-circle p-3 shadow"
+                    aria-hidden="true"
+                  ></span>
+                  <span className="visually-hidden">Siguiente</span>
+                </button>
+              </>
             )}
           </div>
 
@@ -434,6 +493,10 @@ export default function Metodologia(): JSX.Element {
         .hover-lift:hover {
           transform: translateY(-5px);
           box-shadow: 0 1rem 3rem rgba(0,0,0,.15)!important;
+        }
+        .carousel-control-prev-icon, .carousel-control-next-icon {
+          background-size: 50%;
+          opacity: 0.8;
         }
       `}</style>
     </main>

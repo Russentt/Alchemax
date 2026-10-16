@@ -6,6 +6,10 @@ export interface Usuario {
   password?: string;
   rol: "admin" | "usuario" | "nutricionista";
   fechaNacimiento: string;
+  // Campos añadidos para personalización de perfil
+  fotoPerfil?: string;
+  pesoActual?: number;
+  objetivoPrincipal?: string;
 }
 
 export interface Cita {

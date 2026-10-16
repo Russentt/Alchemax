@@ -28,6 +28,14 @@ export default function Account(): JSX.Element {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AccountTab>("resumen");
 
+  useEffect(() => {
+    const sesion = StorageUsuario.getUsuarioSesion();
+
+    if (!sesion || sesion.rol !== "usuario") {
+      navigate("/login");
+    }
+  }, [navigate]);
+
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [citas, setCitas] = useState<Cita[]>([]);
   const [plan, setPlan] = useState<PlanNutricional | null>(null);
@@ -97,9 +105,10 @@ export default function Account(): JSX.Element {
   }, [navigate]);
 
   const getTabClass = (tabName: AccountTab) =>
-    `nav-link fw-semibold rounded-3 px-3 py-2 text-start w-100 border-0 ${activeTab === tabName
-      ? "active bg-success text-white"
-      : "text-dark bg-light"
+    `nav-link fw-semibold rounded-3 px-3 py-2 text-start w-100 border-0 ${
+      activeTab === tabName
+        ? "active bg-success text-white"
+        : "text-dark bg-light"
     }`;
 
   const showNotification = (
@@ -922,8 +931,12 @@ export default function Account(): JSX.Element {
         {compras.length === 0 ? (
           <div className="text-center py-5">
             <div className="fs-1 mb-3">🛍️</div>
-            <h6 className="fw-bold text-dark mb-2">Aún no tienes servicios activos</h6>
-            <p className="text-muted small">Explora nuestro catálogo y comienza tu tratamiento.</p>
+            <h6 className="fw-bold text-dark mb-2">
+              Aún no tienes servicios activos
+            </h6>
+            <p className="text-muted small">
+              Explora nuestro catálogo y comienza tu tratamiento.
+            </p>
           </div>
         ) : (
           <div className="table-responsive">
@@ -941,12 +954,12 @@ export default function Account(): JSX.Element {
                 {/* 6. [DRY] Mapeamos las compras reales obtenidas del servicio */}
                 {compras.map((compra) => (
                   <tr key={compra.id}>
-                    <td className="fw-semibold">
-                      {compra.nombre}
-                    </td>
+                    <td className="fw-semibold">{compra.nombre}</td>
                     <td className="text-muted">{compra.fechaCompra}</td>
                     <td>
-                      <span className={`badge ${compra.estado === "Activo" ? "bg-success" : "bg-secondary"}`}>
+                      <span
+                        className={`badge ${compra.estado === "Activo" ? "bg-success" : "bg-secondary"}`}
+                      >
                         {compra.estado}
                       </span>
                     </td>

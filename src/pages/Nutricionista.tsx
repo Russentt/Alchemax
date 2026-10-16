@@ -14,8 +14,6 @@ import type {
     PlanNutricional,
     Usuario,
     Servicio
-
-
 } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";
@@ -39,7 +37,6 @@ export default function Nutricionista(): JSX.Element {
   const [activeTab, setActiveTab] = useState<NutricionistaTab>("dashboard");
   const navigate = useNavigate();
 
-  // Estado del profesional autenticado (Corrige el bug de "Especialista")
   const [nutricionistaActual] = useState<Usuario | null>(() => {
     const sesion = StorageUsuario.getUsuarioSesion();
     return sesion?.rol === "nutricionista" ? sesion : null;
@@ -53,7 +50,6 @@ export default function Nutricionista(): JSX.Element {
     }
   }, [navigate]);
 
-  // Sistema de Notificaciones Flotantes
   const [notificacion, setNotificacion] = useState<{
     texto: string;
     tipo: "info" | "success" | "danger";
@@ -67,9 +63,7 @@ export default function Nutricionista(): JSX.Element {
     setTimeout(() => setNotificacion(null), 3800);
   };
 
-  // =========================================================
   // 1. GESTIÓN DE CATEGORÍAS
-  // =========================================================
   const [categorias, setCategorias] = useState<Categoria[]>(() =>
     StorageCategorias.getCategorias(),
   );
@@ -114,9 +108,7 @@ export default function Nutricionista(): JSX.Element {
     );
   };
 
-  // =========================================================
-  // 2. GESTIÓN DE SERVICIOS Y PLANES (CATÁLOGO)
-  // =========================================================
+  // 2. GESTIÓN DE SERVICIOS
   const [servicios, setServicios] = useState<Servicio[]>(() =>
     StorageServicios.getServicios(),
   );
@@ -171,9 +163,7 @@ export default function Nutricionista(): JSX.Element {
     mostrarNotificacion("Visibilidad del servicio actualizada.", "info");
   };
 
-  // =========================================================
-  // 3. GESTIÓN DE AGENDA Y CITAS (COMPATIBLE CON ACCOUNT.TSX)
-  // =========================================================
+  // 3. GESTIÓN DE CITAS
   const [busquedaCitas, setBusquedaCitas] = useState("");
   const [filtroEstadoCita, setFiltroEstadoCita] = useState<string>("TODOS");
   const [isCreatingCita, setIsCreatingCita] = useState(false);
@@ -185,7 +175,6 @@ export default function Nutricionista(): JSX.Element {
     hora: "",
   });
 
-  // Adaptador que normaliza citas creadas desde Account.tsx y citas del seed
   const obtenerCitasNormalizadas = (): CitaNormalizada[] => {
     const raw = localStorage.getItem("db_citas");
     const usuariosReg = StorageUsuario.getUsuarios().filter(
@@ -220,7 +209,6 @@ export default function Nutricionista(): JSX.Element {
 
   const guardarCitasEnStorage = (nuevasCitas: CitaNormalizada[]) => {
     setCitas(nuevasCitas);
-    // Guardamos manteniendo compatibilidad con la interfaz Cita de Account.tsx (propiedad 'tipo')
     const formatoCompatible = nuevasCitas.map((c) => ({
       ...c,
       tipo: c.servicioNombre,
@@ -281,9 +269,7 @@ export default function Nutricionista(): JSX.Element {
     return coincideTexto && coincideEstado;
   });
 
-  // =========================================================
-  // 4. NUEVO MÓDULO CLÍNICO: FICHAS, PAUTAS Y LABORATORIO
-  // =========================================================
+  // 4. MÓDULO CLÍNICO
   const [pacientes, setPacientes] = useState<Usuario[]>(() =>
     StorageUsuario.getUsuarios().filter((u) => u.rol === "usuario"),
   );
@@ -298,14 +284,12 @@ export default function Nutricionista(): JSX.Element {
   );
   const [isEditingPlan, setIsEditingPlan] = useState(false);
 
-  // Formulario para agregar comida a la pauta del paciente
   const [nuevaComida, setNuevaComida] = useState({
     horario: "08:30",
     tipo: "Desayuno",
     descripcion: "",
   });
 
-  // Formulario para registrar antropometría desde consulta
   const [nuevoControlClinico, setNuevoControlClinico] = useState({
     peso: "",
     grasa: "",
@@ -338,10 +322,7 @@ export default function Nutricionista(): JSX.Element {
     );
     setExamenes(actualizados);
     localStorage.setItem("db_examenes", JSON.stringify(actualizados));
-    mostrarNotificacion(
-      "Estado de revisión del examen actualizado en la ficha del paciente.",
-      "success",
-    );
+    mostrarNotificacion("Estado de revisión del examen actualizado.", "success");
   };
 
   const handleGuardarPlanNutricional = (e: React.FormEvent<HTMLFormElement>) => {
@@ -349,10 +330,7 @@ export default function Nutricionista(): JSX.Element {
     if (!planActivo) return;
     localStorage.setItem("db_plan", JSON.stringify(planActivo));
     setIsEditingPlan(false);
-    mostrarNotificacion(
-      "Pauta alimentaria sincronizada con el Portal del Paciente.",
-      "success",
-    );
+    mostrarNotificacion("Pauta alimentaria sincronizada con el Portal del Paciente.", "success");
   };
 
   const handleAgregarComidaPlan = () => {
@@ -409,23 +387,15 @@ export default function Nutricionista(): JSX.Element {
     setMetricasPaciente(actualizadas);
     localStorage.setItem("db_metricas", JSON.stringify(actualizadas));
     setNuevoControlClinico({ peso: "", grasa: "", musculo: "" });
-    mostrarNotificacion(
-      "Medición InBody registrada en la evolución del paciente.",
-      "success",
-    );
+    mostrarNotificacion("Medición InBody registrada en la evolución del paciente.", "success");
   };
 
-  // Contadores operativos para insignias del Sidebar
   const citasPendientesCount = citas.filter(
     (c) => c.estado === "Pendiente" || c.estado === "Programada",
   ).length;
   const examenesPendientesCount = examenes.filter(
     (e) => e.estado === "Pendiente",
   ).length;
-
-  /* =========================================================
-     RENDERS DE LAS 5 SUB-VISTAS DEL PROFESIONAL
-     ========================================================= */
 
   const renderDashboard = () => {
     const totalPlanesActivos = servicios.filter(
@@ -435,100 +405,47 @@ export default function Nutricionista(): JSX.Element {
     return (
       <div style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}>
         <div className="row g-4 mb-4">
-          <AdminStatCard
-            title="Planes Publicados"
-            value={totalPlanesActivos}
-            icon="🥗"
-            theme="success"
-          />
-          <AdminStatCard
-            title="Consultas Activas"
-            value={citasPendientesCount}
-            icon="📅"
-            theme="warning"
-          />
-          <AdminStatCard
-            title="Exámenes por Revisar"
-            value={examenesPendientesCount}
-            icon="🔬"
-            theme="info"
-          />
+          <AdminStatCard title="Planes Publicados" value={totalPlanesActivos} icon="🥗" theme="success" />
+          <AdminStatCard title="Consultas Activas" value={citasPendientesCount} icon="📅" theme="warning" />
+          <AdminStatCard title="Exámenes por Revisar" value={examenesPendientesCount} icon="🔬" theme="info" />
         </div>
 
         <div className="row g-4">
-          {/* Columna Izquierda: Próximas Consultas en Cola */}
           <div className="col-lg-7">
             <div className="glass-panel p-4 rounded-5 border-0 h-100">
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                  <h5 className="fw-bolder text-dark mb-0 tracking-tight">
-                    Cola de Atención Inmediata
-                  </h5>
-                  <small className="text-muted">
-                    Pacientes con horas programadas o pendientes de confirmación
-                  </small>
+                  <h5 className="fw-bolder text-dark mb-0 tracking-tight">Cola de Atención Inmediata</h5>
+                  <small className="text-muted">Pacientes con horas programadas o pendientes</small>
                 </div>
-                <button
-                  onClick={() => cambiarTab("users")}
-                  className="btn btn-sm btn-dark rounded-pill px-3 fw-bold"
-                >
+                <button onClick={() => cambiarTab("users")} className="btn btn-sm btn-dark rounded-pill px-3 fw-bold">
                   Gestionar Agenda →
                 </button>
               </div>
 
-              {citas.filter(
-                (c) => c.estado !== "Cancelada" && c.estado !== "Completada",
-              ).length === 0 ? (
+              {citas.filter((c) => c.estado !== "Cancelada" && c.estado !== "Completada").length === 0 ? (
                 <div className="text-center py-5 bg-white rounded-4 border">
                   <div className="fs-2 mb-2">✨</div>
-                  <p className="text-muted small mb-0">
-                    No tienes consultas pendientes por atender.
-                  </p>
+                  <p className="text-muted small mb-0">No tienes consultas pendientes por atender.</p>
                 </div>
               ) : (
                 <div className="d-flex flex-column gap-3">
-                  {citas
-                    .filter(
-                      (c) =>
-                        c.estado !== "Cancelada" && c.estado !== "Completada",
-                    )
-                    .slice(0, 4)
-                    .map((c) => (
-                      <div
-                        key={c.id}
-                        className="p-3 rounded-4 bg-white border shadow-sm d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3"
-                      >
+                  {citas.filter((c) => c.estado !== "Cancelada" && c.estado !== "Completada").slice(0, 4).map((c) => (
+                      <div key={c.id} className="p-3 rounded-4 bg-white border shadow-sm d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
                         <div>
                           <div className="d-flex align-items-center gap-2 mb-1">
-                            <span className="fw-bolder text-dark">
-                              {c.pacienteNombre}
-                            </span>
-                            <span className="badge bg-success-subtle text-success rounded-pill">
-                              {c.servicioNombre}
-                            </span>
+                            <span className="fw-bolder text-dark">{c.pacienteNombre}</span>
+                            <span className="badge bg-success-subtle text-success rounded-pill">{c.servicioNombre}</span>
                           </div>
-                          <small className="text-muted">
-                            🕒 {c.fecha} a las {c.hora} hrs • {c.pacienteEmail}
-                          </small>
+                          <small className="text-muted">🕒 {c.fecha} a las {c.hora} hrs • {c.pacienteEmail}</small>
                         </div>
                         <div className="d-flex gap-2">
-                          {(c.estado === "Pendiente" ||
-                            c.estado === "Programada") && (
-                            <button
-                              onClick={() =>
-                                cambiarEstadoCita(c.id, "Confirmada")
-                              }
-                              className="btn btn-sm btn-success rounded-pill px-3 fw-bold"
-                            >
+                          {(c.estado === "Pendiente" || c.estado === "Programada") && (
+                            <button onClick={() => cambiarEstadoCita(c.id, "Confirmada")} className="btn btn-sm btn-success rounded-pill px-3 fw-bold">
                               Confirmar
                             </button>
                           )}
-                          <button
-                            onClick={() =>
-                              cambiarEstadoCita(c.id, "Completada")
-                            }
-                            className="btn btn-sm btn-outline-dark rounded-pill px-3 fw-semibold"
-                          >
+                          <button onClick={() => cambiarEstadoCita(c.id, "Completada")} className="btn btn-sm btn-outline-dark rounded-pill px-3 fw-semibold">
                             Finalizar
                           </button>
                         </div>
@@ -539,57 +456,31 @@ export default function Nutricionista(): JSX.Element {
             </div>
           </div>
 
-          {/* Columna Derecha: Bandeja de Laboratorio Rápida */}
           <div className="col-lg-5">
             <div className="glass-panel p-4 rounded-5 border-0 h-100 d-flex flex-column justify-content-between">
               <div>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <div>
-                    <h5 className="fw-bolder text-dark mb-0 tracking-tight">
-                      Laboratorio Clínico
-                    </h5>
-                    <small className="text-muted">
-                      Últimos archivos subidos por pacientes
-                    </small>
+                    <h5 className="fw-bolder text-dark mb-0 tracking-tight">Laboratorio Clínico</h5>
+                    <small className="text-muted">Últimos archivos subidos</small>
                   </div>
-                  <button
-                    onClick={() => cambiarTab("clinical")}
-                    className="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold"
-                  >
+                  <button onClick={() => cambiarTab("clinical")} className="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold">
                     Abrir Fichas
                   </button>
                 </div>
 
                 {examenes.length === 0 ? (
-                  <p className="text-muted small">
-                    No hay documentos médicos en bandeja.
-                  </p>
+                  <p className="text-muted small">No hay documentos médicos en bandeja.</p>
                 ) : (
                   <div className="d-flex flex-column gap-2">
                     {examenes.slice(0, 4).map((ex) => (
-                      <div
-                        key={ex.id}
-                        className="p-3 rounded-4 bg-white border d-flex justify-content-between align-items-center gap-2"
-                      >
+                      <div key={ex.id} className="p-3 rounded-4 bg-white border d-flex justify-content-between align-items-center gap-2">
                         <div className="text-truncate">
-                          <div className="fw-bold text-dark small text-truncate">
-                            📄 {ex.nombre}
-                          </div>
-                          <small className="text-muted">
-                            Subido: {ex.fechaSubida}
-                          </small>
+                          <div className="fw-bold text-dark small text-truncate">📄 {ex.nombre}</div>
+                          <small className="text-muted">Subido: {ex.fechaSubida}</small>
                         </div>
-                        <button
-                          onClick={() => handleToggleEstadoExamen(ex.id)}
-                          className={`btn btn-sm rounded-pill px-3 fw-bold flex-shrink-0 ${
-                            ex.estado === "Revisado"
-                              ? "btn-success"
-                              : "btn-warning text-dark"
-                          }`}
-                        >
-                          {ex.estado === "Revisado"
-                            ? "✓ Revisado"
-                            : "Marcar Visto"}
+                        <button onClick={() => handleToggleEstadoExamen(ex.id)} className={`btn btn-sm rounded-pill px-3 fw-bold flex-shrink-0 ${ex.estado === "Revisado" ? "btn-success" : "btn-warning text-dark"}`}>
+                          {ex.estado === "Revisado" ? "✓ Revisado" : "Marcar Visto"}
                         </button>
                       </div>
                     ))}
@@ -597,26 +488,12 @@ export default function Nutricionista(): JSX.Element {
                 )}
               </div>
 
-              <div
-                className="p-3 rounded-4 mt-4 d-flex align-items-center justify-content-between"
-                style={{
-                  background: "linear-gradient(90deg, #0f172a, #1e293b)",
-                  color: "white",
-                }}
-              >
+              <div className="p-3 rounded-4 mt-4 d-flex align-items-center justify-content-between bg-success text-white">
                 <div>
-                  <div className="small fw-bold text-success">
-                    Pauta Activa Global
-                  </div>
-                  <div className="fw-bolder">
-                    {planActivo?.caloriasDiarias || 1800} kcal •{" "}
-                    {planActivo?.objetivo || "Mantenimiento"}
-                  </div>
+                  <small className="fw-bold opacity-75">Pauta Activa Global</small>
+                  <div className="fw-bolder">{planActivo?.caloriasDiarias || 1800} kcal • {planActivo?.objetivo || "Mantenimiento"}</div>
                 </div>
-                <button
-                  onClick={() => cambiarTab("clinical")}
-                  className="btn btn-sm btn-light rounded-pill px-3 fw-bold"
-                >
+                <button onClick={() => cambiarTab("clinical")} className="btn btn-sm btn-light text-success rounded-pill px-3 fw-bold">
                   Editar Pauta
                 </button>
               </div>
@@ -628,169 +505,64 @@ export default function Nutricionista(): JSX.Element {
   };
 
   const renderCitas = () => (
-    <div
-      className="glass-panel p-4 p-md-5 rounded-5 border-0"
-      style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}
-    >
+    <div className="glass-panel p-4 p-md-5 rounded-5 border-0" style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}>
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
-          <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-            Control de Agenda y Consultas
-          </h4>
-          <p className="text-muted small mb-0">
-            Sincronizado en tiempo real con el agendamiento de los pacientes.
-          </p>
+          <h4 className="fw-bolder text-dark mb-1 tracking-tight">Control de Agenda y Consultas</h4>
+          <p className="text-muted small mb-0">Sincronizado en tiempo real con el agendamiento de los pacientes.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsCreatingCita(!isCreatingCita)}
-          className="btn-kinetic-health py-2 px-4 border-0 shadow-sm"
-        >
+        <button type="button" onClick={() => setIsCreatingCita(!isCreatingCita)} className="btn-kinetic-health py-2 px-4 border-0 shadow-sm">
           {isCreatingCita ? "Cerrar Formulario" : "+ Agendar Paciente"}
         </button>
       </div>
 
-      {/* Formulario para agendar manualmente a un paciente */}
       {isCreatingCita && (
-        <form
-          onSubmit={handleCrearCitaManual}
-          className="p-4 rounded-4 bg-white border shadow-sm mb-4"
-        >
-          <h6 className="fw-bolder text-dark mb-3">
-            Asignar Nueva Hora de Consulta
-          </h6>
+        <form onSubmit={handleCrearCitaManual} className="p-4 rounded-4 bg-white border shadow-sm mb-4">
+          <h6 className="fw-bolder text-dark mb-3">Asignar Nueva Hora de Consulta</h6>
           <div className="row g-3 mb-3">
             <div className="col-md-4">
-              <label className="form-label small fw-bold text-muted text-uppercase">
-                Nombre del Paciente
-              </label>
-              <input
-                type="text"
-                className="form-control apple-input"
-                placeholder="Ej. Javiera Morales"
-                value={nuevaCitaForm.pacienteNombre}
-                onChange={(e) =>
-                  setNuevaCitaForm({
-                    ...nuevaCitaForm,
-                    pacienteNombre: e.target.value,
-                  })
-                }
-                required
-              />
+              <label className="form-label small fw-bold text-muted text-uppercase">Nombre del Paciente</label>
+              <input type="text" className="form-control apple-input" placeholder="Ej. Javiera Morales" value={nuevaCitaForm.pacienteNombre} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, pacienteNombre: e.target.value })} required />
             </div>
             <div className="col-md-4">
-              <label className="form-label small fw-bold text-muted text-uppercase">
-                Correo del Paciente
-              </label>
-              <input
-                type="email"
-                className="form-control apple-input"
-                placeholder="paciente@gmail.com"
-                value={nuevaCitaForm.pacienteEmail}
-                onChange={(e) =>
-                  setNuevaCitaForm({
-                    ...nuevaCitaForm,
-                    pacienteEmail: e.target.value,
-                  })
-                }
-                required
-              />
+              <label className="form-label small fw-bold text-muted text-uppercase">Correo del Paciente</label>
+              <input type="email" className="form-control apple-input" placeholder="paciente@gmail.com" value={nuevaCitaForm.pacienteEmail} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, pacienteEmail: e.target.value })} required />
             </div>
             <div className="col-md-4">
-              <label className="form-label small fw-bold text-muted text-uppercase">
-                Prestación / Plan
-              </label>
-              <select
-                className="form-select apple-input fw-semibold"
-                value={nuevaCitaForm.servicioNombre}
-                onChange={(e) =>
-                  setNuevaCitaForm({
-                    ...nuevaCitaForm,
-                    servicioNombre: e.target.value,
-                  })
-                }
-              >
+              <label className="form-label small fw-bold text-muted text-uppercase">Prestación / Plan</label>
+              <select className="form-select apple-input fw-semibold" value={nuevaCitaForm.servicioNombre} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, servicioNombre: e.target.value })}>
                 <option value="Consulta Presencial">Consulta Presencial</option>
-                <option value="Control Telemedicina">
-                  Control Telemedicina
-                </option>
-                {servicios.map((s) => (
-                  <option key={s.id} value={s.nombre}>
-                    {s.nombre}
-                  </option>
-                ))}
+                <option value="Control Telemedicina">Control Telemedicina</option>
+                {servicios.map((s) => (<option key={s.id} value={s.nombre}>{s.nombre}</option>))}
               </select>
             </div>
           </div>
           <div className="row g-3 align-items-end">
             <div className="col-md-4">
-              <label className="form-label small fw-bold text-muted text-uppercase">
-                Fecha
-              </label>
-              <input
-                type="date"
-                className="form-control apple-input"
-                value={nuevaCitaForm.fecha}
-                onChange={(e) =>
-                  setNuevaCitaForm({ ...nuevaCitaForm, fecha: e.target.value })
-                }
-                required
-              />
+              <label className="form-label small fw-bold text-muted text-uppercase">Fecha</label>
+              <input type="date" className="form-control apple-input" value={nuevaCitaForm.fecha} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, fecha: e.target.value })} required />
             </div>
             <div className="col-md-4">
-              <label className="form-label small fw-bold text-muted text-uppercase">
-                Hora
-              </label>
-              <input
-                type="time"
-                className="form-control apple-input"
-                value={nuevaCitaForm.hora}
-                onChange={(e) =>
-                  setNuevaCitaForm({ ...nuevaCitaForm, hora: e.target.value })
-                }
-                required
-              />
+              <label className="form-label small fw-bold text-muted text-uppercase">Hora</label>
+              <input type="time" className="form-control apple-input" value={nuevaCitaForm.hora} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, hora: e.target.value })} required />
             </div>
             <div className="col-md-4 text-end">
-              <button
-                type="submit"
-                className="btn btn-success rounded-pill w-100 py-2 fw-bold"
-              >
-                Guardar en Agenda
-              </button>
+              <button type="submit" className="btn btn-success rounded-pill w-100 py-2 fw-bold">Guardar en Agenda</button>
             </div>
           </div>
         </form>
       )}
 
-      {/* Barra de Filtros y Buscador */}
       <div className="row g-3 align-items-center mb-4">
         <div className="col-md-6">
-          <input
-            type="search"
-            className="form-control apple-input"
-            placeholder="🔍 Buscar por paciente, correo o servicio..."
-            value={busquedaCitas}
-            onChange={(e) => setBusquedaCitas(e.target.value)}
-          />
+          <input type="search" className="form-control apple-input" placeholder="🔍 Buscar por paciente, correo o servicio..." value={busquedaCitas} onChange={(e) => setBusquedaCitas(e.target.value)} />
         </div>
         <div className="col-md-6 d-flex flex-wrap gap-2 justify-content-md-end">
-          {["TODOS", "ACTIVAS", "Confirmada", "Completada", "Cancelada"].map(
-            (est) => (
-              <button
-                key={est}
-                type="button"
-                onClick={() => setFiltroEstadoCita(est)}
-                className={`btn btn-sm rounded-pill px-3 fw-bold ${
-                  filtroEstadoCita === est
-                    ? "btn-dark"
-                    : "btn-light text-secondary border"
-                }`}
-              >
-                {est}
-              </button>
-            ),
-          )}
+          {["TODOS", "ACTIVAS", "Confirmada", "Completada", "Cancelada"].map((est) => (
+            <button key={est} type="button" onClick={() => setFiltroEstadoCita(est)} className={`btn btn-sm rounded-pill px-3 fw-bold ${filtroEstadoCita === est ? "btn-dark" : "btn-light text-secondary border"}`}>
+              {est}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -798,27 +570,17 @@ export default function Nutricionista(): JSX.Element {
         <table className="table table-hover align-middle mb-0">
           <thead className="table-light">
             <tr>
-              <th className="py-3 ps-4 small text-uppercase text-muted">
-                Paciente
-              </th>
-              <th className="py-3 small text-uppercase text-muted">
-                Prestación / Modalidad
-              </th>
-              <th className="py-3 small text-uppercase text-muted">
-                Fecha y Hora
-              </th>
+              <th className="py-3 ps-4 small text-uppercase text-muted">Paciente</th>
+              <th className="py-3 small text-uppercase text-muted">Prestación / Modalidad</th>
+              <th className="py-3 small text-uppercase text-muted">Fecha y Hora</th>
               <th className="py-3 small text-uppercase text-muted">Estado</th>
-              <th className="py-3 pe-4 text-end small text-uppercase text-muted">
-                Resolución Clínica
-              </th>
+              <th className="py-3 pe-4 text-end small text-uppercase text-muted">Resolución Clínica</th>
             </tr>
           </thead>
           <tbody>
             {citasFiltradas.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-5 text-muted">
-                  No se encontraron registros para el filtro seleccionado.
-                </td>
+                <td colSpan={5} className="text-center py-5 text-muted">No se encontraron registros para el filtro seleccionado.</td>
               </tr>
             ) : (
               citasFiltradas.map((c) => (
@@ -828,61 +590,28 @@ export default function Nutricionista(): JSX.Element {
                     <small className="text-muted">{c.pacienteEmail}</small>
                   </td>
                   <td>
-                    <span className="badge bg-light text-dark border rounded-pill px-3 py-1">
-                      {c.servicioNombre}
-                    </span>
+                    <span className="badge bg-light text-dark border rounded-pill px-3 py-1">{c.servicioNombre}</span>
                   </td>
                   <td>
                     <div className="fw-bold text-dark small">{c.fecha}</div>
                     <small className="text-muted">{c.hora} hrs</small>
                   </td>
                   <td>
-                    <span
-                      className={`badge rounded-pill px-3 py-1 ${
-                        c.estado === "Confirmada"
-                          ? "bg-success-subtle text-success"
-                          : c.estado === "Pendiente" ||
-                              c.estado === "Programada"
-                            ? "bg-warning-subtle text-dark"
-                            : c.estado === "Completada"
-                              ? "bg-primary-subtle text-primary"
-                              : "bg-danger-subtle text-danger"
-                      }`}
-                    >
+                    <span className={`badge rounded-pill px-3 py-1 ${c.estado === "Confirmada" ? "bg-success-subtle text-success" : c.estado === "Pendiente" || c.estado === "Programada" ? "bg-warning-subtle text-dark" : c.estado === "Completada" ? "bg-primary-subtle text-primary" : "bg-danger-subtle text-danger"}`}>
                       {c.estado}
                     </span>
                   </td>
                   <td className="pe-4 text-end">
                     <div className="d-inline-flex gap-2">
-                      {(c.estado === "Pendiente" ||
-                        c.estado === "Programada") && (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-success rounded-pill px-3 fw-bold"
-                          onClick={() => cambiarEstadoCita(c.id, "Confirmada")}
-                        >
-                          Confirmar
-                        </button>
+                      {(c.estado === "Pendiente" || c.estado === "Programada") && (
+                        <button type="button" className="btn btn-sm btn-success rounded-pill px-3 fw-bold" onClick={() => cambiarEstadoCita(c.id, "Confirmada")}>Confirmar</button>
                       )}
                       {c.estado === "Confirmada" && (
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary rounded-pill px-3 fw-bold"
-                          onClick={() => cambiarEstadoCita(c.id, "Completada")}
-                        >
-                          Marcar Atendida
-                        </button>
+                        <button type="button" className="btn btn-sm btn-primary rounded-pill px-3 fw-bold" onClick={() => cambiarEstadoCita(c.id, "Completada")}>Marcar Atendida</button>
                       )}
-                      {c.estado !== "Cancelada" &&
-                        c.estado !== "Completada" && (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold"
-                            onClick={() => cambiarEstadoCita(c.id, "Cancelada")}
-                          >
-                            Anular
-                          </button>
-                        )}
+                      {c.estado !== "Cancelada" && c.estado !== "Completada" && (
+                        <button type="button" className="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold" onClick={() => cambiarEstadoCita(c.id, "Cancelada")}>Anular</button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -894,27 +623,17 @@ export default function Nutricionista(): JSX.Element {
     </div>
   );
 
-  // NUEVA PESTAÑA: GESTIÓN CLÍNICA DE FICHAS, PAUTA Y EXÁMENES
   const renderClinical = () => (
     <div style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}>
       <div className="row g-4 mb-4">
-        {/* Editor de Pauta Alimentaria (Sincronizado con Account.tsx) */}
         <div className="col-lg-7">
           <div className="glass-panel p-4 p-md-5 rounded-5 border-0 h-100">
             <div className="d-flex justify-content-between align-items-center mb-4">
               <div>
-                <span className="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-bold mb-1">
-                  Sincronizado con Portal del Paciente
-                </span>
-                <h4 className="fw-bolder text-dark mb-0 tracking-tight">
-                  Prescripción Dietoterapéutica
-                </h4>
+                <span className="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-bold mb-1">Sincronizado con Portal del Paciente</span>
+                <h4 className="fw-bolder text-dark mb-0 tracking-tight">Prescripción Dietoterapéutica</h4>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsEditingPlan(!isEditingPlan)}
-                className="btn btn-dark rounded-pill px-3 py-2 fw-bold small"
-              >
+              <button type="button" onClick={() => setIsEditingPlan(!isEditingPlan)} className="btn btn-dark rounded-pill px-3 py-2 fw-bold small shadow-sm">
                 {isEditingPlan ? "Cerrar Editor" : "✏️ Ajustar Macros y Kcal"}
               </button>
             </div>
@@ -922,107 +641,48 @@ export default function Nutricionista(): JSX.Element {
             {planActivo && (
               <>
                 {isEditingPlan ? (
-                  <form
-                    onSubmit={handleGuardarPlanNutricional}
-                    className="p-4 rounded-4 bg-white border shadow-sm mb-4"
-                  >
-                    <h6 className="fw-bolder text-dark mb-3">
-                      Parámetros Energéticos y Objetivo
-                    </h6>
+                  <form onSubmit={handleGuardarPlanNutricional} className="p-4 rounded-4 bg-white border shadow-sm mb-4">
+                    <h6 className="fw-bolder text-dark mb-3">Parámetros Energéticos y Objetivo</h6>
                     <div className="row g-3 mb-3">
                       <div className="col-md-6">
-                        <label className="form-label small fw-bold text-muted text-uppercase">
-                          Objetivo Clínico
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control apple-input"
-                          value={planActivo.objetivo}
-                          onChange={(e) =>
-                            setPlanActivo({
-                              ...planActivo,
-                              objetivo: e.target.value,
-                            })
-                          }
-                          required
-                        />
+                        <label className="form-label small fw-bold text-muted text-uppercase">Objetivo Clínico</label>
+                        <input type="text" className="form-control apple-input" value={planActivo.objetivo} onChange={(e) => setPlanActivo({ ...planActivo, objetivo: e.target.value })} required />
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label small fw-bold text-muted text-uppercase">
-                          Requerimiento (kcal/día)
-                        </label>
-                        <input
-                          type="number"
-                          className="form-control apple-input"
-                          value={planActivo.caloriasDiarias}
-                          onChange={(e) =>
-                            setPlanActivo({
-                              ...planActivo,
-                              caloriasDiarias: Number(e.target.value),
-                            })
-                          }
-                          required
-                        />
+                        <label className="form-label small fw-bold text-muted text-uppercase">Requerimiento (kcal/día)</label>
+                        <input type="number" className="form-control apple-input" value={planActivo.caloriasDiarias} onChange={(e) => setPlanActivo({ ...planActivo, caloriasDiarias: Number(e.target.value) })} required />
                       </div>
                     </div>
-
                     <div className="row g-3 mb-3">
                       {planActivo.macros?.map((m, idx) => (
                         <div key={idx} className="col-md-4">
-                          <label className="form-label small fw-bold text-muted">
-                            {m.nombre} (g)
-                          </label>
-                          <input
-                            type="number"
-                            className="form-control apple-input"
-                            value={m.gramos}
-                            onChange={(e) => {
-                              const nuevosMacros = [...planActivo.macros];
-                              nuevosMacros[idx] = {
-                                ...m,
-                                gramos: Number(e.target.value),
-                              };
-                              setPlanActivo({
-                                ...planActivo,
-                                macros: nuevosMacros,
-                              });
-                            }}
-                          />
+                          <label className="form-label small fw-bold text-muted">{m.nombre} (g)</label>
+                          <input type="number" className="form-control apple-input" value={m.gramos} onChange={(e) => {
+                            const nuevosMacros = [...planActivo.macros];
+                            nuevosMacros[idx] = { ...m, gramos: Number(e.target.value) };
+                            setPlanActivo({ ...planActivo, macros: nuevosMacros });
+                          }} />
                         </div>
                       ))}
                     </div>
-
                     <div className="text-end">
-                      <button
-                        type="submit"
-                        className="btn btn-success rounded-pill px-4 py-2 fw-bold small"
-                      >
-                        Publicar Cambios en Ficha
-                      </button>
+                      <button type="submit" className="btn btn-success rounded-pill px-4 py-2 fw-bold small shadow-sm">Publicar Cambios</button>
                     </div>
                   </form>
                 ) : (
                   <div className="row g-3 mb-4">
                     <div className="col-sm-4">
-                      <div className="p-3 rounded-4 bg-dark text-white text-center">
-                        <small className="text-secondary text-uppercase fw-bold d-block">
-                          Meta Diaria
-                        </small>
-                        <h4 className="fw-bolder mb-0 text-success">
-                          {planActivo.caloriasDiarias} kcal
-                        </h4>
+                      <div className="p-3 rounded-4 bg-dark text-white text-center shadow-sm">
+                        <small className="text-white-50 text-uppercase fw-bold d-block">Meta Diaria</small>
+                        <h4 className="fw-bolder mb-0 text-success">{planActivo.caloriasDiarias} kcal</h4>
                       </div>
                     </div>
                     <div className="col-sm-8">
-                      <div className="p-3 rounded-4 bg-white border h-100 d-flex align-items-center justify-content-around">
+                      <div className="p-3 rounded-4 bg-white border h-100 d-flex align-items-center justify-content-around shadow-sm">
                         {planActivo.macros?.map((m, idx) => (
                           <div key={idx} className="text-center">
-                            <small className="text-muted fw-bold d-block">
-                              {m.nombre}
-                            </small>
-                            <span className="fw-bolder text-dark">
-                              {m.gramos}g
-                            </span>
+                            <small className="text-muted fw-bold d-block">{m.nombre}</small>
+                            <span className="fw-bolder text-dark">{m.gramos}g</span>
                           </div>
                         ))}
                       </div>
@@ -1030,95 +690,38 @@ export default function Nutricionista(): JSX.Element {
                   </div>
                 )}
 
-                {/* Creador de tiempos de comida */}
-                <div className="p-3 rounded-4 bg-white border mb-4">
-                  <div className="small fw-bold text-dark text-uppercase mb-2">
-                    + Añadir Tiempo de Comida a la Pauta
-                  </div>
+                <div className="p-3 rounded-4 bg-white border mb-4 shadow-sm">
+                  <div className="small fw-bold text-dark text-uppercase mb-2">+ Añadir Tiempo de Comida a la Pauta</div>
                   <div className="row g-2">
                     <div className="col-sm-3">
-                      <input
-                        type="time"
-                        className="form-control form-control-sm apple-input"
-                        value={nuevaComida.horario}
-                        onChange={(e) =>
-                          setNuevaComida({
-                            ...nuevaComida,
-                            horario: e.target.value,
-                          })
-                        }
-                      />
+                      <input type="time" className="form-control form-control-sm apple-input" value={nuevaComida.horario} onChange={(e) => setNuevaComida({ ...nuevaComida, horario: e.target.value })} />
                     </div>
                     <div className="col-sm-3">
-                      <select
-                        className="form-select form-select-sm apple-input fw-semibold"
-                        value={nuevaComida.tipo}
-                        onChange={(e) =>
-                          setNuevaComida({
-                            ...nuevaComida,
-                            tipo: e.target.value,
-                          })
-                        }
-                      >
+                      <select className="form-select form-select-sm apple-input fw-semibold" value={nuevaComida.tipo} onChange={(e) => setNuevaComida({ ...nuevaComida, tipo: e.target.value })}>
                         <option value="Desayuno">Desayuno</option>
                         <option value="Colación">Colación</option>
                         <option value="Almuerzo">Almuerzo</option>
-                        <option value="Once / Pre-entreno">
-                          Once / Pre-entreno
-                        </option>
+                        <option value="Once / Pre-entreno">Once / Pre-entreno</option>
                         <option value="Cena">Cena</option>
                       </select>
                     </div>
                     <div className="col-sm-4">
-                      <input
-                        type="text"
-                        className="form-control form-control-sm apple-input"
-                        placeholder="Indicación alimentaria..."
-                        value={nuevaComida.descripcion}
-                        onChange={(e) =>
-                          setNuevaComida({
-                            ...nuevaComida,
-                            descripcion: e.target.value,
-                          })
-                        }
-                      />
+                      <input type="text" className="form-control form-control-sm apple-input" placeholder="Indicación alimentaria..." value={nuevaComida.descripcion} onChange={(e) => setNuevaComida({ ...nuevaComida, descripcion: e.target.value })} />
                     </div>
                     <div className="col-sm-2 d-grid">
-                      <button
-                        type="button"
-                        onClick={handleAgregarComidaPlan}
-                        className="btn btn-sm btn-success rounded-3 fw-bold"
-                      >
-                        Añadir
-                      </button>
+                      <button type="button" onClick={handleAgregarComidaPlan} className="btn btn-sm btn-success rounded-3 fw-bold">Añadir</button>
                     </div>
                   </div>
                 </div>
 
-                {/* Lista de comidas prescritas */}
                 <div className="d-flex flex-column gap-2">
                   {planActivo.comidas?.map((c) => (
-                    <div
-                      key={c.id}
-                      className="p-3 rounded-4 bg-white border d-flex justify-content-between align-items-center gap-3"
-                    >
+                    <div key={c.id} className="p-3 rounded-4 bg-white border shadow-sm d-flex justify-content-between align-items-center gap-3">
                       <div>
-                        <span className="badge bg-success-subtle text-success me-2">
-                          {c.horario}
-                        </span>
-                        <strong className="text-dark">{c.tipo}:</strong>{" "}
-                        <span className="text-muted small">
-                          {c.descripcion}
-                        </span>
+                        <span className="badge bg-success-subtle text-success me-2">{c.horario}</span>
+                        <strong className="text-dark">{c.tipo}:</strong> <span className="text-muted small">{c.descripcion}</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleEliminarComidaPlan(c.id)}
-                        className="btn btn-sm btn-light text-danger rounded-pill px-2"
-                        title="Quitar comida"
-                      >
-                        ✕
-                      </button>
+                      <button type="button" onClick={() => handleEliminarComidaPlan(c.id)} className="btn btn-sm btn-light text-danger rounded-pill px-2" title="Quitar">✕</button>
                     </div>
                   ))}
                 </div>
@@ -1127,129 +730,50 @@ export default function Nutricionista(): JSX.Element {
           </div>
         </div>
 
-        {/* Columna Derecha: Validación de Exámenes y Antropometría */}
         <div className="col-lg-5">
           <div className="d-flex flex-column gap-4 h-100">
-            {/* Bandeja de Revisión de Exámenes */}
             <div className="glass-panel p-4 rounded-5 border-0">
-              <h5 className="fw-bolder text-dark mb-1 tracking-tight">
-                Auditoría de Exámenes
-              </h5>
-              <p className="text-muted small mb-3">
-                Valida los documentos subidos por el paciente para actualizar su
-                estado a "Revisado".
-              </p>
-
+              <h5 className="fw-bolder text-dark mb-1 tracking-tight">Auditoría de Exámenes</h5>
+              <p className="text-muted small mb-3">Valida los documentos subidos por el paciente.</p>
               <div className="d-flex flex-column gap-2">
                 {examenes.map((ex) => (
-                  <div
-                    key={ex.id}
-                    className="p-3 rounded-4 bg-white border d-flex justify-content-between align-items-center gap-2"
-                  >
+                  <div key={ex.id} className="p-3 rounded-4 bg-white border shadow-sm d-flex justify-content-between align-items-center gap-2">
                     <div className="text-truncate">
-                      <div className="fw-bold text-dark small text-truncate">
-                        🩺 {ex.nombre}
-                      </div>
-                      <small className="text-muted">
-                        Fecha: {ex.fechaSubida}
-                      </small>
+                      <div className="fw-bold text-dark small text-truncate">🩺 {ex.nombre}</div>
+                      <small className="text-muted">Fecha: {ex.fechaSubida}</small>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleToggleEstadoExamen(ex.id)}
-                      className={`btn btn-sm rounded-pill px-3 fw-bold flex-shrink-0 ${
-                        ex.estado === "Revisado"
-                          ? "btn-outline-success"
-                          : "btn-success"
-                      }`}
-                    >
-                      {ex.estado === "Revisado"
-                        ? "✓ Revisado"
-                        : "Aprobar Examen"}
+                    <button type="button" onClick={() => handleToggleEstadoExamen(ex.id)} className={`btn btn-sm rounded-pill px-3 fw-bold flex-shrink-0 ${ex.estado === "Revisado" ? "btn-outline-success" : "btn-success"}`}>
+                      {ex.estado === "Revisado" ? "✓ Revisado" : "Aprobar"}
                     </button>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Ingreso Rápido de Antropometría InBody */}
             <div className="glass-panel p-4 rounded-5 border-0">
-              <h5 className="fw-bolder text-dark mb-1 tracking-tight">
-                Cargar Control InBody
-              </h5>
-              <p className="text-muted small mb-3">
-                Añade un punto biométrico a la tabla evolutiva del paciente.
-              </p>
+              <h5 className="fw-bolder text-dark mb-1 tracking-tight">Cargar Control InBody</h5>
+              <p className="text-muted small mb-3">Añade un punto biométrico a la tabla evolutiva del paciente.</p>
               <form onSubmit={handleRegistrarAntropometria}>
                 <div className="row g-2 mb-3">
                   <div className="col-4">
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="form-control apple-input form-control-sm"
-                      placeholder="Peso (kg)"
-                      value={nuevoControlClinico.peso}
-                      onChange={(e) =>
-                        setNuevoControlClinico({
-                          ...nuevoControlClinico,
-                          peso: e.target.value,
-                        })
-                      }
-                      required
-                    />
+                    <input type="number" step="0.1" className="form-control apple-input form-control-sm" placeholder="Peso (kg)" value={nuevoControlClinico.peso} onChange={(e) => setNuevoControlClinico({ ...nuevoControlClinico, peso: e.target.value })} required />
                   </div>
                   <div className="col-4">
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="form-control apple-input form-control-sm"
-                      placeholder="% Grasa"
-                      value={nuevoControlClinico.grasa}
-                      onChange={(e) =>
-                        setNuevoControlClinico({
-                          ...nuevoControlClinico,
-                          grasa: e.target.value,
-                        })
-                      }
-                      required
-                    />
+                    <input type="number" step="0.1" className="form-control apple-input form-control-sm" placeholder="% Grasa" value={nuevoControlClinico.grasa} onChange={(e) => setNuevoControlClinico({ ...nuevoControlClinico, grasa: e.target.value })} required />
                   </div>
                   <div className="col-4">
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="form-control apple-input form-control-sm"
-                      placeholder="Músculo (kg)"
-                      value={nuevoControlClinico.musculo}
-                      onChange={(e) =>
-                        setNuevoControlClinico({
-                          ...nuevoControlClinico,
-                          musculo: e.target.value,
-                        })
-                      }
-                      required
-                    />
+                    <input type="number" step="0.1" className="form-control apple-input form-control-sm" placeholder="Músculo (kg)" value={nuevoControlClinico.musculo} onChange={(e) => setNuevoControlClinico({ ...nuevoControlClinico, musculo: e.target.value })} required />
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  className="btn btn-dark rounded-pill w-100 py-2 fw-bold small"
-                >
-                  Registrar Medición en Ficha
-                </button>
+                <button type="submit" className="btn btn-dark rounded-pill w-100 py-2 fw-bold small shadow-sm">Registrar Medición en Ficha</button>
               </form>
 
               {pacientes.length > 0 && (
                 <div className="mt-4 pt-3 border-top">
-                  <small className="text-uppercase fw-bold text-muted d-block mb-2">
-                    Pacientes Activos en Plataforma ({pacientes.length})
-                  </small>
+                  <small className="text-uppercase fw-bold text-muted d-block mb-2">Pacientes Activos en Plataforma ({pacientes.length})</small>
                   <div className="d-flex flex-wrap gap-2">
                     {pacientes.map((p) => (
-                      <span
-                        key={p.email}
-                        className="badge bg-white text-dark border rounded-pill px-3 py-2"
-                      >
+                      <span key={p.email} className="badge bg-white text-dark border rounded-pill px-3 py-2 shadow-sm">
                         👤 {p.nombre} ({p.pesoActual || "--"} kg)
                       </span>
                     ))}
@@ -1305,7 +829,6 @@ export default function Nutricionista(): JSX.Element {
     <main className="app-wrapper py-4 py-lg-5 position-relative">
       <div className="ambient-glow-health"></div>
 
-      {/* Notificación Flotante Global */}
       {notificacion && (
         <div
           className="position-fixed top-0 start-50 translate-middle-x p-3"
@@ -1341,11 +864,10 @@ export default function Nutricionista(): JSX.Element {
         style={{ zIndex: 2 }}
       >
         <div className="row g-4">
-          {/* CONSOLA DE NAVEGACIÓN CON NOMBRE REAL DEL NUTRICIONISTA */}
           <NutricionistaSidebar
             activeTab={activeTab}
             onTabChange={cambiarTab}
-            nombreNutricionista={nutricionistaActual?.nombre || "Nutricionista"}
+            nombreNutricionista={nutricionistaActual?.nombre || "Especialista"}
             emailNutricionista={nutricionistaActual?.email}
             fotoPerfil={nutricionistaActual?.fotoPerfil}
             pendientesCount={{
@@ -1355,20 +877,19 @@ export default function Nutricionista(): JSX.Element {
           />
 
           <section className="col-12 col-lg-9">
-            {/* Banner Superior de Estación de Trabajo */}
             <div
               className="p-4 p-md-5 rounded-5 shadow-glass mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3"
               style={{
-                background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                background: "linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)",
                 color: "white",
               }}
             >
               <div>
                 <div className="d-flex align-items-center gap-2 mb-2">
-                  <span className="badge bg-success text-white rounded-pill px-3 py-1 fw-bold">
+                  <span className="badge bg-white text-success rounded-pill px-3 py-1 fw-bold">
                     ESTACIÓN CLÍNICA
                   </span>
-                  <span className="text-secondary small">
+                  <span className="text-white-50 small">
                     •{" "}
                     {new Date().toLocaleDateString("es-CL", {
                       weekday: "long",
@@ -1379,11 +900,11 @@ export default function Nutricionista(): JSX.Element {
                 </div>
                 <h2 className="fw-bolder mb-1 tracking-tight">
                   Bienvenido/a,{" "}
-                  <span style={{ color: "#34d399" }}>
+                  <span className="text-white">
                     {nutricionistaActual?.nombre || "Especialista"}
                   </span>
                 </h2>
-                <p className="mb-0 text-secondary small">
+                <p className="mb-0 text-white-50 small">
                   {activeTab === "dashboard" &&
                     "Panorama operativo de tu consulta, pacientes en espera y bandeja de laboratorio."}
                   {activeTab === "users" &&
@@ -1396,13 +917,13 @@ export default function Nutricionista(): JSX.Element {
                     "Organización de especialidades clínicas del centro."}
                 </p>
               </div>
-              <div className="d-none d-xl-flex align-items-center gap-3 bg-white bg-opacity-10 p-3 rounded-4">
+              <div className="d-none d-xl-flex align-items-center gap-3 bg-white bg-opacity-25 p-3 rounded-4 backdrop-blur">
                 <div className="fs-2">🩺</div>
                 <div>
                   <div className="fw-bolder text-white leading-tight">
                     {pacientes.length} Pacientes
                   </div>
-                  <small className="text-secondary">
+                  <small className="text-white-50">
                     Registrados en plataforma
                   </small>
                 </div>

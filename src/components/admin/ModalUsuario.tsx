@@ -57,7 +57,7 @@ function ModalUsuarioContent({
                 ¿Seguro que deseas eliminar a{" "}
                 <strong>{usuarioEliminar.nombre}</strong>?
               </p>
-              <small className="text-muted">
+              <small className="text-white">
                 Correo: {usuarioEliminar.email}. Esta acción no se puede
                 deshacer.
               </small>
@@ -101,7 +101,7 @@ function ModalUsuarioContent({
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">
+                <label className="form-label small fw-semibold text-white">
                   Nombre Completo
                 </label>
                 <input
@@ -114,7 +114,7 @@ function ModalUsuarioContent({
               </div>
 
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">
+                <label className="form-label small fw-semibold text-white">
                   Correo Electrónico
                 </label>
                 <input
@@ -127,7 +127,7 @@ function ModalUsuarioContent({
               </div>
 
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-muted">
+                <label className="form-label small fw-semibold text-white">
                   Rol en el Sistema
                 </label>
                 <select

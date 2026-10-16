@@ -7,12 +7,12 @@ interface ModalProductoProps {
     categorias: Categoria[];
     onClose: () => void;
     onSave: (datos: {
-    nombre: string;
-    descripcion: string;
-    precio: number;
-    tipo: "evaluacion" | "plan" | "control";
-    icono: string;
-    categoriaId: string;
+        nombre: string;
+        descripcion: string;
+        precio: number;
+        tipo: "evaluacion" | "plan" | "control";
+        icono: string;
+        categoriaId: string;
     }) => void;
 }
 
@@ -49,89 +49,97 @@ function ModalProductoContent({
     };
 
     return (
-        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-        <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content rounded-4 border-0 p-3 shadow">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h6 className="fw-bold mb-0">
-                {servicioEditar ? "Modificar Plan" : "Nuevo Plan / Servicio"}
-                </h6>
-                <button type="button" className="btn-close small" onClick={onClose} />
-            </div>
+        <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+            <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content rounded-4 border border-secondary border-opacity-50 p-4 shadow-lg" style={{ backgroundColor: '#1f2937', color: '#f3f4f6' }}>
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        <h6 className="fw-bolder mb-0 tracking-tight" style={{ color: '#3b82f6' }}>
+                            {servicioEditar ? "ACTUALIZAR OBJETO CLÍNICO" : "NUEVO OBJETO CLÍNICO (PLAN/SERVICIO)"}
+                        </h6>
+                        <button type="button" className="btn-close btn-close-white" style={{ fontSize: '0.8rem' }} onClick={onClose} />
+                    </div>
 
-            <form onSubmit={handleSubmit} className="d-flex flex-column gap-2">
-                <input
-                type="text"
-                className="form-control form-control-sm"
-                placeholder="Nombre del Plan"
-                value={form.nombre}
-                onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                required
-                />
+                    <form onSubmit={handleSubmit} className="d-flex flex-column gap-3">
+                        <div>
+                            <label className="form-label small fw-bold text-white text-uppercase mb-1">Nombre producto</label>
+                            <input
+                                type="text"
+                                className="form-control bg-dark text-white border-secondary shadow-none font-monospace"
+                                placeholder="Nombre del Plan o Consulta"
+                                value={form.nombre}
+                                onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                                required
+                            />
+                        </div>
 
-                <select
-                className="form-select form-select-sm"
-                value={form.categoriaId}
-                onChange={(e) => setForm({ ...form, categoriaId: e.target.value })}
-                required
-                >
-                <option value="">Seleccionar categoría...</option>
-                {categorias.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                    {cat.nombre}
-                    </option>
-                ))}
-                </select>
+                        <div>
+                            <label className="form-label small fw-bold text-white text-uppercase mb-1">Categoría</label>
+                            <select
+                                className="form-select bg-dark text-white border-secondary shadow-none font-monospace"
+                                value={form.categoriaId}
+                                onChange={(e) => setForm({ ...form, categoriaId: e.target.value })}
+                                required
+                            >
+                                <option value="">Seleccionar categoría</option>
+                                {categorias.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                <div className="row g-2">
-                <div className="col-7">
-                    <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    placeholder="Precio ($ CLP)"
-                    value={form.precio || ""}
-                    onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })}
-                    min={0}
-                    required
-                    />
+                        <div className="row g-3">
+                            <div className="col-7">
+                                <label className="form-label small fw-bold text-white text-uppercase mb-1">Arancel (CLP)</label>
+                                <input
+                                    type="number"
+                                    className="form-control bg-dark text-white border-secondary shadow-none font-monospace"
+                                    placeholder="Valor numérico"
+                                    value={form.precio || ""}
+                                    onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })}
+                                    min={0}
+                                    required
+                                />
+                            </div>
+                            <div className="col-5">
+                                <label className="form-label small fw-bold text-white text-uppercase mb-1">Tipo de servicio</label>
+                                <select
+                                    className="form-select bg-dark text-white border-secondary shadow-none font-monospace"
+                                    value={form.tipo}
+                                    onChange={(e) =>
+                                        setForm({ ...form, tipo: e.target.value as "evaluacion" | "plan" | "control" })
+                                    }
+                                >
+                                    <option value="plan">Plan</option>
+                                    <option value="evaluacion">Evaluación</option>
+                                    <option value="control">Control</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="form-label small fw-bold text-white text-uppercase mb-1">Especificaciones</label>
+                            <textarea
+                                className="form-control bg-dark text-white border-secondary shadow-none font-monospace"
+                                rows={2}
+                                placeholder="Descripción del alcance del plan..."
+                                value={form.descripcion}
+                                onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" className="btn btn-sm btn-outline-light text-secondary border-secondary" onClick={onClose}>
+                                Cancelar
+                            </button>
+                            <button type="submit" className="btn btn-sm fw-bold" style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}>
+                                Crear producto
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div className="col-5">
-                    <select
-                    className="form-select form-select-sm"
-                    value={form.tipo}
-                    onChange={(e) =>
-                        setForm({
-                        ...form,
-                        tipo: e.target.value as "evaluacion" | "plan" | "control",
-                        })
-                    }
-                    >
-                    <option value="plan">Plan</option>
-                    <option value="evaluacion">Evaluación</option>
-                    <option value="control">Control</option>
-                    </select>
-                </div>
-                </div>
-
-                <textarea
-                className="form-control form-control-sm"
-                rows={2}
-                placeholder="Descripción breve..."
-                value={form.descripcion}
-                onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-                />
-
-                <div className="d-flex justify-content-end gap-2 mt-2">
-                <button type="button" className="btn btn-sm btn-light" onClick={onClose}>
-                    Cancelar
-                </button>
-                <button type="submit" className="btn btn-sm btn-success fw-bold">
-                    {servicioEditar ? "Guardar" : "Crear"}
-                </button>
-                </div>
-            </form>
             </div>
         </div>
-    </div>
     );
 }

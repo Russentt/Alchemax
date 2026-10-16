@@ -78,27 +78,18 @@ export default function NutricionistaSidebar({
 
   return (
     <>
-      {/* =========================================================
-          INTERFAZ MÓVIL Y TABLET (< 992px): CINTA DE COMANDOS OSCURA
-          ========================================================= */}
+      {/* INTERFAZ MÓVIL Y TABLET (< 992px): CINTA DE COMANDOS CLARA */}
       <div className="col-12 d-lg-none mb-3">
-        <div
-          className="p-3 rounded-4 shadow-sm"
-          style={{
-            background: "linear-gradient(145deg, #0f172a 0%, #1e293b 100%)",
-            color: "#f8fafc",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+        <div className="glass-panel p-3 rounded-4 shadow-sm border">
+          <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom border-opacity-10">
             <div className="d-flex align-items-center gap-3">
               <div
                 className="rounded-3 d-flex justify-content-center align-items-center fw-bolder shadow-sm overflow-hidden flex-shrink-0"
                 style={{
                   width: "44px",
                   height: "44px",
-                  backgroundColor: "#10b981",
-                  color: "#064e3b",
+                  backgroundColor: "#27ae60",
+                  color: "#ffffff",
                   fontSize: "1.1rem",
                 }}
               >
@@ -119,26 +110,22 @@ export default function NutricionistaSidebar({
                     style={{
                       width: "8px",
                       height: "8px",
-                      backgroundColor: "#10b981",
+                      backgroundColor: "#27ae60",
                     }}
                   />
                   <small
-                    className="text-uppercase fw-bold"
-                    style={{
-                      fontSize: "0.65rem",
-                      letterSpacing: "0.08em",
-                      color: "#34d399",
-                    }}
+                    className="text-uppercase fw-bold text-success"
+                    style={{ fontSize: "0.65rem", letterSpacing: "0.08em" }}
                   >
                     Facultativo en Línea
                   </small>
                 </div>
-                <h6 className="fw-bolder mb-0 text-white text-truncate">
+                <h6 className="fw-bolder mb-0 text-dark text-truncate">
                   {nombreNutricionista}
                 </h6>
               </div>
             </div>
-            <span className="badge bg-dark border border-secondary border-opacity-50 text-light rounded-pill px-3 py-1">
+            <span className="badge bg-success-subtle text-success rounded-pill px-3 py-1">
               PRO
             </span>
           </div>
@@ -160,10 +147,8 @@ export default function NutricionistaSidebar({
                   onClick={() => onTabChange(item.id)}
                   className="btn rounded-3 px-3 py-2 fw-bold text-nowrap d-flex align-items-center gap-2 flex-shrink-0 border-0 transition-all"
                   style={{
-                    backgroundColor: isActive
-                      ? "#10b981"
-                      : "rgba(255, 255, 255, 0.06)",
-                    color: isActive ? "#052e16" : "#cbd5e1",
+                    backgroundColor: isActive ? "#27ae60" : "rgba(0, 0, 0, 0.04)",
+                    color: isActive ? "#ffffff" : "#495057",
                     fontSize: "0.85rem",
                   }}
                 >
@@ -173,8 +158,8 @@ export default function NutricionistaSidebar({
                     <span
                       className="badge rounded-pill"
                       style={{
-                        backgroundColor: isActive ? "#052e16" : "#ef4444",
-                        color: "#ffffff",
+                        backgroundColor: isActive ? "#ffffff" : "#dc3545",
+                        color: isActive ? "#27ae60" : "#ffffff",
                         fontSize: "0.68rem",
                       }}
                     >
@@ -188,37 +173,22 @@ export default function NutricionistaSidebar({
         </div>
       </div>
 
-      {/* =========================================================
-          INTERFAZ PC (>= 992px): CONSOLA CLÍNICA VERTICAL
-          ========================================================= */}
+      {/* INTERFAZ PC (>= 992px): SIDEBAR VERTICAL LUMINOSO */}
       <aside className="col-lg-3 d-none d-lg-block">
         <div
-          className="p-4 rounded-5 shadow-lg sticky-lg-top d-flex flex-column justify-content-between"
-          style={{
-            top: "105px",
-            minHeight: "calc(100vh - 135px)",
-            background: "linear-gradient(165deg, #0f172a 0%, #111827 100%)",
-            color: "#f8fafc",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
+          className="glass-card p-4 rounded-5 shadow-glass sticky-lg-top d-flex flex-column justify-content-between border-0"
+          style={{ top: "110px", minHeight: "calc(100vh - 140px)" }}
         >
           <div>
-            {/* Tarjeta de Credencial Médica */}
-            <div
-              className="p-3 rounded-4 mb-4"
-              style={{
-                background: "rgba(255, 255, 255, 0.04)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-              }}
-            >
+            <div className="p-3 rounded-4 mb-4 bg-white border shadow-sm">
               <div className="d-flex align-items-center gap-3">
                 <div
-                  className="rounded-4 d-flex justify-content-center align-items-center fw-bolder shadow overflow-hidden flex-shrink-0"
+                  className="rounded-4 d-flex justify-content-center align-items-center fw-bolder shadow-sm overflow-hidden flex-shrink-0"
                   style={{
                     width: "56px",
                     height: "56px",
                     fontSize: "1.35rem",
-                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    background: "linear-gradient(135deg, #27ae60, #2ecc71)",
                     color: "#ffffff",
                   }}
                 >
@@ -226,11 +196,7 @@ export default function NutricionistaSidebar({
                     <img
                       src={fotoPerfil}
                       alt={nombreNutricionista}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : (
                     iniciales
@@ -243,29 +209,24 @@ export default function NutricionistaSidebar({
                       style={{
                         width: "8px",
                         height: "8px",
-                        backgroundColor: "#10b981",
-                        boxShadow: "0 0 8px #10b981",
+                        backgroundColor: "#27ae60",
                       }}
                     />
-                    <span
-                      className="text-uppercase fw-bold"
-                      style={{
-                        fontSize: "0.65rem",
-                        letterSpacing: "0.08em",
-                        color: "#34d399",
-                      }}
+                    <small
+                      className="text-uppercase fw-bold text-success"
+                      style={{ fontSize: "0.65rem", letterSpacing: "0.08em" }}
                     >
                       Staff Clínico
-                    </span>
+                    </small>
                   </div>
                   <h6
-                    className="fw-bolder text-white mb-0 text-truncate"
+                    className="fw-bolder text-dark mb-0 text-truncate"
                     title={nombreNutricionista}
                   >
                     {nombreNutricionista}
                   </h6>
                   <small
-                    className="text-secondary d-block text-truncate"
+                    className="text-muted d-block text-truncate"
                     style={{ fontSize: "0.75rem" }}
                   >
                     {emailNutricionista}
@@ -275,17 +236,12 @@ export default function NutricionistaSidebar({
             </div>
 
             <div
-              className="text-uppercase fw-bold px-2 mb-2"
-              style={{
-                fontSize: "0.68rem",
-                letterSpacing: "0.1em",
-                color: "#64748b",
-              }}
+              className="text-uppercase fw-bold px-2 mb-2 text-muted"
+              style={{ fontSize: "0.68rem", letterSpacing: "0.1em" }}
             >
               Módulos de Gestión
             </div>
 
-            {/* Botonera de Comandos */}
             <div className="d-flex flex-column gap-2">
               {menuItems.map((item) => {
                 const isActive = activeTab === item.id;
@@ -294,15 +250,15 @@ export default function NutricionistaSidebar({
                     key={item.id}
                     type="button"
                     onClick={() => onTabChange(item.id)}
-                    className="btn rounded-4 px-3 py-3 text-start d-flex align-items-center justify-content-between border-0 transition-all"
+                    className="btn rounded-4 px-3 py-3 text-start d-flex align-items-center justify-content-between border-0 transition-all hover-lift"
                     style={{
                       background: isActive
-                        ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
+                        ? "linear-gradient(90deg, #27ae60 0%, #2ecc71 100%)"
                         : "transparent",
-                      color: isActive ? "#ffffff" : "#94a3b8",
+                      color: isActive ? "#ffffff" : "#495057",
                       fontWeight: isActive ? 700 : 600,
                       boxShadow: isActive
-                        ? "0 8px 20px -4px rgba(16, 185, 129, 0.4)"
+                        ? "0 8px 20px -4px rgba(39, 174, 96, 0.3)"
                         : "none",
                     }}
                   >
@@ -314,10 +270,8 @@ export default function NutricionistaSidebar({
                       <span
                         className="badge rounded-pill px-2 py-1"
                         style={{
-                          backgroundColor: isActive
-                            ? "rgba(0,0,0,0.25)"
-                            : "rgba(239, 68, 68, 0.2)",
-                          color: isActive ? "#ffffff" : "#fca5a5",
+                          backgroundColor: isActive ? "rgba(255,255,255,0.25)" : "#dc3545",
+                          color: "#ffffff",
                           fontSize: "0.72rem",
                         }}
                       >
@@ -330,25 +284,13 @@ export default function NutricionistaSidebar({
             </div>
           </div>
 
-          {/* Pie de Consola */}
-          <div
-            className="p-3 rounded-4 mt-4"
-            style={{
-              background: "rgba(16, 185, 129, 0.08)",
-              border: "1px solid rgba(16, 185, 129, 0.2)",
-            }}
-          >
+          <div className="p-3 rounded-4 mt-4 bg-light border">
             <div className="d-flex justify-content-between align-items-center mb-1">
-              <small className="fw-bold" style={{ color: "#34d399" }}>
-                Sede Temuco
-              </small>
-              <span className="badge bg-success bg-opacity-25 text-success small">
-                Sincronizado
-              </span>
+              <small className="fw-bold text-success">Sede Temuco</small>
+              <span className="badge bg-success-subtle text-success small">Sincronizado</span>
             </div>
-            <p className="mb-0 text-secondary" style={{ fontSize: "0.75rem" }}>
-              Los cambios en planes, exámenes y catálogo impactan en tiempo real
-              el Portal del Paciente.
+            <p className="mb-0 text-muted" style={{ fontSize: "0.75rem" }}>
+              Los cambios impactan en tiempo real el Portal del Paciente.
             </p>
           </div>
         </div>

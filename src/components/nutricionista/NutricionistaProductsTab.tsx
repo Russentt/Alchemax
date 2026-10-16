@@ -61,7 +61,7 @@ export default function NutricionistaProductsTab({
             Catálogo de Planes y Prestaciones
           </h4>
           <p className="text-muted small mb-0">
-            Administra los servicios clínicos que los pacientes pueden adquirir.
+            Administra los servicios clínicos disponibles para los pacientes.
           </p>
         </div>
         <button

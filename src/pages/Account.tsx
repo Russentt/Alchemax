@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, type JSX } from "react";
+import { useState, useEffect, useRef, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type {
   Usuario,

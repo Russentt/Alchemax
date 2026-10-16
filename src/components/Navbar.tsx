@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, type JSX } from "react";
+import { useState, useEffect, useRef, type JSX } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { StorageUsuario } from "../services/storageUsuario";
 
@@ -16,7 +16,6 @@ export default function Navbar(): JSX.Element {
   const recursosRef = useRef<HTMLLIElement>(null);
   const serviciosRef = useRef<HTMLLIElement>(null);
 
-  // Referencias para controlar el delay del hover en ambos menús
   const hoverTimeoutRef = useRef<number | null>(null);
   const recursosTimeoutRef = useRef<number | null>(null);
 
@@ -87,43 +86,45 @@ export default function Navbar(): JSX.Element {
     navigate("/login", { replace: true });
   };
 
-  // --- Lógica unificada para el hover de Servicios ---
+  // --- Hover Servicios ---
   const handleMouseEnterServicios = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = window.setTimeout(() => {
       setIsServiciosOpen(true);
-      setIsDropdownOpen(false); // Cierra Recursos para evitar que se pisen
-    }, 200);
+      setIsDropdownOpen(false);
+    }, 150);
   };
 
   const handleMouseLeaveServicios = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = window.setTimeout(() => {
       setIsServiciosOpen(false);
-    }, 200);
+    }, 300);
   };
 
-  // --- Lógica unificada para el hover de Recursos ---
+  // --- Hover Recursos ---
   const handleMouseEnterRecursos = () => {
     if (recursosTimeoutRef.current) clearTimeout(recursosTimeoutRef.current);
     recursosTimeoutRef.current = window.setTimeout(() => {
       setIsDropdownOpen(true);
-      setIsServiciosOpen(false); // Cierra Servicios para evitar que se pisen
-    }, 200);
+      setIsServiciosOpen(false);
+    }, 150);
   };
 
   const handleMouseLeaveRecursos = () => {
     if (recursosTimeoutRef.current) clearTimeout(recursosTimeoutRef.current);
     recursosTimeoutRef.current = window.setTimeout(() => {
       setIsDropdownOpen(false);
-    }, 200);
+    }, 300);
   };
 
   const getNavLinkClass = (path: string, hash: string = "") => {
     const isActive = hash
       ? location.pathname === path && location.hash === hash
       : location.pathname === path && location.hash === "";
-    return `nav-link ${isActive ? "text-success fw-bold" : ""}`;
+    return `nav-link tracking-tight px-3 rounded-pill transition-all ${
+      isActive ? "text-success fw-bold bg-light" : "text-dark fw-medium hover-lift-text"
+    }`;
   };
 
   const isRecursosActive =
@@ -131,116 +132,147 @@ export default function Navbar(): JSX.Element {
     location.pathname === "/telemedicina" ||
     location.pathname.startsWith("/blog");
 
+  const isServiciosActive = location.pathname.startsWith("/metodologia");
+
   const shouldShow = isVisible || isHovered || isMobileMenuOpen;
 
   return (
     <>
       <div
         className="fixed-top w-100"
-        style={{ height: "30px", zIndex: 1040 }}
+        style={{ height: "40px", zIndex: 1040 }}
         onMouseEnter={() => setIsHovered(true)}
       />
 
       <header
-        className="bg-white shadow-sm fixed-top w-100"
+        className="fixed-top w-100"
         style={{
-          transition: "transform 0.3s ease-in-out",
-          transform: shouldShow ? "translateY(0)" : "translateY(-100%)",
+          padding: "1rem", // Separación superior para crear el efecto flotante
+          transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+          transform: shouldShow ? "translateY(0)" : "translateY(-120%)",
           zIndex: 1030,
+          pointerEvents: "none", // Permite hacer click "a través" del padding
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <nav className="navbar navbar-expand-lg navbar-light py-3">
-          <div className="container-fluid px-4">
+        {/* LA ISLA FLOTANTE (CAPSULE NAVBAR) */}
+        <nav
+          className="navbar navbar-expand-lg mx-auto"
+          style={{
+            pointerEvents: "auto", // Reactiva el click dentro de la isla
+            maxWidth: "1100px",
+            background: "rgba(255, 255, 255, 0.75)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: "1px solid rgba(255, 255, 255, 0.6)",
+            borderRadius: isMobileMenuOpen ? "24px" : "50px", // Cambia la forma en móvil
+            padding: "0.5rem 1.5rem",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.08)",
+            transition: "border-radius 0.3s ease",
+          }}
+        >
+          <div className="container-fluid px-0">
             <Link
               to="/"
-              className="text-decoration-none"
+              className="text-decoration-none d-flex align-items-center me-4"
               onClick={handleLinkClick}
             >
-              <span className="navbar-brand mb-0 h1 text-success fw-bold">
-                NutriVida
+              <span className="navbar-brand mb-0 h4 tracking-tight text-dark fw-bolder m-0">
+                Nutri<span className="text-success">Vida.</span>
               </span>
             </Link>
 
             <button
-              className="navbar-toggler border-0 shadow-none"
+              className="navbar-toggler border-0 shadow-none p-2"
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
+              style={{ borderRadius: "50px", backgroundColor: isMobileMenuOpen ? 'rgba(0,0,0,0.05)' : 'transparent' }}
             >
-              <span className="navbar-toggler-icon"></span>
+              <span className="navbar-toggler-icon" style={{ width: '1.2em', height: '1.2em' }}></span>
             </button>
 
             <div
-              className={`collapse navbar-collapse justify-content-end mt-3 mt-lg-0 ${
+              className={`collapse navbar-collapse justify-content-between mt-3 mt-lg-0 ${
                 isMobileMenuOpen ? "show" : ""
               }`}
               style={
                 isMobileMenuOpen
-                  ? { maxHeight: "calc(100vh - 80px)", overflowY: "auto" }
+                  ? { maxHeight: "calc(80vh)", overflowY: "auto" }
                   : { overflow: "visible" }
               }
             >
-              <ul className="navbar-nav align-items-center text-center gap-2 w-100 justify-content-lg-end">
+              {/* Enlaces centrales alineados como píldoras */}
+              <ul className="navbar-nav mx-auto align-items-center text-center gap-1">
                 <li className="nav-item w-100 w-lg-auto">
                   <Link
                     to="/#servicios"
                     className={getNavLinkClass("/", "#servicios")}
                     onClick={handleLinkClick}
                   >
-                    Nuestros metodos
+                    Especialidades
                   </Link>
                 </li>
 
-                {/* Submenú de Servicios con Hover */}
+                {/* Submenú SERVICIOS (Ahora funciona como Recursos) */}
                 <li
                   className="nav-item dropdown w-100 w-lg-auto"
                   ref={serviciosRef}
                   onMouseEnter={handleMouseEnterServicios}
                   onMouseLeave={handleMouseLeaveServicios}
                 >
-                  <Link
-                    to="/metodologia"
-                    className={`nav-link dropdown-toggle w-100 ${
-                      location.pathname.startsWith("/metodologia")
-                        ? "text-success fw-bold"
-                        : ""
+                  <a
+                    href="#servicios-menu"
+                    className={`nav-link dropdown-toggle tracking-tight px-3 rounded-pill transition-all w-100 ${
+                      isServiciosActive
+                        ? "text-success fw-bold bg-light"
+                        : "text-dark fw-medium"
                     }`}
-                    onClick={handleLinkClick}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsServiciosOpen(!isServiciosOpen);
+                      setIsDropdownOpen(false);
+                    }}
                     aria-expanded={isServiciosOpen}
                   >
                     Servicios
-                  </Link>
+                  </a>
                   <ul
-                    className={`dropdown-menu border-0 shadow-sm text-center text-lg-start ${
+                    className={`dropdown-menu glass-panel-small p-2 border-0 text-center text-lg-start ${
                       isServiciosOpen ? "show" : ""
                     }`}
                     style={{
                       display: isServiciosOpen ? "block" : "none",
-                      marginTop: "0.5rem",
+                      marginTop: "1rem", // Se separa de la cápsula para flotar libremente
+                      top: "100%",
                       position: isMobileMenuOpen ? "static" : "absolute",
+                      minWidth: "240px",
+                      borderRadius: "20px", // Bento card style
                     }}
                   >
                     <li>
                       <Link
-                        className={`dropdown-item py-2 ${
+                        className={`dropdown-item py-2 px-3 rounded-3 transition-all ${
                           location.pathname === "/metodologia" && !location.hash
-                            ? "text-success fw-bold bg-light"
-                            : ""
+                            ? "bg-light text-success fw-bold"
+                            : "text-dark"
                         }`}
                         to="/metodologia"
                         onClick={handleLinkClick}
                       >
-                        Calculadora de Triage
+                        Vista General
                       </Link>
                     </li>
                     <li>
+                      <hr className="dropdown-divider opacity-10 my-1" />
+                    </li>
+                    <li>
                       <Link
-                        className={`dropdown-item py-2 ${
+                        className={`dropdown-item py-2 px-3 rounded-3 transition-all ${
                           location.hash === "#catalogo"
-                            ? "text-success fw-bold bg-light"
-                            : ""
+                            ? "bg-light text-success fw-bold"
+                            : "text-dark"
                         }`}
                         to="/metodologia#catalogo"
                         onClick={handleLinkClick}
@@ -261,7 +293,7 @@ export default function Navbar(): JSX.Element {
                   </Link>
                 </li>
 
-                {/* Submenú de Recursos con Hover */}
+                {/* Submenú RECURSOS */}
                 <li
                   className="nav-item dropdown w-100 w-lg-auto"
                   ref={recursosRef}
@@ -269,9 +301,9 @@ export default function Navbar(): JSX.Element {
                   onMouseLeave={handleMouseLeaveRecursos}
                 >
                   <a
-                    href="#recursos"
-                    className={`nav-link dropdown-toggle w-100 ${
-                      isRecursosActive ? "text-success fw-bold" : ""
+                    href="#recursos-menu"
+                    className={`nav-link dropdown-toggle tracking-tight px-3 rounded-pill transition-all w-100 ${
+                      isRecursosActive ? "text-success fw-bold bg-light" : "text-dark fw-medium"
                     }`}
                     onClick={(e) => {
                       e.preventDefault();
@@ -283,21 +315,24 @@ export default function Navbar(): JSX.Element {
                     Recursos
                   </a>
                   <ul
-                    className={`dropdown-menu border-0 shadow-sm text-center text-lg-start ${
+                    className={`dropdown-menu glass-panel-small p-2 border-0 text-center text-lg-start ${
                       isDropdownOpen ? "show" : ""
                     }`}
                     style={{
                       display: isDropdownOpen ? "block" : "none",
-                      marginTop: "0.5rem",
+                      marginTop: "1rem", 
+                      top: "100%",
                       position: isMobileMenuOpen ? "static" : "absolute",
+                      minWidth: "240px",
+                      borderRadius: "20px",
                     }}
                   >
                     <li>
                       <Link
-                        className={`dropdown-item py-2 ${
+                        className={`dropdown-item py-2 px-3 rounded-3 transition-all ${
                           location.pathname === "/faq"
-                            ? "text-success fw-bold bg-light"
-                            : ""
+                            ? "bg-light text-success fw-bold"
+                            : "text-dark"
                         }`}
                         to="/faq"
                         onClick={handleLinkClick}
@@ -307,10 +342,10 @@ export default function Navbar(): JSX.Element {
                     </li>
                     <li>
                       <Link
-                        className={`dropdown-item py-2 ${
+                        className={`dropdown-item py-2 px-3 rounded-3 transition-all ${
                           location.pathname === "/telemedicina"
-                            ? "text-success fw-bold bg-light"
-                            : ""
+                            ? "bg-light text-success fw-bold"
+                            : "text-dark"
                         }`}
                         to="/telemedicina"
                         onClick={handleLinkClick}
@@ -319,14 +354,14 @@ export default function Navbar(): JSX.Element {
                       </Link>
                     </li>
                     <li>
-                      <hr className="dropdown-divider" />
+                      <hr className="dropdown-divider opacity-10 my-1" />
                     </li>
                     <li>
                       <Link
-                        className={`dropdown-item py-2 ${
+                        className={`dropdown-item py-2 px-3 rounded-3 transition-all ${
                           location.pathname.startsWith("/blog")
-                            ? "text-success fw-bold bg-light"
-                            : ""
+                            ? "bg-light text-success fw-bold"
+                            : "text-dark"
                         }`}
                         to="/blog"
                         onClick={handleLinkClick}
@@ -338,19 +373,22 @@ export default function Navbar(): JSX.Element {
                 </li>
               </ul>
 
-              <div className="d-flex flex-column flex-lg-row align-items-center gap-2 ms-lg-4 mt-3 mt-lg-0">
+              {/* Botones de Autenticación compactos */}
+              <div className="d-flex flex-column flex-lg-row align-items-center gap-2 mt-4 mt-lg-0">
                 {!isAuthenticated ? (
                   <>
                     <Link
                       to="/login"
-                      className="btn btn-outline-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto"
+                      className="btn-kinetic-secondary text-decoration-none text-nowrap w-100 w-lg-auto"
+                      style={{ fontSize: '0.9rem', padding: '0.5rem 1.2rem', backgroundColor: 'transparent' }}
                       onClick={handleLinkClick}
                     >
                       Ingresar
                     </Link>
                     <Link
                       to="/register"
-                      className="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto"
+                      className="btn-kinetic-health text-decoration-none text-nowrap w-100 w-lg-auto"
+                      style={{ fontSize: '0.9rem', padding: '0.5rem 1.5rem', boxShadow: 'none' }}
                       onClick={handleLinkClick}
                     >
                       Registrarse
@@ -360,20 +398,21 @@ export default function Navbar(): JSX.Element {
                   <>
                     <Link
                       to={rutaPerfil}
-                      className="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto text-nowrap"
+                      className="btn-kinetic-health text-decoration-none text-nowrap w-100 w-lg-auto"
+                      style={{ fontSize: '0.9rem', padding: '0.5rem 1.5rem', boxShadow: 'none' }}
                       onClick={handleLinkClick}
                     >
-                      {sesionActual?.rol === "nutricionista" ||
-                      sesionActual?.rol === "admin"
-                        ? "Mi Perfil"
+                      {sesionActual?.rol === "nutricionista" || sesionActual?.rol === "admin"
+                        ? "Panel Control"
                         : "Mi Perfil"}
                     </Link>
                     <button
                       type="button"
-                      className="btn btn-outline-danger btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto text-nowrap"
+                      className="btn-kinetic-secondary text-danger border-0 text-nowrap w-100 w-lg-auto"
+                      style={{ fontSize: '0.9rem', padding: '0.5rem 1.2rem', backgroundColor: 'transparent' }}
                       onClick={handleLogout}
                     >
-                      Cerrar Sesión
+                      Salir
                     </button>
                   </>
                 )}
@@ -383,7 +422,8 @@ export default function Navbar(): JSX.Element {
         </nav>
       </header>
 
-      <div style={{ height: "76px" }} aria-hidden="true" />
+      {/* Espaciador aumentado para compensar la cápsula flotante */}
+      <div style={{ height: "100px" }} aria-hidden="true" />
     </>
   );
 }

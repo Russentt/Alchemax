@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Categoria, Servicio } from "../data/types";
 import { TiendaService } from "../services/tiendaService";

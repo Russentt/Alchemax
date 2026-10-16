@@ -1,6 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { Categoria, Servicio } from "../data/types";
+import type { Categoria, Servicio } from "../types/index";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";

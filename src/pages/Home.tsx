@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { StorageServicios } from "../services/storageProductos";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
-import type { Servicio } from "../data/types";
+import type { Servicio } from "../types/index";
 
 export default function Home(): JSX.Element {
   const navigate = useNavigate();

@@ -7,7 +7,7 @@ import type {
   Metrica,
   Examen,
   Compra,
-} from "../data/types";
+} from "../types/index";
 
 import { StorageInit } from "../services/storage_init";
 import { StorageUsuario } from "../services/storageUsuario";

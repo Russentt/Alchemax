@@ -1,4 +1,4 @@
-import type { Categoria } from "../data/types";
+import type { Categoria } from "../types/index"; 
 
 
 export const StorageCategorias = {

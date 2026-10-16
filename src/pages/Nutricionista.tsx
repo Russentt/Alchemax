@@ -8,18 +8,19 @@ import NutricionistaSidebar, {
 } from "../components/nutricionista/NutriSidebar";
 
 import type {
-  Categoria,
-  Servicio,
-  Usuario,
-  PlanNutricional,
-  Examen,
-  Metrica,
-} from "../data/types";
+    Categoria,
+    Metrica,
+    Examen,
+    PlanNutricional,
+    Usuario,
+    Servicio
+
+
+} from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 import { PlanService } from "../services/planService";
-import "../index.css";
 
 interface CitaNormalizada {
   id: string;

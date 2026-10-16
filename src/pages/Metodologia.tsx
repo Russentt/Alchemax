@@ -6,13 +6,6 @@ import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 
-
-const chunkArray = <T,>(arr: T[], size: number): T[][] => {
-  return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
-    arr.slice(i * size, i * size + size),
-  );
-};
-
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
 
@@ -27,16 +20,16 @@ export default function Metodologia(): JSX.Element {
       setCategorias(catsGuardadas);
     }
 
-    // Cargar servicios/productos 
+    // Cargar servicios/productos
     const srvsGuardados = StorageServicios.getServicios();
     if (srvsGuardados && srvsGuardados.length > 0) {
       // Mostrar servicios activos
       const activos = srvsGuardados.filter(
-        (s) => !s.estado || s.estado === "Activo"
+        (s) => !s.estado || s.estado === "Activo",
       );
-      setServicios(activos); 
+      setServicios(activos);
     } else {
-      setServicios([]); 
+      setServicios([]);
     }
   }, []);
 
@@ -61,20 +54,6 @@ export default function Metodologia(): JSX.Element {
     message: string;
     type: "success" | "warning";
   } | null>(null);
-
-  const [filtroCategoria, setFiltroCategoria] = useState<string>("todos");
-
-  const categoriasUnicas = [
-    "todos",
-    ...new Set(catalogoServicios.map((s) => s.tipo)),
-  ];
-
-  const serviciosFiltrados =
-    filtroCategoria === "todos"
-      ? catalogoServicios
-      : catalogoServicios.filter((s) => s.tipo === filtroCategoria);
-
-  const serviciosChunked = chunkArray(serviciosFiltrados, 4);
 
   const handleTriageChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -455,10 +434,6 @@ export default function Metodologia(): JSX.Element {
         .hover-lift:hover {
           transform: translateY(-5px);
           box-shadow: 0 1rem 3rem rgba(0,0,0,.15)!important;
-        }
-        .carousel-control-prev-icon, .carousel-control-next-icon {
-          background-size: 50%;
-          opacity: 0.8;
         }
       `}</style>
     </main>

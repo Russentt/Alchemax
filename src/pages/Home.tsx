@@ -43,8 +43,17 @@ export default function Home(): JSX.Element {
       return;
     }
 
+    // Activamos el estado de éxito
     setMostrarExito(true);
     setError(null);
+  };
+
+  // Función para reiniciar el formulario y permitir enviar otra consulta
+  const handleResetForm = () => {
+    setMostrarExito(false);
+    setNombre("");
+    setEmail("");
+    setMensaje("");
   };
 
   const handleAddToCart = (servicio: Servicio) => {
@@ -127,7 +136,7 @@ export default function Home(): JSX.Element {
         </div>
       </div>
 
-      {/* --- NUEVA VITRINA DE CATÁLOGO EXPRESS --- */}
+      {/* VITRINA DE CATÁLOGO EXPRESS */}
       <div className="container my-5 py-5" id="vitrina">
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5 fade-up-delay border-bottom pb-4" style={{ borderColor: 'rgba(0,0,0,0.05)' }}>
           <div>
@@ -288,13 +297,49 @@ export default function Home(): JSX.Element {
         </div>
       </div>
 
-      {/* Contacto y Mapa fusionado con la lógica de estado (Coworker) */}
+      {/* Contacto y Mapa fusionado con la lógica de estado */}
       <div className="container my-5 pb-5" id="contact">
         <h2 className="text-center fw-bold mb-5 text-dark tracking-tight">Solicita tu Evaluación</h2>
         <div className="row g-4 justify-content-center">
           <div className="col-lg-5">
-            <div className="glass-panel p-4 rounded-4 h-100 position-relative">
-              <form className="formulario" onSubmit={handleSubmit}>
+            {/* El contenedor ahora tiene overflow-hidden para enmarcar el overlay de éxito */}
+            <div className="glass-panel p-4 rounded-4 h-100 position-relative overflow-hidden">
+              
+              {/* STATEFUL GLASS OVERLAY: Pantalla de Éxito Integrada */}
+              {mostrarExito && (
+                <div 
+                  className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center text-center p-4"
+                  style={{
+                    zIndex: 10,
+                    background: 'rgba(255, 255, 255, 0.85)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    animation: 'fadeIn 0.4s ease-out'
+                  }}
+                >
+                  <div className="mb-3 d-flex justify-content-center align-items-center rounded-circle shadow-glass" style={{ width: '80px', height: '80px', backgroundColor: '#e8f5e9' }}>
+                    <span className="fs-1">✨</span>
+                  </div>
+                  <h3 className="fw-bolder text-dark tracking-tight mb-2">¡Solicitud Enviada!</h3>
+                  <p className="text-muted small mb-4" style={{ maxWidth: '280px' }}>
+                    Tu información ha sido recibida correctamente. Nuestro equipo clínico se pondrá en contacto contigo a la brevedad.
+                  </p>
+                  <button onClick={handleResetForm} className="btn-kinetic-secondary text-decoration-none">
+                    Enviar otra consulta
+                  </button>
+                </div>
+              )}
+
+              {/* Formulario que se desvanece suavemente cuando hay éxito */}
+              <form 
+                className="formulario" 
+                onSubmit={handleSubmit}
+                style={{ 
+                  opacity: mostrarExito ? 0 : 1, 
+                  pointerEvents: mostrarExito ? 'none' : 'auto',
+                  transition: 'opacity 0.4s ease' 
+                }}
+              >
                 
                 {error && (
                   <div className="alert alert-danger py-2 px-3 small border-0 mb-4 rounded-3 shadow-sm" style={{ backgroundColor: 'rgba(220, 53, 69, 0.08)', color: '#dc3545' }} role="alert">
@@ -350,16 +395,6 @@ export default function Home(): JSX.Element {
                     Enviar Solicitud
                   </button>
                 </div>
-
-                {mostrarExito && (
-                  <div className="glass-panel-small p-4 text-center mt-4 border-success" style={{ borderWidth: '2px', animation: 'revealUp 0.4s ease-out' }}>
-                    <div className="text-success fs-1 mb-2">✅</div>
-                    <h4 className="fw-bold text-dark tracking-tight">¡Solicitud Recibida!</h4>
-                    <p className="text-muted small mb-0">
-                      Tu solicitud fue recibida con éxito. Pronto nos pondremos en contacto con usted.
-                    </p>
-                  </div>
-                )}
               </form>
             </div>
           </div>

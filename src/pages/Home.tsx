@@ -1,15 +1,30 @@
-import { useState, type JSX } from "react";
-import { Link } from "react-router";
-// Recuerda mantener la importación de tu hoja de estilos global si no la has movido a main.tsx
-// import "./index.css"; 
+import { useState, useEffect, type JSX } from "react";
+import { Link, useNavigate } from "react-router";
+import { StorageServicios } from "../services/storageProductos";
+import { TiendaService } from "../services/tiendaService";
+import { StorageUsuario } from "../services/storageUsuario";
+import type { Servicio } from "../data/types";
 
 export default function Home(): JSX.Element {
-  // Lógica original de tu coworker conservada intacta
+  const navigate = useNavigate();
+
+  // Estados del formulario (Coworker)
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [mostrarExito, setMostrarExito] = useState(false);
+
+  // Estados de la Vitrina del Catálogo
+  const [serviciosPreview, setServiciosPreview] = useState<Servicio[]>([]);
+  const [notification, setNotification] = useState<{ message: string; type: "success" | "warning" } | null>(null);
+
+  useEffect(() => {
+    // Cargar los primeros 3 servicios activos para la vitrina del Home
+    const srvsGuardados = StorageServicios.getServicios() || [];
+    const activos = srvsGuardados.filter((s) => !s.estado || s.estado === "Activo").slice(0, 3);
+    setServiciosPreview(activos);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); 
@@ -32,9 +47,47 @@ export default function Home(): JSX.Element {
     setError(null);
   };
 
+  const handleAddToCart = (servicio: Servicio) => {
+    const sesionActual = StorageUsuario.getUsuarioSesion();
+
+    if (!sesionActual) {
+      setNotification({ message: "Inicia sesión para reservar un plan.", type: "warning" });
+      setTimeout(() => {
+        setNotification(null);
+        navigate("/login");
+      }, 2500);
+      return;
+    }
+
+    TiendaService.agregarAlCarrito(servicio);
+    setNotification({ message: `¡"${servicio.nombre}" añadido al carrito!`, type: "success" });
+    
+    setTimeout(() => setNotification(null), 4000);
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
+  };
+
   return (
     <main className="home-wrapper">
       <div className="ambient-glow-health"></div>
+
+      {/* Sistema de Notificaciones Flotante (Vitrina) */}
+      {notification && (
+        <div className="position-fixed top-0 start-50 translate-middle-x p-4" style={{ zIndex: 1100, marginTop: "80px", animation: "fadeSlideUp 0.4s var(--ease-spring)" }}>
+          <div className="glass-panel-small px-4 py-3 rounded-pill d-flex align-items-center gap-3 shadow-glass">
+            <span className="fs-5">{notification.type === "success" ? "✅" : "⚠️"}</span>
+            <span className="fw-semibold text-dark mb-0 small">{notification.message}</span>
+            {notification.type === "success" && (
+              <Link to="/carrito" className="btn-kinetic-health text-decoration-none py-1 px-3 ms-2" style={{ fontSize: '0.8rem' }}>
+                Ir al pago
+              </Link>
+            )}
+            <button type="button" className="btn-close ms-2" onClick={() => setNotification(null)}></button>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section Cinético */}
       <section className="hero-section container d-flex flex-column justify-content-center align-items-center text-center">
@@ -52,8 +105,8 @@ export default function Home(): JSX.Element {
           Somos una clínica especializada en nutrición y dietética ubicada en Temuco. Nuestro equipo de 4 nutricionistas te acompañará paso a paso para alcanzar tus metas de salud con planes 100% personalizados.
         </p>
         <div className="mt-5 fade-up-delay-2 d-flex gap-3">
-          <a href="#servicios" className="btn-kinetic-health text-decoration-none">
-            <span className="btn-text">Ver Especialidades</span>
+          <a href="#vitrina" className="btn-kinetic-health text-decoration-none">
+            <span className="btn-text">Ver Planes</span>
             <span className="btn-icon">↓</span>
           </a>
           <a href="#contact" className="btn-kinetic-secondary text-decoration-none">
@@ -74,8 +127,58 @@ export default function Home(): JSX.Element {
         </div>
       </div>
 
+      {/* --- NUEVA VITRINA DE CATÁLOGO EXPRESS --- */}
+      <div className="container my-5 py-5" id="vitrina">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5 fade-up-delay border-bottom pb-4" style={{ borderColor: 'rgba(0,0,0,0.05)' }}>
+          <div>
+            <h2 className="display-6 fw-bold text-dark tracking-tight mb-2">Planes Destacados</h2>
+            <p className="text-muted mb-0">Inicia tu transformación hoy mismo.</p>
+          </div>
+          <Link to="/metodologia#catalogo" className="btn-kinetic-secondary text-decoration-none mt-4 mt-md-0 shadow-sm">
+            Explorar catálogo completo →
+          </Link>
+        </div>
+
+        <div className="row g-4">
+          {serviciosPreview.length > 0 ? (
+            serviciosPreview.map((servicio) => (
+              <div key={servicio.id} className="col-lg-4 col-md-6">
+                <div className="glass-panel-small h-100 rounded-5 hover-lift p-4 d-flex flex-column position-relative overflow-hidden">
+                  <div className="position-absolute" style={{ top: '-20px', right: '-20px', fontSize: '6rem', opacity: 0.05, filter: 'grayscale(100%)' }}>
+                    {servicio.icono}
+                  </div>
+                  <div className="fs-1 mb-3 position-relative z-index-2">{servicio.icono}</div>
+                  <span className="badge bg-dark text-white border-0 align-self-start mb-3 rounded-pill text-uppercase px-3 py-1 tracking-tight" style={{ fontSize: "0.65rem" }}>
+                    {servicio.tipo}
+                  </span>
+                  <h5 className="fw-bolder text-dark mb-2 tracking-tight position-relative z-index-2">
+                    {servicio.nombre}
+                  </h5>
+                  <p className="text-muted small mb-4 flex-grow-1 position-relative z-index-2" style={{ lineHeight: 1.6 }}>
+                    {servicio.descripcion}
+                  </p>
+                  <div className="position-relative z-index-2 border-top pt-3" style={{ borderColor: 'rgba(0,0,0,0.05)!important' }}>
+                    <h4 className="fw-bolder text-success mb-3 tracking-tight">
+                      {formatPrice(servicio.precio)}
+                    </h4>
+                    <button onClick={() => handleAddToCart(servicio)} className="btn btn-dark w-100 fw-bold rounded-pill apple-btn py-2">
+                      Adquirir Plan
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-12 text-center py-5 opacity-50">
+              <div className="fs-1 text-muted mb-2">🔍</div>
+              <p className="text-muted fw-medium tracking-tight">Cargando catálogo clínico...</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Bento Grid de Especialidades */}
-      <div className="container my-5 py-5" id="servicios">
+      <div className="container my-5 py-4" id="servicios">
         <div className="text-center mb-5 fade-up-delay">
           <h2 className="display-6 fw-bold text-dark tracking-tight">Nuestras Especialidades</h2>
           <p className="text-muted">Abordaje clínico basado en evidencia científica.</p>
@@ -155,7 +258,7 @@ export default function Home(): JSX.Element {
         </div>
       </div>
 
-      {/* Sobre NutriVida (Estilo Glassmorphism Apple) */}
+      {/* Sobre NutriVida */}
       <div className="container my-5 py-4" id="about">
         <div className="glass-panel p-5 rounded-4 shadow-sm text-center">
           <h3 className="fw-bold text-success mb-4 tracking-tight">Sobre NutriVida</h3>
@@ -185,7 +288,7 @@ export default function Home(): JSX.Element {
         </div>
       </div>
 
-      {/* Contacto y Mapa fusionado con la lógica de estado */}
+      {/* Contacto y Mapa fusionado con la lógica de estado (Coworker) */}
       <div className="container my-5 pb-5" id="contact">
         <h2 className="text-center fw-bold mb-5 text-dark tracking-tight">Solicita tu Evaluación</h2>
         <div className="row g-4 justify-content-center">
@@ -193,7 +296,6 @@ export default function Home(): JSX.Element {
             <div className="glass-panel p-4 rounded-4 h-100 position-relative">
               <form className="formulario" onSubmit={handleSubmit}>
                 
-                {/* Alerta de Error adaptada visualmente */}
                 {error && (
                   <div className="alert alert-danger py-2 px-3 small border-0 mb-4 rounded-3 shadow-sm" style={{ backgroundColor: 'rgba(220, 53, 69, 0.08)', color: '#dc3545' }} role="alert">
                     ⚠️ {error}
@@ -249,7 +351,6 @@ export default function Home(): JSX.Element {
                   </button>
                 </div>
 
-                {/* Tarjeta de Éxito adaptada al Glassmorphism */}
                 {mostrarExito && (
                   <div className="glass-panel-small p-4 text-center mt-4 border-success" style={{ borderWidth: '2px', animation: 'revealUp 0.4s ease-out' }}>
                     <div className="text-success fs-1 mb-2">✅</div>

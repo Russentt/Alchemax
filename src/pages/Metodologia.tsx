@@ -6,7 +6,6 @@ import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 
-// Carrusel añadido: Función auxiliar para dividir los servicios en grupos
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
   return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
     arr.slice(i * size, i * size + size),
@@ -20,17 +19,17 @@ export default function Metodologia(): JSX.Element {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
 
+  // Nuevo estado para controlar el modal de redirección suave
+  const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
+
   useEffect(() => {
-    // Cargar categorías creadas
     const catsGuardadas = StorageCategorias.getCategorias();
     if (catsGuardadas && catsGuardadas.length > 0) {
       setCategorias(catsGuardadas);
     }
 
-    // Cargar servicios/productos
     const srvsGuardados = StorageServicios.getServicios();
     if (srvsGuardados && srvsGuardados.length > 0) {
-      // Mostrar servicios activos
       const activos = srvsGuardados.filter(
         (s) => !s.estado || s.estado === "Activo",
       );
@@ -45,7 +44,6 @@ export default function Metodologia(): JSX.Element {
     return String(servicio.categoriaId) === String(categoriaActiva);
   });
 
-  // Carrusel añadido: Agrupamos los servicios filtrados de 4 en 4
   const serviciosChunked = chunkArray(serviciosFiltrados, 4);
 
   const [triageForm, setTriageForm] = useState({
@@ -53,6 +51,7 @@ export default function Metodologia(): JSX.Element {
     altura: "",
     objetivo: "mantener",
   });
+  
   const [triageResult, setTriageResult] = useState<{
     imc: number;
     diagnostico: string;
@@ -86,25 +85,21 @@ export default function Metodologia(): JSX.Element {
     if (imc < 18.5) {
       diagnostico = "Bajo Peso";
       color = "warning";
-      recomendacion =
-        "Sugerimos un Plan Clínico enfocado en superávit calórico controlado y ganancia de masa magra.";
+      recomendacion = "Sugerimos un Plan Clínico enfocado en superávit calórico controlado y ganancia de masa magra.";
     } else if (imc >= 18.5 && imc <= 24.9) {
       diagnostico = "Normopeso";
       color = "success";
-      recomendacion =
-        triageForm.objetivo === "rendimiento"
+      recomendacion = triageForm.objetivo === "rendimiento"
           ? "Estás en un rango óptimo. Te sugerimos el Plan Nutricional Deportivo para potenciar tu rendimiento."
           : "Estás en un rango óptimo. Una Evaluación Biométrica Inicial nos ayudará a afinar tus hábitos actuales.";
     } else if (imc >= 25 && imc <= 29.9) {
       diagnostico = "Sobrepeso";
       color = "warning";
-      recomendacion =
-        "Sugerimos una Evaluación Biométrica Inicial para diseñar un déficit calórico que proteja tu masa muscular.";
+      recomendacion = "Sugerimos una Evaluación Biométrica Inicial para diseñar un déficit calórico que proteja tu masa muscular.";
     } else {
       diagnostico = "Obesidad";
       color = "danger";
-      recomendacion =
-        "Te recomendamos encarecidamente nuestro Plan Nutricional Clínico para un abordaje metabólico integral.";
+      recomendacion = "Te recomendamos encarecidamente nuestro Plan Nutricional Clínico para un abordaje metabólico integral.";
     }
 
     setTriageResult({ imc, diagnostico, color, recomendacion });
@@ -115,27 +110,32 @@ export default function Metodologia(): JSX.Element {
 
     if (!sesionActual) {
       setNotification({
-        message: "Debes iniciar sesión para agregar servicios al carrito.",
+        message: "Acceso requerido para reservar este servicio.",
         type: "warning",
       });
+      
+      // Activamos el modal de transición
+      setIsRedirecting(true);
 
+      // Aumentamos el tiempo a 3.5s para permitir la lectura y ver la animación
       setTimeout(() => {
         setNotification(null);
+        setIsRedirecting(false);
         navigate("/login");
-      }, 2500);
+      }, 3500);
       return;
     }
 
     TiendaService.agregarAlCarrito(servicio);
 
     setNotification({
-      message: `¡"${servicio.nombre}" se ha añadido a tu carrito correctamente! Puedes ir a pagar para asignarlo a tu cuenta.`,
+      message: `¡"${servicio.nombre}" añadido a tu carrito! Puedes ir a pagar para asignarlo a tu cuenta.`,
       type: "success",
     });
 
     setTimeout(() => {
       setNotification(null);
-    }, 15000);
+    }, 5000);
   };
 
   const formatPrice = (price: number) => {
@@ -146,228 +146,154 @@ export default function Metodologia(): JSX.Element {
   };
 
   return (
-    <main className="flex-grow-1 bg-light position-relative">
-      {notification && (
-        <div
-          className="position-fixed top-0 end-0 p-4 animation-fade-in"
-          style={{ zIndex: 1100, marginTop: "80px" }}
+    <main className="app-wrapper py-5 position-relative">
+      <div className="ambient-glow-health"></div>
+
+      {/* Modal de Transición Suave (Redirección a Login) */}
+      {isRedirecting && (
+        <div 
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" 
+          style={{ 
+            zIndex: 1050, // Justo por debajo de la notificación para que ambas sean visibles
+            background: 'rgba(250, 250, 250, 0.4)', 
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            animation: 'fadeIn 0.5s ease-out' 
+          }}
         >
-          <div
-            className={`toast show align-items-center text-white bg-${notification.type} border-0 shadow-lg rounded-4 p-2`}
-            role="alert"
-            aria-live="assertive"
-            aria-atomic="true"
-          >
-            <div className="d-flex">
-              <div className="toast-body fw-semibold px-3 py-2 fs-6">
-                🛒 {notification.message}
-              </div>
-              <button
-                type="button"
-                className="btn-close btn-close-white me-3 m-auto"
-                onClick={() => setNotification(null)}
-                aria-label="Close"
-              ></button>
+          <div className="glass-panel p-5 rounded-5 text-center shadow-glass d-flex flex-column align-items-center" style={{ animation: "fadeSlideUp 0.6s var(--ease-spring)" }}>
+            <div className="spinner-border text-success mb-4" role="status" style={{ width: '3rem', height: '3rem', borderWidth: '0.25em' }}>
+              <span className="visually-hidden">Cargando...</span>
             </div>
+            <h3 className="fw-bolder text-dark tracking-tight mb-2">Preparando entorno</h3>
+            <p className="text-muted mb-0">Redirigiendo al portal seguro...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de Notificaciones Flotante tipo Isla (Mantenido sobre el modal) */}
+      {notification && (
+        <div className="position-fixed top-0 start-50 translate-middle-x p-4" style={{ zIndex: 1100, marginTop: "80px", animation: "fadeSlideUp 0.4s var(--ease-spring)" }}>
+          <div className="glass-panel-small px-4 py-3 rounded-pill d-flex align-items-center gap-3 shadow-glass" role="alert">
+            <span className="fs-5">{notification.type === "success" ? "✅" : "⚠️"}</span>
+            <span className="fw-semibold text-dark mb-0 small">{notification.message}</span>
             {notification.type === "success" && (
-              <div className="px-3 pb-2 text-end">
-                <Link
-                  to="/carrito"
-                  className="btn btn-light btn-sm fw-bold text-success rounded-pill px-3 shadow-sm"
-                >
-                  Ir al carrito ahora
-                </Link>
-              </div>
+              <Link to="/carrito" className="btn-kinetic-health text-decoration-none py-1 px-3 ms-2" style={{ fontSize: '0.8rem' }}>
+                Ir al carrito
+              </Link>
+            )}
+            {/* Si está redirigiendo, ocultamos el botón de cerrar para evitar interrupciones */}
+            {!isRedirecting && (
+              <button type="button" className="btn-close ms-2" onClick={() => setNotification(null)} aria-label="Close"></button>
             )}
           </div>
         </div>
       )}
 
-      <section className="bg-success text-white py-5">
-        <div className="container py-4 px-4 px-md-5">
-          <div className="row align-items-center">
-            <div className="col-lg-6">
-              <span className="badge bg-white text-success mb-3 px-3 py-2 rounded-pill">
-                Nuestro Enfoque
-              </span>
-              <h1 className="display-5 fw-bold mb-4">
-                Ciencia, no restricciones.
-              </h1>
-              <p className="lead opacity-75 mb-4">
-                En NutriVida rechazamos las dietas genéricas. Utilizamos
-                tecnología InBody y evidencia clínica actualizada para diseñar
-                pautas metabólicas que se adaptan a tu estilo de vida, no al
-                revés.
-              </p>
-            </div>
-            <div className="col-lg-5 offset-lg-1 d-none d-lg-block text-center">
-              <div style={{ fontSize: "8rem", lineHeight: "1" }}>🧬</div>
-            </div>
-          </div>
+      {/* Hero Section */}
+      <section className="hero-section container d-flex flex-column justify-content-center align-items-center text-center mt-4">
+        <span className="badge bg-white text-success shadow-sm mb-4 px-4 py-2 rounded-pill fw-bold tracking-tight" style={{ border: '1px solid rgba(39, 174, 96, 0.2)'}}>
+          NUESTRO ENFOQUE
+        </span>
+        <div className="hero-text-mask">
+          <h1 className="hero-title display-2 fw-bolder tracking-tight text-dark">
+            Ciencia, no <span className="text-gradient-health">restricciones.</span>
+          </h1>
         </div>
+        <p className="hero-subtitle mt-4 text-muted fs-5 fade-up-delay mx-auto" style={{ maxWidth: "750px" }}>
+          Rechazamos las dietas genéricas. Utilizamos tecnología biométrica y evidencia clínica actualizada para diseñar pautas metabólicas que se adaptan a tu estilo de vida.
+        </p>
       </section>
 
-      <section className="py-5 bg-white border-bottom">
-        <div className="container px-4 px-md-5">
-          <div className="row justify-content-center">
-            <div className="col-lg-8 text-center mb-5">
-              <h2 className="fw-bold text-dark mb-3">
-                Calculadora de Triage Clínico
-              </h2>
-              <p className="text-muted">
-                Ingresa tus datos biométricos básicos. Nuestro algoritmo
-                calculará tu Índice de Masa Corporal (IMC) y te sugerirá el
-                servicio más adecuado para tu punto de partida.
-              </p>
-            </div>
-          </div>
-
-          <div className="row justify-content-center">
-            <div className="col-lg-10">
-              <div className="bg-light p-4 p-md-5 rounded-4 shadow-sm border border-success border-opacity-25">
-                <div className="row g-5 align-items-center">
-                  <div className="col-md-6 border-md-end border-success border-opacity-25 pe-md-5">
-                    <form onSubmit={handleTriageSubmit}>
-                      <div className="mb-3">
-                        <label className="form-label text-muted fw-semibold small">
-                          Peso actual (kg)
-                        </label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          name="peso"
-                          className="form-control form-control-lg"
-                          placeholder="Ej: 70.5"
-                          value={triageForm.peso}
-                          onChange={handleTriageChange}
-                          required
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <label className="form-label text-muted fw-semibold small">
-                          Estatura (cm)
-                        </label>
-                        <input
-                          type="number"
-                          name="altura"
-                          className="form-control form-control-lg"
-                          placeholder="Ej: 171"
-                          value={triageForm.altura}
-                          onChange={handleTriageChange}
-                          required
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <label className="form-label text-muted fw-semibold small">
-                          Objetivo Principal
-                        </label>
-                        <select
-                          name="objetivo"
-                          className="form-select form-select-lg"
-                          value={triageForm.objetivo}
-                          onChange={handleTriageChange}
-                        >
-                          <option value="bajar">
-                            Reducción de porcentaje de grasa
-                          </option>
-                          <option value="mantener">
-                            Mantenimiento y reeducación alimentaria
-                          </option>
-                          <option value="rendimiento">
-                            Aumento de masa muscular / Rendimiento
-                          </option>
-                        </select>
-                      </div>
-                      <button
-                        type="submit"
-                        className="btn btn-success btn-lg w-100 fw-bold shadow-sm"
-                      >
-                        Evaluar mi perfil
-                      </button>
-                    </form>
+      {/* Triage Clínico */}
+      <section className="container px-4 px-md-5 my-5 z-index-2 position-relative fade-up-delay-2">
+        <div className="glass-card p-4 p-md-5 rounded-5 border-0">
+          <div className="row g-5 align-items-center">
+            <div className="col-lg-6 pe-lg-5">
+              <div className="mb-4">
+                <h3 className="fw-bold text-dark tracking-tight">Calculadora de Triage</h3>
+                <p className="text-muted small">Algoritmo de diagnóstico preliminar para sugerir tu ruta clínica ideal.</p>
+              </div>
+              <form onSubmit={handleTriageSubmit}>
+                <div className="row g-3">
+                  <div className="col-md-6 mb-2">
+                    <label className="form-label text-dark fw-semibold small text-uppercase tracking-tight">Peso (kg)</label>
+                    <input type="number" step="0.1" name="peso" className="form-control apple-input" placeholder="Ej: 70.5" value={triageForm.peso} onChange={handleTriageChange} required />
                   </div>
-
-                  <div className="col-md-6 ps-md-5 text-center text-md-start">
-                    {!triageResult ? (
-                      <div className="text-muted d-flex flex-column align-items-center justify-content-center h-100 opacity-50">
-                        <div className="fs-1 mb-3">🩺</div>
-                        <p>
-                          Completa el formulario para visualizar tu diagnóstico
-                          preventivo.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="animation-fade-in">
-                        <h5 className="text-muted fw-semibold mb-1">
-                          Tu Resultado Biométrico
-                        </h5>
-                        <div className="d-flex align-items-end justify-content-center justify-content-md-start gap-3 mb-3">
-                          <h1 className="display-4 fw-bold text-dark mb-0">
-                            {triageResult.imc}
-                          </h1>
-                          <span
-                            className={`badge bg-${triageResult.color} fs-6 mb-2 rounded-pill`}
-                          >
-                            {triageResult.diagnostico}
-                          </span>
-                        </div>
-                        <div
-                          className={`alert alert-${triageResult.color} bg-${triageResult.color}-subtle border-0 rounded-3 mb-0`}
-                          role="alert"
-                        >
-                          <p className="mb-0 text-dark fw-semibold small lh-lg">
-                            {triageResult.recomendacion}
-                          </p>
-                        </div>
-                        <a
-                          href="#catalogo"
-                          className="btn btn-outline-dark btn-sm mt-4 fw-bold rounded-pill px-4"
-                        >
-                          Ver servicios recomendados ↓
-                        </a>
-                      </div>
-                    )}
+                  <div className="col-md-6 mb-2">
+                    <label className="form-label text-dark fw-semibold small text-uppercase tracking-tight">Estatura (cm)</label>
+                    <input type="number" name="altura" className="form-control apple-input" placeholder="Ej: 171" value={triageForm.altura} onChange={handleTriageChange} required />
                   </div>
                 </div>
-              </div>
+                <div className="mb-4 mt-2">
+                  <label className="form-label text-dark fw-semibold small text-uppercase tracking-tight">Objetivo Principal</label>
+                  <select name="objetivo" className="form-select apple-input" value={triageForm.objetivo} onChange={handleTriageChange}>
+                    <option value="bajar">Reducción de porcentaje de grasa</option>
+                    <option value="mantener">Mantenimiento y reeducación alimentaria</option>
+                    <option value="rendimiento">Aumento de masa muscular / Rendimiento</option>
+                  </select>
+                </div>
+                <button type="submit" className="btn btn-success w-100 fw-bold apple-btn py-3">
+                  Procesar Biometría
+                </button>
+              </form>
+            </div>
+
+            <div className="col-lg-6 ps-lg-5 border-start-lg border-success border-opacity-10 text-center text-lg-start">
+              {!triageResult ? (
+                <div className="d-flex flex-column align-items-center justify-content-center h-100 opacity-50 py-5">
+                  <div className="fs-1 mb-3" style={{ filter: 'grayscale(100%)' }}>🩺</div>
+                  <p className="text-muted fw-medium tracking-tight">Esperando parámetros biológicos...</p>
+                </div>
+              ) : (
+                <div style={{ animation: "fadeSlideUp 0.4s var(--ease-spring)" }}>
+                  <span className="text-uppercase tracking-tight fw-bold text-muted small">Tu Índice Biométrico</span>
+                  <div className="d-flex align-items-center justify-content-center justify-content-lg-start gap-3 my-3">
+                    <h1 className="display-1 fw-bolder text-dark mb-0 tracking-tight" style={{ letterSpacing: '-0.06em' }}>
+                      {triageResult.imc}
+                    </h1>
+                    <span className={`badge bg-${triageResult.color} px-3 py-2 rounded-pill fw-bold shadow-sm`}>
+                      {triageResult.diagnostico}
+                    </span>
+                  </div>
+                  <div className="glass-panel-small p-4 rounded-4 text-start">
+                    <p className="mb-0 text-dark fw-medium small lh-lg">
+                      {triageResult.recomendacion}
+                    </p>
+                  </div>
+                  <a href="#catalogo" className="btn-kinetic-secondary mt-4 text-decoration-none d-inline-flex">
+                    Ver catálogo sugerido ↓
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      <section id="catalogo" className="py-5">
+      {/* Catálogo Clínico */}
+      <section id="catalogo" className="py-5 position-relative z-index-2">
         <div className="container px-4 px-md-5">
-          <div className="text-center mb-4">
-            <h2 className="fw-bold text-dark mb-3">
-              Catálogo de Servicios Clínicos
-            </h2>
-            <p className="text-muted">
-              Selecciona el plan sugerido en tu Triage o inicia con una
-              evaluación general.
+          <div className="text-center mb-5">
+            <h2 className="display-6 fw-bold text-dark tracking-tight">Catálogo de Servicios Clínicos</h2>
+            <p className="text-muted mx-auto" style={{ maxWidth: '600px' }}>
+              Selecciona el plan sugerido en tu Triage o inicia con una evaluación general. Cada plan incluye acceso a nuestro ecosistema digital.
             </p>
           </div>
 
-          <div className="d-flex flex-wrap justify-content-center gap-2 mb-5">
+          <div className="d-flex flex-wrap justify-content-center gap-2 mb-5 p-1 rounded-pill mx-auto" style={{ background: 'rgba(0,0,0,0.03)', maxWidth: 'fit-content' }}>
             <button
               type="button"
-              className={`btn btn-sm rounded-pill px-3 py-2 fw-semibold ${
-                categoriaActiva === "todas"
-                  ? "btn-success text-white shadow-sm"
-                  : "btn-outline-secondary"
-              }`}
+              className={`btn btn-sm rounded-pill px-4 py-2 fw-bold transition-all ${categoriaActiva === "todas" ? "bg-white text-dark shadow-sm" : "btn-link text-muted text-decoration-none"}`}
               onClick={() => setCategoriaActiva("todas")}
             >
-              Todos los Servicios
+              Todos
             </button>
             {categorias.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
-                className={`btn btn-sm rounded-pill px-3 py-2 fw-semibold ${
-                  categoriaActiva === cat.id
-                    ? "btn-success text-white shadow-sm"
-                    : "btn-outline-secondary"
-                }`}
+                className={`btn btn-sm rounded-pill px-4 py-2 fw-bold transition-all ${categoriaActiva === cat.id ? "bg-white text-dark shadow-sm" : "btn-link text-muted text-decoration-none"}`}
                 onClick={() => setCategoriaActiva(cat.id)}
               >
                 {cat.nombre}
@@ -375,60 +301,40 @@ export default function Metodologia(): JSX.Element {
             ))}
           </div>
 
-          {/* FIX: Añadimos key={categoriaActiva} para forzar a React a recrear el carrusel al filtrar */}
-          <div
-            key={categoriaActiva}
-            id="catalogoCarousel"
-            className="carousel slide"
-            data-bs-ride="false"
-            data-bs-interval="false"
-          >
+          <div key={categoriaActiva} id="catalogoCarousel" className="carousel slide" data-bs-ride="false" data-bs-interval="false">
             <div className="carousel-inner px-2 py-4">
               {serviciosChunked.length === 0 ? (
-                <div className="col-12 text-center py-5">
+                <div className="col-12 text-center py-5 opacity-50">
                   <div className="fs-1 text-muted mb-2">🔍</div>
-                  <h5 className="text-muted fw-semibold">
-                    No hay servicios disponibles en esta categoría.
-                  </h5>
+                  <h5 className="text-muted fw-semibold tracking-tight">Sin servicios en esta categoría.</h5>
                 </div>
               ) : (
                 serviciosChunked.map((chunk, index) => (
-                  <div
-                    key={index}
-                    className={`carousel-item ${index === 0 ? "active" : ""}`}
-                  >
+                  <div key={index} className={`carousel-item ${index === 0 ? "active" : ""}`}>
                     <div className="row g-4 justify-content-center">
                       {chunk.map((servicio) => (
-                        <div
-                          key={servicio.id}
-                          className="col-12 col-md-6 col-lg-3"
-                        >
-                          <div className="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all">
-                            <div className="card-body p-4 d-flex flex-column">
-                              <div className="fs-1 mb-3">{servicio.icono}</div>
-                              <span
-                                className="badge bg-light text-secondary border align-self-start mb-3 rounded-pill text-uppercase"
-                                style={{ fontSize: "0.65rem" }}
-                              >
-                                {servicio.tipo}
-                              </span>
-                              <h5 className="fw-bold text-dark mb-3">
-                                {servicio.nombre}
-                              </h5>
-                              <p className="text-muted small mb-4 flex-grow-1">
-                                {servicio.descripcion}
-                              </p>
-                              <div>
-                                <h4 className="fw-bold text-success mb-3">
-                                  {formatPrice(servicio.precio)}
-                                </h4>
-                                <button
-                                  onClick={() => handleAddToCart(servicio)}
-                                  className="btn btn-outline-success w-100 fw-bold rounded-pill"
-                                >
-                                  Agregar al Carrito
-                                </button>
-                              </div>
+                        <div key={servicio.id} className="col-12 col-md-6 col-lg-3">
+                          <div className="glass-panel-small h-100 rounded-5 hover-lift p-4 d-flex flex-column position-relative overflow-hidden">
+                            <div className="position-absolute" style={{ top: '-20px', right: '-20px', fontSize: '6rem', opacity: 0.05, filter: 'grayscale(100%)' }}>
+                              {servicio.icono}
+                            </div>
+                            <div className="fs-1 mb-3 position-relative z-index-2">{servicio.icono}</div>
+                            <span className="badge bg-dark text-white border-0 align-self-start mb-3 rounded-pill text-uppercase px-3 py-1 tracking-tight" style={{ fontSize: "0.65rem" }}>
+                              {servicio.tipo}
+                            </span>
+                            <h5 className="fw-bolder text-dark mb-2 tracking-tight position-relative z-index-2">
+                              {servicio.nombre}
+                            </h5>
+                            <p className="text-muted small mb-4 flex-grow-1 position-relative z-index-2" style={{ lineHeight: 1.6 }}>
+                              {servicio.descripcion}
+                            </p>
+                            <div className="position-relative z-index-2 border-top pt-3" style={{ borderColor: 'rgba(0,0,0,0.05)!important' }}>
+                              <h4 className="fw-bolder text-success mb-3 tracking-tight">
+                                {formatPrice(servicio.precio)}
+                              </h4>
+                              <button onClick={() => handleAddToCart(servicio)} className="btn btn-dark w-100 fw-bold rounded-pill apple-btn py-2">
+                                + Añadir
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -441,64 +347,26 @@ export default function Metodologia(): JSX.Element {
 
             {serviciosChunked.length > 1 && (
               <>
-                <button
-                  className="carousel-control-prev"
-                  type="button"
-                  data-bs-target="#catalogoCarousel"
-                  data-bs-slide="prev"
-                  style={{ width: "5%", left: "-5%" }}
-                >
-                  <span
-                    className="carousel-control-prev-icon bg-dark rounded-circle p-3 shadow"
-                    aria-hidden="true"
-                  ></span>
+                <button className="carousel-control-prev" type="button" data-bs-target="#catalogoCarousel" data-bs-slide="prev" style={{ width: "5%", left: "-2%" }}>
+                  <span className="carousel-control-prev-icon bg-dark rounded-circle p-3 shadow-glass" style={{ backgroundSize: '40%' }} aria-hidden="true"></span>
                   <span className="visually-hidden">Anterior</span>
                 </button>
-                <button
-                  className="carousel-control-next"
-                  type="button"
-                  data-bs-target="#catalogoCarousel"
-                  data-bs-slide="next"
-                  style={{ width: "5%", right: "-5%" }}
-                >
-                  <span
-                    className="carousel-control-next-icon bg-dark rounded-circle p-3 shadow"
-                    aria-hidden="true"
-                  ></span>
+                <button className="carousel-control-next" type="button" data-bs-target="#catalogoCarousel" data-bs-slide="next" style={{ width: "5%", right: "-2%" }}>
+                  <span className="carousel-control-next-icon bg-dark rounded-circle p-3 shadow-glass" style={{ backgroundSize: '40%' }} aria-hidden="true"></span>
                   <span className="visually-hidden">Siguiente</span>
                 </button>
               </>
             )}
           </div>
 
-          <div className="text-center mt-5">
-            <Link
-              to="/carrito"
-              className="btn btn-dark btn-lg fw-bold px-5 rounded-pill shadow-sm"
-            >
-              Ir a pagar servicios
+          <div className="text-center mt-5 pt-3">
+            <Link to="/carrito" className="btn-kinetic-health text-decoration-none shadow-glass">
+              <span className="btn-text">Proceder al pago</span>
+              <span className="btn-icon">→</span>
             </Link>
           </div>
         </div>
       </section>
-
-      <style>{`
-        .animation-fade-in {
-          animation: fadeIn 0.4s ease-in-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .hover-lift:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 1rem 3rem rgba(0,0,0,.15)!important;
-        }
-        .carousel-control-prev-icon, .carousel-control-next-icon {
-          background-size: 50%;
-          opacity: 0.8;
-        }
-      `}</style>
     </main>
   );
 }

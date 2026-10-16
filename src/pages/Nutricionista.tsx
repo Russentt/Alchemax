@@ -1,11 +1,11 @@
 import { useEffect, useState, type JSX } from "react";
 import { useNavigate } from "react-router";
 import AdminStatCard from "../components/admin/AdminStatCard";
-import ModalProducto from "../components/admin/ModalProducto";
-import ModalCategoria from "../components/admin/ModalCategoria";
 import NutricionistaSidebar, {
   type nutriTab,
 } from "../components/nutricionista/NutriSidebar";
+import NutricionistaProductsTab from "../components/nutricionista/NutricionistaProductsTab";
+import NutricionistaCategoriesTab from "../components/nutricionista/NutricionistaCategoriesTab";
 
 import type {
     Categoria,
@@ -70,14 +70,6 @@ export default function Nutricionista(): JSX.Element {
   // 1. GESTIÓN DE CATEGORÍAS
   // =========================================================
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [busquedaCategoria, setBusquedaCategoria] = useState("");
-  const [categoriaEditar, setCategoriaEditar] = useState<Categoria | null>(
-    null,
-  );
-  const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(
-    null,
-  );
-  const [modalCrearCategoria, setModalCrearCategoria] = useState(false);
 
   const cargarCategorias = () => {
     setCategorias(StorageCategorias.getCategorias());
@@ -89,7 +81,8 @@ export default function Nutricionista(): JSX.Element {
 
   const handleGuardarCategoria = (
     datos: Omit<Categoria, "id" | "serviciosAsociados">,
-  ) => {
+    categoriaEditar: Categoria | null,
+  ): boolean => {
     if (categoriaEditar) {
       const res = StorageCategorias.updateCategoria({
         ...categoriaEditar,
@@ -97,42 +90,35 @@ export default function Nutricionista(): JSX.Element {
       });
       if (!res.success) {
         mostrarNotificacion(res.mensaje, "danger");
-        return;
+        return false;
       }
       mostrarNotificacion("Categoría actualizada correctamente.", "success");
     } else {
       const res = StorageCategorias.crearCategoria(datos);
       if (!res.success) {
         mostrarNotificacion(res.mensaje, "danger");
-        return;
+        return false;
       }
       mostrarNotificacion("Nueva categoría creada.", "success");
     }
 
     cargarCategorias();
-    setModalCrearCategoria(false);
-    setCategoriaEditar(null);
+    return true;
   };
 
-  const EliminarCategoria = () => {
-    if (!categoriaEliminar) return;
-    StorageCategorias.deleteCategoria(categoriaEliminar.id);
+  const eliminarCategoria = (categoria: Categoria) => {
+    StorageCategorias.deleteCategoria(categoria.id);
     cargarCategorias();
     mostrarNotificacion(
-      `Categoría "${categoriaEliminar.nombre}" eliminada.`,
+      `Categoría "${categoria.nombre}" eliminada.`,
       "success",
     );
-    setCategoriaEliminar(null);
   };
 
   // =========================================================
   // 2. GESTIÓN DE SERVICIOS Y PLANES (CATÁLOGO)
   // =========================================================
   const [servicios, setServicios] = useState<Servicio[]>([]);
-  const [busquedaServicio, setBusquedaServicio] = useState("");
-  const [filtroCategoriaSrv, setFiltroCategoriaSrv] = useState("todas");
-  const [modalProducto, setModalProducto] = useState(false);
-  const [servicioAEditar, setServicioAEditar] = useState<Servicio | null>(null);
 
   const cargarServicios = () => {
     setServicios(StorageServicios.getServicios());
@@ -142,17 +128,10 @@ export default function Nutricionista(): JSX.Element {
     cargarServicios();
   }, []);
 
-  const abrirCrearServicio = () => {
-    setServicioAEditar(null);
-    setModalProducto(true);
-  };
-
-  const abrirEditarServicio = (item: Servicio) => {
-    setServicioAEditar(item);
-    setModalProducto(true);
-  };
-
-  const handleGuardarServicio = (datos: Omit<Servicio, "id" | "estado">) => {
+  const handleGuardarServicio = (
+    datos: Omit<Servicio, "id" | "estado">,
+    servicioAEditar: Servicio | null,
+  ): boolean => {
     const categoriaEncontrada = categorias.find(
       (c) => c.id === datos.categoriaId,
     );
@@ -168,7 +147,7 @@ export default function Nutricionista(): JSX.Element {
       });
       if (!res.success) {
         mostrarNotificacion(res.mensaje, "danger");
-        return;
+        return false;
       }
       mostrarNotificacion("Plan o servicio actualizado.", "success");
     } else {
@@ -179,15 +158,14 @@ export default function Nutricionista(): JSX.Element {
       });
       if (!res.success) {
         mostrarNotificacion(res.mensaje, "danger");
-        return;
+        return false;
       }
       mostrarNotificacion("Nuevo plan publicado en el catálogo.", "success");
     }
 
     cargarServicios();
     cargarCategorias();
-    setModalProducto(false);
-    setServicioAEditar(null);
+    return true;
   };
 
   const handleToggleEstado = (id: string) => {
@@ -1278,279 +1256,23 @@ export default function Nutricionista(): JSX.Element {
   );
 
   const renderProducts = () => {
-    const serviciosFiltrados = servicios.filter((s) => {
-      const coincideTexto = s.nombre
-        .toLowerCase()
-        .includes(busquedaServicio.toLowerCase());
-      const coincideCat =
-        filtroCategoriaSrv === "todas" ||
-        String(s.categoriaId) === String(filtroCategoriaSrv);
-      return coincideTexto && coincideCat;
-    });
-
     return (
-      <div
-        className="glass-panel p-4 p-md-5 rounded-5 border-0"
-        style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}
-      >
-        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
-          <div>
-            <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-              Catálogo de Planes y Prestaciones
-            </h4>
-            <p className="text-muted small mb-0">
-              Administra los servicios clínicos que los pacientes pueden adquirir.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn-kinetic-health py-2 px-4 border-0 shadow-sm"
-            onClick={abrirCrearServicio}
-          >
-            + Crear Nuevo Plan
-          </button>
-        </div>
-
-        <div className="row g-3 mb-4">
-          <div className="col-md-7">
-            <input
-              type="search"
-              className="form-control apple-input"
-              placeholder="🔍 Filtrar planes por nombre..."
-              value={busquedaServicio}
-              onChange={(e) => setBusquedaServicio(e.target.value)}
-            />
-          </div>
-          <div className="col-md-5">
-            <select
-              className="form-select apple-input fw-semibold"
-              value={filtroCategoriaSrv}
-              onChange={(e) => setFiltroCategoriaSrv(e.target.value)}
-            >
-              <option value="todas">Todas las categorías</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="table-responsive rounded-4 bg-white border shadow-sm overflow-hidden">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th className="ps-4 py-3 small text-uppercase text-muted">
-                  Código
-                </th>
-                <th className="py-3 small text-uppercase text-muted">
-                  Servicio / Plan
-                </th>
-                <th className="py-3 small text-uppercase text-muted">
-                  Categoría
-                </th>
-                <th className="py-3 small text-uppercase text-muted">
-                  Arancel
-                </th>
-                <th className="py-3 small text-uppercase text-muted">
-                  Visibilidad
-                </th>
-                <th className="pe-4 py-3 text-end small text-uppercase text-muted">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {serviciosFiltrados.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-5 text-muted">
-                    No se encontraron planes con los filtros aplicados.
-                  </td>
-                </tr>
-              ) : (
-                serviciosFiltrados.map((s) => (
-                  <tr key={s.id}>
-                    <td className="ps-4 text-muted small fw-bold">#{s.id}</td>
-                    <td>
-                      <div className="d-flex align-items-center gap-2">
-                        <span className="fs-4">{s.icono}</span>
-                        <div>
-                          <div className="fw-bolder text-dark">{s.nombre}</div>
-                          <small className="text-muted">{s.tipo}</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="badge bg-light text-dark border rounded-pill px-3">
-                        {s.categoriaNombre || "General"}
-                      </span>
-                    </td>
-                    <td className="fw-bold text-success">
-                      ${Number(s.precio).toLocaleString("es-CL")}
-                    </td>
-                    <td>
-                      <span
-                        className={`badge rounded-pill px-3 ${
-                          s.estado === "Activo" ? "bg-success" : "bg-secondary"
-                        }`}
-                      >
-                        {s.estado}
-                      </span>
-                    </td>
-                    <td className="pe-4 text-end">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-light border rounded-pill px-3 fw-semibold me-2"
-                        onClick={() => abrirEditarServicio(s)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-sm rounded-pill px-3 fw-bold ${
-                          s.estado === "Activo"
-                            ? "btn-outline-danger"
-                            : "btn-outline-success"
-                        }`}
-                        onClick={() => handleToggleEstado(s.id)}
-                      >
-                        {s.estado === "Activo" ? "Ocultar" : "Activar"}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <ModalProducto
-          isOpen={modalProducto}
-          servicioEditar={servicioAEditar}
-          categorias={categorias}
-          onClose={() => setModalProducto(false)}
-          onSave={handleGuardarServicio}
-        />
-      </div>
+      <NutricionistaProductsTab
+        servicios={servicios}
+        categorias={categorias}
+        onSave={handleGuardarServicio}
+        onToggleState={handleToggleEstado}
+      />
     );
   };
 
   const renderCategories = () => {
-    const categoriasFiltradas = categorias.filter((c) =>
-      c.nombre.toLowerCase().includes(busquedaCategoria.toLowerCase()),
-    );
-
     return (
-      <div
-        className="glass-panel p-4 p-md-5 rounded-5 border-0"
-        style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}
-      >
-        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
-          <div>
-            <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-              Taxonomía y Categorías Clínicas
-            </h4>
-            <p className="text-muted small mb-0">
-              Estructura las áreas de especialidad para el filtro del catálogo público.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn-kinetic-health py-2 px-4 border-0 shadow-sm"
-            onClick={() => setModalCrearCategoria(true)}
-          >
-            + Nueva Categoría
-          </button>
-        </div>
-
-        <div className="mb-4" style={{ maxWidth: "420px" }}>
-          <input
-            type="search"
-            className="form-control apple-input"
-            placeholder="🔍 Buscar categoría..."
-            value={busquedaCategoria}
-            onChange={(e) => setBusquedaCategoria(e.target.value)}
-          />
-        </div>
-
-        <div className="table-responsive rounded-4 bg-white border shadow-sm overflow-hidden">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th className="ps-4 py-3 small text-uppercase text-muted">
-                  ID
-                </th>
-                <th className="py-3 small text-uppercase text-muted">
-                  Nombre de Especialidad
-                </th>
-                <th className="py-3 small text-uppercase text-muted">
-                  Descripción Clínica
-                </th>
-                <th className="py-3 text-center small text-uppercase text-muted">
-                  Planes Vinculados
-                </th>
-                <th className="pe-4 py-3 text-end small text-uppercase text-muted">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {categoriasFiltradas.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-5 text-muted">
-                    No hay categorías que coincidan con la búsqueda.
-                  </td>
-                </tr>
-              ) : (
-                categoriasFiltradas.map((cat: Categoria) => (
-                  <tr key={cat.id}>
-                    <td className="ps-4 text-muted small fw-bold">#{cat.id}</td>
-                    <td className="fw-bolder text-dark">{cat.nombre}</td>
-                    <td className="text-muted small">
-                      {cat.descripcion || "Sin descripción"}
-                    </td>
-                    <td className="text-center">
-                      <span className="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-bold">
-                        {cat.serviciosAsociados ?? 0} planes
-                      </span>
-                    </td>
-                    <td className="pe-4 text-end">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-light border rounded-pill px-3 fw-semibold me-2"
-                        onClick={() => setCategoriaEditar({ ...cat })}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold"
-                        onClick={() => setCategoriaEliminar(cat)}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <ModalCategoria
-          isOpen={modalCrearCategoria || Boolean(categoriaEditar)}
-          categoriaEditar={categoriaEditar}
-          categoriaEliminar={categoriaEliminar}
-          onClose={() => {
-            setModalCrearCategoria(false);
-            setCategoriaEditar(null);
-            setCategoriaEliminar(null);
-          }}
-          onSave={handleGuardarCategoria}
-          onDeleteConfirm={EliminarCategoria}
-        />
-      </div>
+      <NutricionistaCategoriesTab
+        categorias={categorias}
+        onSave={handleGuardarCategoria}
+        onDelete={eliminarCategoria}
+      />
     );
   };
 

@@ -4,6 +4,7 @@ import { StorageServicios } from "../services/storageProductos";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
 import type { Servicio } from "../types/index";
+import { formatPriceCLP } from "../utils/formatPriceCLP";
 
 export default function Home(): JSX.Element {
   const navigate = useNavigate();
@@ -72,10 +73,6 @@ export default function Home(): JSX.Element {
     setNotification({ message: `¡"${servicio.nombre}" añadido al carrito!`, type: "success" });
     
     setTimeout(() => setNotification(null), 4000);
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(price);
   };
 
   return (
@@ -168,7 +165,7 @@ export default function Home(): JSX.Element {
                   </p>
                   <div className="position-relative z-index-2 border-top pt-3" style={{ borderColor: 'rgba(0,0,0,0.05)!important' }}>
                     <h4 className="fw-bolder text-success mb-3 tracking-tight">
-                      {formatPrice(servicio.precio)}
+                      {formatPriceCLP(servicio.precio)}
                     </h4>
                     <button onClick={() => handleAddToCart(servicio)} className="btn btn-dark w-100 fw-bold rounded-pill apple-btn py-2">
                       Adquirir Plan

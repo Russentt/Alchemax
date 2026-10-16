@@ -10,6 +10,7 @@ import ModalProducto from "../components/admin/ModalProducto";
 import ModalCategoria from "../components/admin/ModalCategoria";
 import ModalUsuario from "../components/admin/ModalUsuario";
 import ModalCrearUsuario from "../components/admin/ModalCrearUsuario";
+import { formatPriceCLP } from "../utils/formatPriceCLP";
 
 
 export default function Admin(): JSX.Element {
@@ -321,7 +322,7 @@ export default function Admin(): JSX.Element {
                       {s.categoriaNombre || "Sin categoría"}
                     </span>
                   </td>
-                  <td>${Number(s.precio).toLocaleString("es-CL")}</td>
+                  <td>{formatPriceCLP(s.precio)}</td>
                   <td>
                     <span
                       className={`badge ${

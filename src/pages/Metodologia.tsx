@@ -5,6 +5,7 @@ import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
+import { formatPriceCLP } from "../utils/formatPriceCLP";
 
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
   return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
@@ -136,13 +137,6 @@ export default function Metodologia(): JSX.Element {
     setTimeout(() => {
       setNotification(null);
     }, 5000);
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CL", {
-      style: "currency",
-      currency: "CLP",
-    }).format(price);
   };
 
   return (
@@ -330,7 +324,7 @@ export default function Metodologia(): JSX.Element {
                             </p>
                             <div className="position-relative z-index-2 border-top pt-3" style={{ borderColor: 'rgba(0,0,0,0.05)!important' }}>
                               <h4 className="fw-bolder text-success mb-3 tracking-tight">
-                                {formatPrice(servicio.precio)}
+                                {formatPriceCLP(servicio.precio)}
                               </h4>
                               <button onClick={() => handleAddToCart(servicio)} className="btn btn-dark w-100 fw-bold rounded-pill apple-btn py-2">
                                 + Añadir

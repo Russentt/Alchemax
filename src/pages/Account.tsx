@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type JSX } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import type {
   Usuario,
   Cita,
@@ -14,6 +14,11 @@ import { StorageUsuario } from "../services/storageUsuario";
 import { CitasService } from "../services/citasService";
 import { PlanService } from "../services/planService";
 import { TiendaService } from "../services/tiendaService";
+import AccountSummaryCard from "../components/AccountSummaryCard";
+import AccountPlanTab from "../components/account/AccountPlanTab";
+import AccountEvolutionTab from "../components/account/AccountEvolutionTab";
+import AccountExamsTab from "../components/account/AccountExamsTab";
+import AccountPurchasesTab from "../components/account/AccountPurchasesTab";
 import "../index.css";
 
 export type AccountTab =
@@ -464,13 +469,6 @@ export default function Account(): JSX.Element {
     showNotification(`Documento "${nombre}" eliminado.`, "warning");
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CL", {
-      style: "currency",
-      currency: "CLP",
-    }).format(price);
-  };
-
   const navItems: { id: AccountTab; icon: string; label: string }[] = [
     { id: "resumen", icon: "🏠", label: "Resumen" },
     { id: "citas", icon: "📅", label: "Mis Citas" },
@@ -488,78 +486,51 @@ export default function Account(): JSX.Element {
     <div style={{ animation: "fadeSlideUp 0.4s var(--ease-spring)" }}>
       <div className="row g-4 mb-4">
         <div className="col-md-4">
-          <div
+          <AccountSummaryCard
+            icon="📅"
+            label="Próxima Cita"
+            value={citas.find((c) => c.estado === "Programada")?.fecha || "Sin agendar"}
+            description={citas.find((c) => c.estado === "Programada")?.tipo || "Haz clic para programar →"}
             onClick={() => setActiveTab("citas")}
-            style={{ cursor: "pointer" }}
-            className="glass-panel-small p-4 rounded-5 h-100 border-0 hover-lift position-relative overflow-hidden"
-          >
-            <div className="position-absolute top-0 end-0 p-3 opacity-25 fs-1">
-              📅
-            </div>
-            <p className="text-dark fw-bold small text-uppercase tracking-tight opacity-75 mb-2">
-              Próxima Cita
-            </p>
-            <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-              {citas.find((c) => c.estado === "Programada")?.fecha ||
-                "Sin agendar"}
-            </h4>
-            <p className="text-success small fw-semibold mb-0">
-              {citas.find((c) => c.estado === "Programada")?.tipo ||
-                "Haz clic para programar →"}
-            </p>
-          </div>
+            descriptionClassName="text-success small fw-semibold mb-0"
+          />
         </div>
 
         <div className="col-md-4">
-          <div
-            onClick={() => setActiveTab("evolucion")}
-            style={{ cursor: "pointer" }}
-            className="glass-panel-small p-4 rounded-5 h-100 border-0 hover-lift position-relative overflow-hidden"
-          >
-            <div className="position-absolute top-0 end-0 p-3 opacity-25 fs-1">
-              ⚖️
-            </div>
-            <p className="text-dark fw-bold small text-uppercase tracking-tight opacity-75 mb-2">
-              Último Peso
-            </p>
-            <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-              {usuario?.pesoActual ||
-                (metricas.length > 0 ? metricas[0].peso : "--")}{" "}
-              kg
-            </h4>
-            <p className="text-muted small mb-0">
-              {usuario?.pesoActual
+          <AccountSummaryCard
+            icon="⚖️"
+            label="Último Peso"
+            value={
+              <>
+                {usuario?.pesoActual ||
+                  (metricas.length > 0 ? metricas[0].peso : "--")} kg
+              </>
+            }
+            description={
+              usuario?.pesoActual
                 ? "Sincronizado en perfil"
                 : metricas.length > 0
                   ? `Control del ${metricas[0].fecha}`
-                  : "Registrar peso →"}
-            </p>
-          </div>
+                  : "Registrar peso →"
+            }
+            onClick={() => setActiveTab("evolucion")}
+          />
         </div>
 
         <div className="col-md-4">
-          <div
+          <AccountSummaryCard
+            icon="🎯"
+            label="Objetivo Clínico"
+            value={usuario?.objetivoPrincipal || plan?.objetivo || "Por definir"}
+            description="Ver pauta activa →"
             onClick={() => setActiveTab("plan")}
             style={{
-              cursor: "pointer",
               background:
                 "linear-gradient(135deg, rgba(46,204,113,0.12) 0%, rgba(255,255,255,0.85) 100%)",
             }}
-            className="glass-panel-small p-4 rounded-5 h-100 border-0 hover-lift position-relative overflow-hidden"
-          >
-            <div className="position-absolute top-0 end-0 p-3 opacity-25 fs-1">
-              🎯
-            </div>
-            <p className="text-success fw-bold small text-uppercase tracking-tight mb-2">
-              Objetivo Clínico
-            </p>
-            <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-              {usuario?.objetivoPrincipal || plan?.objetivo || "Por definir"}
-            </h4>
-            <p className="text-success small mb-0 fw-semibold">
-              Ver pauta activa →
-            </p>
-          </div>
+            labelClassName="text-success fw-bold small text-uppercase tracking-tight mb-2"
+            descriptionClassName="text-success small mb-0 fw-semibold"
+          />
         </div>
       </div>
 
@@ -1159,511 +1130,47 @@ export default function Account(): JSX.Element {
   );
 
   const renderPlan = () => {
-    if (!plan || !plan.macros) {
-      return (
-        <div className="glass-panel p-5 rounded-5 text-center">
-          <div className="fs-1 mb-3">🥗</div>
-          <h5 className="fw-bold text-dark">Aún no tienes una pauta asignada</h5>
-          <p className="text-muted small">
-            Tu nutricionista cargará tu plan tras tu primera sesión de evaluación.
-          </p>
-        </div>
-      );
-    }
-
-    const totalComidas = plan.comidas?.length || 1;
-    const progresoDia = Math.round(
-      (comidasCompletadas.length / totalComidas) * 100,
-    );
-
     return (
-      <div
-        className="glass-panel p-4 p-md-5 rounded-5 border-0 mb-5"
-        style={{
-          minHeight: "55vh",
-          animation: "fadeSlideUp 0.4s var(--ease-spring)",
-        }}
-      >
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-          <div>
-            <span className="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-bold mb-2">
-              {plan.caloriasDiarias} kcal diarias •{" "}
-              {usuario?.objetivoPrincipal || plan.objetivo}
-            </span>
-            <h4 className="fw-bolder text-dark mb-0 tracking-tight">
-              Pauta Alimentaria Activa
-            </h4>
-          </div>
-          <button
-            onClick={handleDescargarPDF}
-            className="btn btn-dark rounded-pill px-4 py-2 fw-bold small shadow-sm"
-          >
-            📥 Descargar Pauta (.TXT)
-          </button>
-        </div>
-
-        {/* Distribución de Macronutrientes */}
-        <div className="row g-3 mb-4">
-          {plan.macros.map((macro, idx) => (
-            <div key={idx} className="col-md-4">
-              <div className="p-3 rounded-4 bg-white border shadow-sm text-center">
-                <p className="text-muted small fw-bold text-uppercase tracking-tight mb-1">
-                  {macro.nombre}
-                </p>
-                <h4 className="fw-bolder text-dark mb-2">
-                  {macro.gramos}g{" "}
-                  <span className="fs-6 text-muted fw-normal">
-                    ({macro.porcentaje}%)
-                  </span>
-                </h4>
-                <div className="progress rounded-pill" style={{ height: "8px" }}>
-                  <div
-                    className={`progress-bar bg-${macro.color}`}
-                    style={{ width: `${macro.porcentaje}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Barra de Adherencia Diaria Interactiva */}
-        <div className="p-3 rounded-4 bg-success-subtle border border-success border-opacity-25 mb-4">
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <span className="fw-bold text-success small">
-              ✅ Tu cumplimiento de hoy ({comidasCompletadas.length} de{" "}
-              {totalComidas} comidas)
-            </span>
-            <span className="fw-bolder text-success small">{progresoDia}%</span>
-          </div>
-          <div
-            className="progress rounded-pill bg-white"
-            style={{ height: "10px" }}
-          >
-            <div
-              className="progress-bar bg-success transition-all"
-              style={{ width: `${progresoDia}%` }}
-            ></div>
-          </div>
-        </div>
-
-        <h6 className="fw-bolder text-dark text-uppercase tracking-tight small mb-3">
-          Estructura Diaria (Marca tus comidas realizadas)
-        </h6>
-        <div className="d-flex flex-column gap-3">
-          {plan.comidas.map((comida) => {
-            const completada = comidasCompletadas.includes(comida.id);
-            return (
-              <div
-                key={comida.id}
-                onClick={() => toggleComidaCompletada(comida.id)}
-                style={{ cursor: "pointer" }}
-                className={`p-4 rounded-4 border transition-all d-flex align-items-start gap-3 ${
-                  completada
-                    ? "bg-success-subtle border-success"
-                    : "bg-white hover-lift"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  className="form-check-input mt-1"
-                  checked={completada}
-                  onChange={() => {}}
-                  style={{ width: "1.3rem", height: "1.3rem", cursor: "pointer" }}
-                />
-                <div className="flex-grow-1">
-                  <div className="d-flex flex-wrap justify-content-between align-items-center mb-1 gap-2">
-                    <span
-                      className={`fw-bolder fs-6 ${
-                        completada
-                          ? "text-decoration-line-through text-success"
-                          : "text-dark"
-                      }`}
-                    >
-                      {comida.tipo}
-                    </span>
-                    <span className="badge bg-light text-dark border rounded-pill px-3 py-1">
-                      🕒 {comida.horario}
-                    </span>
-                  </div>
-                  <p
-                    className={`small mb-0 ${
-                      completada ? "text-muted" : "text-secondary"
-                    }`}
-                  >
-                    {comida.descripcion}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <AccountPlanTab
+        plan={plan}
+        objetivo={usuario?.objetivoPrincipal}
+        comidasCompletadas={comidasCompletadas}
+        onDownload={handleDescargarPDF}
+        onToggleMeal={toggleComidaCompletada}
+      />
     );
   };
 
   const renderEvolucion = () => {
-    const pesoDiferencia =
-      metricas.length >= 2
-        ? (metricas[0].peso - metricas[metricas.length - 1].peso).toFixed(1)
-        : "0.0";
-
     return (
-      <div
-        className="glass-panel p-4 p-md-5 rounded-5 border-0 mb-5"
-        style={{
-          minHeight: "55vh",
-          animation: "fadeSlideUp 0.4s var(--ease-spring)",
-        }}
-      >
-        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-3">
-          <div>
-            <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-              Evolución y Biometría
-            </h4>
-            <p className="text-muted small mb-0">
-               Monitorea tus cambios de composición corporal a lo largo del tratamiento.
-            </p>
-          </div>
-          <button
-            onClick={() => setIsAddingMetrica(!isAddingMetrica)}
-            className="btn-kinetic-health py-2 px-4 border-0 shadow-sm"
-          >
-            {isAddingMetrica ? "Cancelar" : "+ Registrar Control"}
-          </button>
-        </div>
-
-        {/* Formulario para añadir nueva métrica biométrica */}
-        {isAddingMetrica && (
-          <form
-            onSubmit={handleAddMetricaSubmit}
-            className="p-4 rounded-4 bg-white border shadow-sm mb-4"
-          >
-            <h6 className="fw-bold text-dark mb-3">
-              Nuevo Registro de Control Corporal
-            </h6>
-            <div className="row g-3 mb-3">
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted text-uppercase">
-                  Peso (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-control apple-input"
-                  placeholder="Ej: 69.5"
-                  value={nuevaMetrica.peso}
-                  onChange={(e) =>
-                    setNuevaMetrica({ ...nuevaMetrica, peso: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted text-uppercase">
-                  % Grasa Corporal
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-control apple-input"
-                  placeholder="Ej: 21.5"
-                  value={nuevaMetrica.grasa}
-                  onChange={(e) =>
-                    setNuevaMetrica({ ...nuevaMetrica, grasa: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted text-uppercase">
-                  Masa Muscular (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-control apple-input"
-                  placeholder="Ej: 30.2"
-                  value={nuevaMetrica.musculo}
-                  onChange={(e) =>
-                    setNuevaMetrica({
-                      ...nuevaMetrica,
-                      musculo: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-            </div>
-            <div className="text-end">
-              <button
-                type="submit"
-                className="btn btn-success rounded-pill px-4 py-2 fw-bold small"
-              >
-                Guardar Medición
-              </button>
-            </div>
-          </form>
-        )}
-
-        {metricas.length === 0 ? (
-          <div className="text-center py-5">
-            <div className="fs-1 mb-2">📊</div>
-            <p className="text-muted">Aún no existen mediciones registradas.</p>
-          </div>
-        ) : (
-          <>
-            <div className="row g-3 mb-4">
-              <div className="col-sm-4">
-                <div className="p-4 rounded-4 bg-success text-white shadow-sm">
-                  <p className="small mb-1 opacity-75 fw-semibold text-uppercase">
-                    Variación Total
-                  </p>
-                  <h3 className="fw-bolder mb-0">
-                    {parseFloat(pesoDiferencia) > 0
-                      ? `+${pesoDiferencia}`
-                      : pesoDiferencia}{" "}
-                    kg
-                  </h3>
-                </div>
-              </div>
-              <div className="col-sm-4">
-                <div className="p-4 rounded-4 bg-white border shadow-sm">
-                  <p className="small text-muted fw-semibold mb-1 text-uppercase">
-                    % Grasa Actual
-                  </p>
-                  <h3 className="fw-bolder text-dark mb-0">
-                    {metricas[0].grasa}%
-                  </h3>
-                </div>
-              </div>
-              <div className="col-sm-4">
-                <div className="p-4 rounded-4 bg-white border shadow-sm">
-                  <p className="small text-muted fw-semibold mb-1 text-uppercase">
-                    Masa Muscular
-                  </p>
-                  <h3 className="fw-bolder text-success mb-0">
-                    {metricas[0].musculo} kg
-                  </h3>
-                </div>
-              </div>
-            </div>
-
-            <div className="table-responsive rounded-4 border bg-white shadow-sm overflow-hidden">
-              <table className="table table-hover align-middle text-center mb-0">
-                <thead className="table-light">
-                  <tr>
-                    <th className="py-3 text-uppercase small text-muted">
-                      Fecha de Control
-                    </th>
-                    <th className="py-3 text-uppercase small text-muted">
-                      Peso (kg)
-                    </th>
-                    <th className="py-3 text-uppercase small text-muted">
-                      % Grasa Corporal
-                    </th>
-                    <th className="py-3 text-uppercase small text-muted">
-                      Masa Muscular (kg)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metricas.map((m) => (
-                    <tr key={m.id}>
-                      <td className="py-3 fw-bold text-dark">{m.fecha}</td>
-                      <td className="py-3 fw-semibold">{m.peso} kg</td>
-                      <td className="py-3">
-                        <span className="badge bg-light text-dark border rounded-pill px-3">
-                          {m.grasa}%
-                        </span>
-                      </td>
-                      <td className="py-3 text-success fw-bold">
-                        {m.musculo} kg
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
+      <AccountEvolutionTab
+        metricas={metricas}
+        isAddingMetrica={isAddingMetrica}
+        nuevaMetrica={nuevaMetrica}
+        onToggleForm={() => setIsAddingMetrica((current) => !current)}
+        onFieldChange={(field, value) =>
+          setNuevaMetrica((current) => ({ ...current, [field]: value }))
+        }
+        onSubmit={handleAddMetricaSubmit}
+      />
     );
   };
 
   const renderExamenes = () => (
-    <div
-      className="glass-panel p-4 p-md-5 rounded-5 border-0 mb-5"
-      style={{
-        minHeight: "55vh",
-        animation: "fadeSlideUp 0.4s var(--ease-spring)",
-      }}
-    >
-      <div className="mb-4">
-        <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-          Repositorio de Exámenes Médicos
-        </h4>
-        <p className="text-muted small mb-0">
-          Carga tus resultados de laboratorio para el análisis previo a tu consulta.
-        </p>
-      </div>
-
-      <div
-        onClick={triggerFileInput}
-        style={{ cursor: "pointer", borderStyle: "dashed", borderWidth: "2px" }}
-        className="p-5 mb-4 bg-white rounded-5 text-center border-success hover-lift transition-all"
-      >
-        <div className="fs-1 mb-2">📥</div>
-        <h5 className="fw-bold text-dark mb-1">
-          Haz clic aquí para subir tus exámenes
-        </h5>
-        <p className="text-muted small mb-3">
-          Formatos admitidos: PDF, JPG o PNG (Máximo 5MB por archivo)
-        </p>
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: "none" }}
-          accept="application/pdf, image/jpeg, image/png"
-          onChange={handleFileChange}
-        />
-        <span className="btn btn-success rounded-pill px-4 py-2 fw-bold small shadow-sm">
-          Seleccionar Documento
-        </span>
-      </div>
-
-      <h6 className="fw-bolder text-dark text-uppercase tracking-tight small mb-3">
-        Historial de Documentos Subidos ({examenes.length})
-      </h6>
-      {examenes.length === 0 ? (
-        <div className="text-center py-4 bg-white rounded-4 border">
-          <p className="text-muted small mb-0">
-            No hay exámenes cargados en tu ficha clínica.
-          </p>
-        </div>
-      ) : (
-        <div className="d-flex flex-column gap-3">
-          {examenes.map((examen) => (
-            <div
-              key={examen.id}
-              className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between p-3 px-4 bg-white border rounded-4 shadow-sm gap-3"
-            >
-              <div className="d-flex align-items-center gap-3">
-                <div className="fs-2">🩺</div>
-                <div>
-                  <h6 className="mb-0 fw-bold text-dark">{examen.nombre}</h6>
-                  <small className="text-muted">
-                    Cargado el {examen.fechaSubida}
-                  </small>
-                </div>
-              </div>
-              <div className="d-flex align-items-center gap-2 align-self-end align-self-sm-center">
-                <span
-                  className={`badge rounded-pill px-3 py-2 ${
-                    examen.estado === "Revisado"
-                      ? "bg-success-subtle text-success"
-                      : "bg-warning-subtle text-dark"
-                  }`}
-                >
-                  {examen.estado === "Revisado"
-                    ? "✓ Revisado por Nutricionista"
-                    : "⏳ Pendiente de revisión"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleEliminarExamen(examen.id, examen.nombre)}
-                  className="btn btn-sm btn-outline-danger rounded-pill px-3"
-                  title="Eliminar documento"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <AccountExamsTab
+      examenes={examenes}
+      fileInputRef={fileInputRef}
+      onTriggerFileInput={triggerFileInput}
+      onFileChange={handleFileChange}
+      onDelete={handleEliminarExamen}
+    />
   );
 
   const renderCompras = () => (
-    <div
-      className="glass-panel p-4 p-md-5 rounded-5 border-0 mb-5"
-      style={{
-        minHeight: "55vh",
-        animation: "fadeSlideUp 0.4s var(--ease-spring)",
-      }}
-    >
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-3">
-        <div>
-          <h4 className="fw-bolder text-dark mb-1 tracking-tight">
-            Mis Planes y Servicios Adquiridos
-          </h4>
-          <p className="text-muted small mb-0">
-            Administra tus prestaciones contratadas y agenda tus sesiones correspondientes.
-          </p>
-        </div>
-        <Link
-          to="/metodologia#catalogo"
-          className="btn-kinetic-secondary py-2 px-4 text-decoration-none"
-        >
-          Explorar Catálogo →
-        </Link>
-      </div>
-
-      {compras.length === 0 ? (
-        <div className="text-center py-5 bg-white rounded-5 border">
-          <div className="fs-1 mb-3">🛍️</div>
-          <h5 className="fw-bold text-dark mb-2">
-            Aún no tienes servicios contratados
-          </h5>
-          <p className="text-muted small mb-4">
-            Explora nuestro catálogo clínico para adquirir tu evaluación o plan nutricional.
-          </p>
-          <Link
-            to="/metodologia#catalogo"
-            className="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm"
-          >
-            Ir al Catálogo Clínico
-          </Link>
-        </div>
-      ) : (
-        <div className="d-flex flex-column gap-3">
-          {compras.map((compra) => (
-            <div
-              key={compra.id}
-              className="p-4 rounded-4 bg-white border shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 hover-lift"
-            >
-              <div>
-                <div className="d-flex align-items-center gap-2 mb-1">
-                  <h5 className="fw-bolder text-dark mb-0">{compra.nombre}</h5>
-                  <span
-                    className={`badge rounded-pill px-3 ${
-                      compra.estado === "Activo" ? "bg-success" : "bg-secondary"
-                    }`}
-                  >
-                    {compra.estado}
-                  </span>
-                </div>
-                <p className="text-muted small mb-0">
-                  Adquirido el <strong>{compra.fechaCompra}</strong> • Monto pagado:{" "}
-                  <strong className="text-success">
-                    {formatPrice(compra.monto)}
-                  </strong>
-                </p>
-              </div>
-              <div className="d-flex gap-2">
-                <button
-                  onClick={() => handleAgendarDesdeCompra(compra.nombre)}
-                  className="btn btn-dark rounded-pill px-4 py-2 fw-bold small shadow-sm"
-                >
-                  📅 Agendar Hora de este Plan
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <AccountPurchasesTab
+      compras={compras}
+      onBookAppointment={handleAgendarDesdeCompra}
+    />
   );
 
   if (isLoading)

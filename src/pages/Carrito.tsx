@@ -4,6 +4,7 @@ import type { Compra, Servicio } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
 // 1. [SOLID] Importamos nuestro servicio que ahora es la única "fuente de la verdad"
 import { TiendaService } from "../services/tiendaService";
+import { formatPriceCLP } from "../utils/formatPriceCLP";
 
 export default function Carrito(): JSX.Element {
   const [carrito, setCarrito] = useState<Servicio[]>([]);
@@ -80,13 +81,6 @@ export default function Carrito(): JSX.Element {
     setTimeout(() => {
       navigate("/account");
     }, 2500);
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CL", {
-      style: "currency",
-      currency: "CLP",
-    }).format(price);
   };
 
   const totalPagar = carrito.reduce((acc, item) => acc + item.precio, 0);
@@ -194,7 +188,7 @@ export default function Carrito(): JSX.Element {
                     </div>
                     <div className="text-end ms-3">
                       <h5 className="fw-bold text-success mb-2">
-                        {formatPrice(item.precio)}
+                        {formatPriceCLP(item.precio)}
                       </h5>
                       <button
                         onClick={() => handleRemoveItem(item.id)}
@@ -225,7 +219,7 @@ export default function Carrito(): JSX.Element {
             <h4 className="fw-bold text-dark mb-4">Resumen de Pago</h4>
             <div className="d-flex justify-content-between mb-2 text-muted">
               <span>Subtotal</span>
-              <span>{formatPrice(totalPagar)}</span>
+              <span>{formatPriceCLP(totalPagar)}</span>
             </div>
             <div className="d-flex justify-content-between mb-3 text-muted">
               <span>Impuestos / Tasas Clínicas</span>
@@ -235,7 +229,7 @@ export default function Carrito(): JSX.Element {
             <div className="d-flex justify-content-between mb-4">
               <span className="fw-bold text-dark fs-5">Total</span>
               <span className="fw-bold text-success fs-4">
-                {formatPrice(totalPagar)}
+                {formatPriceCLP(totalPagar)}
               </span>
             </div>
 

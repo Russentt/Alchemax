@@ -1,4 +1,4 @@
-import { useState, useEffect, type JSX } from "react";
+import { useState, type JSX } from "react";
 import type { Categoria } from "../../types/index";
 
 interface ModalCategoriaProps {
@@ -11,6 +11,17 @@ interface ModalCategoriaProps {
 }
 
 export default function ModalCategoria({
+    ...props
+}: ModalCategoriaProps): JSX.Element | null {
+    return (
+        <ModalCategoriaContent
+            key={`${props.isOpen}-${props.categoriaEditar?.id ?? "new"}`}
+            {...props}
+        />
+    );
+}
+
+function ModalCategoriaContent({
     isOpen,
     categoriaEditar,
     categoriaEliminar,
@@ -18,24 +29,10 @@ export default function ModalCategoria({
     onSave,
     onDeleteConfirm,
 }: ModalCategoriaProps): JSX.Element | null {
-    const [form, setForm] = useState({
-        nombre: "",
-        descripcion: "",
-    });
-
-    useEffect(() => {
-        if (categoriaEditar) {
-            setForm({
-                nombre: categoriaEditar.nombre,
-                descripcion: categoriaEditar.descripcion || "",
-            });
-        } else {
-            setForm({
-                nombre: "",
-                descripcion: "",
-            });
-        }
-    }, [categoriaEditar, isOpen]);
+    const [form, setForm] = useState(() => ({
+        nombre: categoriaEditar?.nombre ?? "",
+        descripcion: categoriaEditar?.descripcion ?? "",
+    }));
 
     // Si el modal no esta activo no muestra nada
     if (!isOpen && !categoriaEliminar) return null;

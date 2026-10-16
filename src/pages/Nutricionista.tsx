@@ -40,8 +40,10 @@ export default function Nutricionista(): JSX.Element {
   const navigate = useNavigate();
 
   // Estado del profesional autenticado (Corrige el bug de "Especialista")
-  const [nutricionistaActual, setNutricionistaActual] =
-    useState<Usuario | null>(null);
+  const [nutricionistaActual] = useState<Usuario | null>(() => {
+    const sesion = StorageUsuario.getUsuarioSesion();
+    return sesion?.rol === "nutricionista" ? sesion : null;
+  });
 
   useEffect(() => {
     const sesion = StorageUsuario.getUsuarioSesion();
@@ -49,7 +51,6 @@ export default function Nutricionista(): JSX.Element {
       navigate("/login");
       return;
     }
-    setNutricionistaActual(sesion);
   }, [navigate]);
 
   // Sistema de Notificaciones Flotantes
@@ -69,15 +70,13 @@ export default function Nutricionista(): JSX.Element {
   // =========================================================
   // 1. GESTIÓN DE CATEGORÍAS
   // =========================================================
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>(() =>
+    StorageCategorias.getCategorias(),
+  );
 
   const cargarCategorias = () => {
     setCategorias(StorageCategorias.getCategorias());
   };
-
-  useEffect(() => {
-    cargarCategorias();
-  }, []);
 
   const handleGuardarCategoria = (
     datos: Omit<Categoria, "id" | "serviciosAsociados">,
@@ -118,15 +117,13 @@ export default function Nutricionista(): JSX.Element {
   // =========================================================
   // 2. GESTIÓN DE SERVICIOS Y PLANES (CATÁLOGO)
   // =========================================================
-  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [servicios, setServicios] = useState<Servicio[]>(() =>
+    StorageServicios.getServicios(),
+  );
 
   const cargarServicios = () => {
     setServicios(StorageServicios.getServicios());
   };
-
-  useEffect(() => {
-    cargarServicios();
-  }, []);
 
   const handleGuardarServicio = (
     datos: Omit<Servicio, "id" | "estado">,
@@ -287,10 +284,18 @@ export default function Nutricionista(): JSX.Element {
   // =========================================================
   // 4. NUEVO MÓDULO CLÍNICO: FICHAS, PAUTAS Y LABORATORIO
   // =========================================================
-  const [pacientes, setPacientes] = useState<Usuario[]>([]);
-  const [examenes, setExamenes] = useState<Examen[]>([]);
-  const [planActivo, setPlanActivo] = useState<PlanNutricional | null>(null);
-  const [metricasPaciente, setMetricasPaciente] = useState<Metrica[]>([]);
+  const [pacientes, setPacientes] = useState<Usuario[]>(() =>
+    StorageUsuario.getUsuarios().filter((u) => u.rol === "usuario"),
+  );
+  const [examenes, setExamenes] = useState<Examen[]>(() =>
+    PlanService.getExamenes(),
+  );
+  const [planActivo, setPlanActivo] = useState<PlanNutricional | null>(() =>
+    PlanService.getPlan(),
+  );
+  const [metricasPaciente, setMetricasPaciente] = useState<Metrica[]>(() =>
+    PlanService.getMetricas(),
+  );
   const [isEditingPlan, setIsEditingPlan] = useState(false);
 
   // Formulario para agregar comida a la pauta del paciente
@@ -315,9 +320,12 @@ export default function Nutricionista(): JSX.Element {
     setMetricasPaciente(PlanService.getMetricas());
   };
 
-  useEffect(() => {
-    cargarDatosClinicos();
-  }, [activeTab]);
+  const cambiarTab = (tab: NutricionistaTab) => {
+    if (tab !== activeTab) {
+      cargarDatosClinicos();
+    }
+    setActiveTab(tab);
+  };
 
   const handleToggleEstadoExamen = (id: string) => {
     const actualizados: Examen[] = examenes.map((ex) =>
@@ -461,7 +469,7 @@ export default function Nutricionista(): JSX.Element {
                   </small>
                 </div>
                 <button
-                  onClick={() => setActiveTab("users")}
+                  onClick={() => cambiarTab("users")}
                   className="btn btn-sm btn-dark rounded-pill px-3 fw-bold"
                 >
                   Gestionar Agenda →
@@ -545,7 +553,7 @@ export default function Nutricionista(): JSX.Element {
                     </small>
                   </div>
                   <button
-                    onClick={() => setActiveTab("clinical")}
+                    onClick={() => cambiarTab("clinical")}
                     className="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold"
                   >
                     Abrir Fichas
@@ -606,7 +614,7 @@ export default function Nutricionista(): JSX.Element {
                   </div>
                 </div>
                 <button
-                  onClick={() => setActiveTab("clinical")}
+                  onClick={() => cambiarTab("clinical")}
                   className="btn btn-sm btn-light rounded-pill px-3 fw-bold"
                 >
                   Editar Pauta
@@ -1336,7 +1344,7 @@ export default function Nutricionista(): JSX.Element {
           {/* CONSOLA DE NAVEGACIÓN CON NOMBRE REAL DEL NUTRICIONISTA */}
           <NutricionistaSidebar
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={cambiarTab}
             nombreNutricionista={nutricionistaActual?.nombre || "Nutricionista"}
             emailNutricionista={nutricionistaActual?.email}
             fotoPerfil={nutricionistaActual?.fotoPerfil}

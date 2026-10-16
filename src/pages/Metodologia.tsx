@@ -1,5 +1,6 @@
-import { useEffect, useState, type JSX } from "react";
+import { useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import type { Categoria, Servicio } from "../types/index";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
@@ -16,29 +17,18 @@ const chunkArray = <T,>(arr: T[], size: number): T[][] => {
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
 
-  const [servicios, setServicios] = useState<Servicio[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [servicios] = useState<Servicio[]>(() =>
+    StorageServicios.getServicios().filter(
+      (s) => !s.estado || s.estado === "Activo",
+    ),
+  );
+  const [categorias] = useState<Categoria[]>(() =>
+    StorageCategorias.getCategorias() || [],
+  );
   const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
 
   // Nuevo estado para controlar el modal de redirección suave
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
-
-  useEffect(() => {
-    const catsGuardadas = StorageCategorias.getCategorias();
-    if (catsGuardadas && catsGuardadas.length > 0) {
-      setCategorias(catsGuardadas);
-    }
-
-    const srvsGuardados = StorageServicios.getServicios();
-    if (srvsGuardados && srvsGuardados.length > 0) {
-      const activos = srvsGuardados.filter(
-        (s) => !s.estado || s.estado === "Activo",
-      );
-      setServicios(activos);
-    } else {
-      setServicios([]);
-    }
-  }, []);
 
   const serviciosFiltrados = servicios.filter((servicio) => {
     if (categoriaActiva === "todas") return true;
@@ -79,31 +69,33 @@ export default function Metodologia(): JSX.Element {
     if (!peso || !altura || altura <= 0) return;
 
     const imc = parseFloat((peso / (altura * altura)).toFixed(1));
-    let diagnostico = "";
-    let color = "";
-    let recomendacion = "";
+    const diagnostico = imc < 18.5
+      ? {
+          diagnostico: "Bajo Peso",
+          color: "warning",
+          recomendacion: "Sugerimos un Plan Clínico enfocado en superávit calórico controlado y ganancia de masa magra.",
+        }
+      : imc <= 24.9
+        ? {
+            diagnostico: "Normopeso",
+            color: "success",
+            recomendacion: triageForm.objetivo === "rendimiento"
+              ? "Estás en un rango óptimo. Te sugerimos el Plan Nutricional Deportivo para potenciar tu rendimiento."
+              : "Estás en un rango óptimo. Una Evaluación Biométrica Inicial nos ayudará a afinar tus hábitos actuales.",
+          }
+        : imc <= 29.9
+          ? {
+              diagnostico: "Sobrepeso",
+              color: "warning",
+              recomendacion: "Sugerimos una Evaluación Biométrica Inicial para diseñar un déficit calórico que proteja tu masa muscular.",
+            }
+          : {
+              diagnostico: "Obesidad",
+              color: "danger",
+              recomendacion: "Te recomendamos encarecidamente nuestro Plan Nutricional Clínico para un abordaje metabólico integral.",
+            };
 
-    if (imc < 18.5) {
-      diagnostico = "Bajo Peso";
-      color = "warning";
-      recomendacion = "Sugerimos un Plan Clínico enfocado en superávit calórico controlado y ganancia de masa magra.";
-    } else if (imc >= 18.5 && imc <= 24.9) {
-      diagnostico = "Normopeso";
-      color = "success";
-      recomendacion = triageForm.objetivo === "rendimiento"
-          ? "Estás en un rango óptimo. Te sugerimos el Plan Nutricional Deportivo para potenciar tu rendimiento."
-          : "Estás en un rango óptimo. Una Evaluación Biométrica Inicial nos ayudará a afinar tus hábitos actuales.";
-    } else if (imc >= 25 && imc <= 29.9) {
-      diagnostico = "Sobrepeso";
-      color = "warning";
-      recomendacion = "Sugerimos una Evaluación Biométrica Inicial para diseñar un déficit calórico que proteja tu masa muscular.";
-    } else {
-      diagnostico = "Obesidad";
-      color = "danger";
-      recomendacion = "Te recomendamos encarecidamente nuestro Plan Nutricional Clínico para un abordaje metabólico integral.";
-    }
-
-    setTriageResult({ imc, diagnostico, color, recomendacion });
+    setTriageResult({ imc, ...diagnostico });
   };
 
   const handleAddToCart = (servicio: Servicio) => {

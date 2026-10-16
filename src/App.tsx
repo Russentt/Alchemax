@@ -1,26 +1,25 @@
-import Home from "./pages/Home";
+import { lazy } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router";
 import Layout from "./components/Layout";
-import Metodologia from "./pages/Metodologia";
-import Account from "./pages/Account";
-import Register from "./pages/Register";
-import Carrito from "./pages/Carrito";
-import Faq from "./pages/Faq";
-import Login from "./pages/Login";
-import Testimonios from "./pages/Testimonios";
-import Telemedicina from "./pages/Telemedicina";
-import Blog from "./pages/Blog";
-import Admin from "./pages/Admin";
-import Article from "./pages/Article";
-import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
-import Nutricionista from "./pages/Nutricionista";
 import { StorageUsuario } from "./services/storageUsuario";
 import type { JSX } from "react/jsx-runtime";
 
-//carrusel
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
+const Home = lazy(() => import("./pages/Home"));
+const Metodologia = lazy(() => import("./pages/Metodologia"));
+const Account = lazy(() => import("./pages/Account"));
+const Register = lazy(() => import("./pages/Register"));
+const Carrito = lazy(() => import("./pages/Carrito"));
+const Faq = lazy(() => import("./pages/Faq"));
+const Login = lazy(() => import("./pages/Login"));
+const Testimonios = lazy(() => import("./pages/Testimonios"));
+const Telemedicina = lazy(() => import("./pages/Telemedicina"));
+const Blog = lazy(() => import("./pages/Blog"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Article = lazy(() => import("./pages/Article"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Nutricionista = lazy(() => import("./pages/Nutricionista"));
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const usuario = StorageUsuario.getUsuarioSesion();

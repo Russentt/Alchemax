@@ -1,4 +1,4 @@
-import { type JSX } from "react";
+import { Suspense, type JSX } from "react";
 import { Outlet } from "react-router";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -9,7 +9,9 @@ export default function Layout(): JSX.Element {
     <div className="alchemax-app d-flex flex-column min-vh-100 bg-light">
       <Navbar />
       <div className="flex-grow-1 d-flex flex-column">
-        <Outlet />
+        <Suspense fallback={<div className="flex-grow-1" aria-busy="true" />}>
+          <Outlet />
+        </Suspense>
       </div>
       <Footer />
       <Chatbot />

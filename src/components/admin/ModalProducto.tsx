@@ -1,4 +1,4 @@
-import { useState, useEffect, type JSX } from "react";
+import { useState, type JSX } from "react";
 import type { Categoria, Servicio } from "../../types/index";
 
 interface ModalProductoProps {
@@ -16,35 +16,30 @@ interface ModalProductoProps {
     }) => void;
 }
 
-export default function modalProducto({
+export default function ModalProducto(props: ModalProductoProps): JSX.Element | null {
+    return (
+        <ModalProductoContent
+            key={`${props.isOpen}-${props.servicioEditar?.id ?? "new"}-${props.categorias[0]?.id ?? ""}`}
+            {...props}
+        />
+    );
+}
+
+function ModalProductoContent({
     isOpen,
     servicioEditar,
     categorias,
     onClose,
     onSave,
 }: ModalProductoProps): JSX.Element | null {
-    const [form, setForm] = useState({
-        nombre: "",
-        descripcion: "",
-        precio: 0,
-        tipo: "plan" as "evaluacion" | "plan" | "control",
-        icono: "🥗",
-        categoriaId: "",
-    });
-
-    // Sincroniza el formulario despues de la accion
-    useEffect(() => {
-        if (servicioEditar) {
-            setForm({
-                nombre: "",
-                descripcion: "",
-                precio: 0,
-                tipo: "plan",
-                icono: "🥗",
-                categoriaId: categorias.length > 0 ? categorias[0].id : "",
-            });
-        }
-    }, [servicioEditar, isOpen, categorias]);
+    const [form, setForm] = useState(() => ({
+        nombre: servicioEditar?.nombre ?? "",
+        descripcion: servicioEditar?.descripcion ?? "",
+        precio: servicioEditar?.precio ?? 0,
+        tipo: servicioEditar?.tipo ?? "plan",
+        icono: servicioEditar?.icono ?? "🥗",
+        categoriaId: servicioEditar?.categoriaId ?? categorias[0]?.id ?? "",
+    }));
 
     if (!isOpen) return null;
 

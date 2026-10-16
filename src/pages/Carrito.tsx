@@ -1,4 +1,4 @@
-import { useState, useEffect, type JSX } from "react";
+import { useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Compra, Servicio } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
@@ -7,18 +7,14 @@ import { TiendaService } from "../services/tiendaService";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
 
 export default function Carrito(): JSX.Element {
-  const [carrito, setCarrito] = useState<Servicio[]>([]);
+  const [carrito, setCarrito] = useState<Servicio[]>(() =>
+    TiendaService.getCarrito(),
+  );
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "warning";
   } | null>(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // 2. [KISS] En lugar de parsear localStorage, le pedimos los datos al servicio.
-    // El servicio ya se encarga de filtrar por el usuario logeado y desempaquetar la data.
-    setCarrito(TiendaService.getCarrito());
-  }, []);
 
   const showToast = (message: string, type: "success" | "warning") => {
     setNotification({ message, type });

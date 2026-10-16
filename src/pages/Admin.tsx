@@ -27,12 +27,16 @@ export default function Admin(): JSX.Element {
     }
   }, [navigate]);
 
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>(() =>
+    StorageUsuario.getUsuarios(),
+  );
   const [busqueda, setBusqueda] = useState("");
   const [emailOriginal, setEmailOriginal] = useState<string>("");
 
   // Estados de categorias
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>(() =>
+    StorageCategorias.getCategorias(),
+  );
   const [categoriaEditar, setCategoriaEditar] = useState<Categoria | null>(null);
   const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(null);
   const [modalCrearCategoria, setModalCrearCategoria] = useState(false);
@@ -41,10 +45,6 @@ export default function Admin(): JSX.Element {
   const cargarCategorias = () => {
     setCategorias(StorageCategorias.getCategorias());
   }
-
-  useEffect(() => {
-    cargarCategorias();
-  }, []);
 
   const handleGuardarCategoria = (
     datos: Omit<Categoria, "id" | "serviciosAsociados">
@@ -92,7 +92,9 @@ export default function Admin(): JSX.Element {
 
 
   // Estados de productos
-  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [servicios, setServicios] = useState<Servicio[]>(() =>
+    StorageServicios.getServicios(),
+  );
   const [modalProducto, setModalProducto] = useState(false);
   const [servicioAEditar, setServicioAEditar] = useState<Servicio | null>(null);
 
@@ -101,10 +103,6 @@ export default function Admin(): JSX.Element {
   const cargarServicios = () => {
     setServicios(StorageServicios.getServicios());
   };
-
-  useEffect(() => {
-    cargarServicios();
-  }, []);
 
   // Crear servicio en modal
   const abrirCrearServicio = () => {
@@ -174,10 +172,6 @@ export default function Admin(): JSX.Element {
   const cargarUsuario = () => {
     setUsuarios(StorageUsuario.getUsuarios());
   };
-
-  useEffect(() => {
-    cargarUsuario();
-  }, []);
 
   const mostrarNotificacion = (
     texto: string,

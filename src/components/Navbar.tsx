@@ -11,8 +11,6 @@ export default function Navbar(): JSX.Element {
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false); // Para Recursos
   const [isServiciosOpen, setIsServiciosOpen] = useState<boolean>(false); // Para Servicios
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-
   const recursosRef = useRef<HTMLLIElement>(null);
   const serviciosRef = useRef<HTMLLIElement>(null);
 
@@ -23,13 +21,9 @@ export default function Navbar(): JSX.Element {
   const navigate = useNavigate();
 
   const sesionActual = StorageUsuario.getUsuarioSesion();
-
-  useEffect(() => {
-    const sesion =
-      StorageUsuario.getUsuarioSesion() ||
-      sessionStorage.getItem("session_user");
-    setIsAuthenticated(!!sesion);
-  }, [location]);
+  const isAuthenticated = Boolean(
+    sesionActual || sessionStorage.getItem("session_user"),
+  );
 
   const rutaPerfil =
     sesionActual?.rol === "admin"
@@ -81,7 +75,6 @@ export default function Navbar(): JSX.Element {
   const handleLogout = () => {
     StorageUsuario.logout();
     sessionStorage.removeItem("session_user");
-    setIsAuthenticated(false);
     handleLinkClick();
     navigate("/login", { replace: true });
   };

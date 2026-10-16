@@ -1,4 +1,4 @@
-import { useState, useEffect, type JSX } from "react";
+import { useState, type JSX } from "react";
 import type { Usuario } from "../../types/index";
 
 interface ModalUsuarioProps {
@@ -10,25 +10,30 @@ interface ModalUsuarioProps {
 }
 
 export default function ModalUsuario({
+  ...props
+}: ModalUsuarioProps): JSX.Element | null {
+  return (
+    <ModalUsuarioContent
+      key={`${props.usuarioEditar?.id ?? "closed"}-${props.usuarioEliminar?.id ?? ""}`}
+      {...props}
+    />
+  );
+}
+
+function ModalUsuarioContent({
   usuarioEditar,
   usuarioEliminar,
   onClose,
   onSave,
   onDeleteConfirm,
 }: ModalUsuarioProps): JSX.Element | null {
-  const [form, setForm] = useState<Usuario>({
+  const [form, setForm] = useState<Usuario>(() => usuarioEditar ? { ...usuarioEditar } : {
     nombre: "",
     email: "",
     genero: "otro",
     rol: "usuario",
     fechaNacimiento: "",
   });
-
-  useEffect(() => {
-    if (usuarioEditar) {
-      setForm({ ...usuarioEditar });
-    }
-  }, [usuarioEditar]);
 
   if (!usuarioEditar && !usuarioEliminar) return null;
 

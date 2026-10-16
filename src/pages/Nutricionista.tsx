@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { useNavigate } from "react-router";
 import AdminStatCard from "../components/admin/AdminStatCard";
 import NutricionistaSidebar, {
@@ -35,6 +35,8 @@ export type NutricionistaTab = nutriTab;
 
 export default function Nutricionista(): JSX.Element {
   const [activeTab, setActiveTab] = useState<NutricionistaTab>("dashboard");
+  const activeContentRef = useRef<HTMLDivElement>(null);
+  const [contentMinHeight, setContentMinHeight] = useState(0);
   const navigate = useNavigate();
 
   const [nutricionistaActual] = useState<Usuario | null>(() => {
@@ -63,7 +65,9 @@ export default function Nutricionista(): JSX.Element {
     setTimeout(() => setNotificacion(null), 3800);
   };
 
+  // =========================================================
   // 1. GESTIÓN DE CATEGORÍAS
+  // =========================================================
   const [categorias, setCategorias] = useState<Categoria[]>(() =>
     StorageCategorias.getCategorias(),
   );
@@ -94,7 +98,6 @@ export default function Nutricionista(): JSX.Element {
       }
       mostrarNotificacion("Nueva categoría creada.", "success");
     }
-
     cargarCategorias();
     return true;
   };
@@ -102,13 +105,12 @@ export default function Nutricionista(): JSX.Element {
   const eliminarCategoria = (categoria: Categoria) => {
     StorageCategorias.deleteCategoria(categoria.id);
     cargarCategorias();
-    mostrarNotificacion(
-      `Categoría "${categoria.nombre}" eliminada.`,
-      "success",
-    );
+    mostrarNotificacion(`Categoría "${categoria.nombre}" eliminada.`, "success");
   };
 
+  // =========================================================
   // 2. GESTIÓN DE SERVICIOS
+  // =========================================================
   const [servicios, setServicios] = useState<Servicio[]>(() =>
     StorageServicios.getServicios(),
   );
@@ -121,12 +123,8 @@ export default function Nutricionista(): JSX.Element {
     datos: Omit<Servicio, "id" | "estado">,
     servicioAEditar: Servicio | null,
   ): boolean => {
-    const categoriaEncontrada = categorias.find(
-      (c) => c.id === datos.categoriaId,
-    );
-    const nombreCategoria = categoriaEncontrada
-      ? categoriaEncontrada.nombre
-      : "General";
+    const categoriaEncontrada = categorias.find((c) => c.id === datos.categoriaId);
+    const nombreCategoria = categoriaEncontrada ? categoriaEncontrada.nombre : "General";
 
     if (servicioAEditar) {
       const res = StorageServicios.updateServicio({
@@ -151,7 +149,6 @@ export default function Nutricionista(): JSX.Element {
       }
       mostrarNotificacion("Nuevo plan publicado en el catálogo.", "success");
     }
-
     cargarServicios();
     cargarCategorias();
     return true;
@@ -163,37 +160,58 @@ export default function Nutricionista(): JSX.Element {
     mostrarNotificacion("Visibilidad del servicio actualizada.", "info");
   };
 
-  // 3. GESTIÓN DE CITAS
+  // =========================================================
+  // 3. DATOS DE USUARIOS Y PACIENTES
+  // =========================================================
+  const [pacientes, setPacientes] = useState<Usuario[]>(() =>
+    StorageUsuario.getUsuarios().filter((u) => u.rol === "usuario"),
+  );
+
+  const cargarDatosClinicos = () => {
+    const todosUsuarios = StorageUsuario.getUsuarios();
+    setPacientes(todosUsuarios.filter((u) => u.rol === "usuario"));
+    setExamenes(PlanService.getExamenes());
+    setPlanActivo(PlanService.getPlan());
+    setMetricasPaciente(PlanService.getMetricas());
+  };
+
+  const cambiarTab = (tab: NutricionistaTab) => {
+    if (tab !== activeTab) {
+      const currentHeight = activeContentRef.current?.getBoundingClientRect().height ?? 0;
+      setContentMinHeight((height) => Math.max(height, currentHeight));
+      cargarDatosClinicos();
+    }
+    setActiveTab(tab);
+  };
+
+  // =========================================================
+  // 4. GESTIÓN DE AGENDA Y CITAS
+  // =========================================================
   const [busquedaCitas, setBusquedaCitas] = useState("");
   const [filtroEstadoCita, setFiltroEstadoCita] = useState<string>("TODOS");
   const [isCreatingCita, setIsCreatingCita] = useState(false);
+  
   const [nuevaCitaForm, setNuevaCitaForm] = useState({
     pacienteNombre: "",
     pacienteEmail: "",
-    servicioNombre: "Consulta Nutricional",
+    servicioNombre: "Consulta Presencial",
     fecha: "",
     hora: "",
   });
 
   const obtenerCitasNormalizadas = (): CitaNormalizada[] => {
     const raw = localStorage.getItem("db_citas");
-    const usuariosReg = StorageUsuario.getUsuarios().filter(
-      (u) => u.rol === "usuario",
-    );
-    const pacienteDefault = usuariosReg[0];
+    const pacienteDefault = pacientes[0];
 
     if (!raw) return [];
     try {
       const parsed = JSON.parse(raw);
       return parsed.map((c: Record<string, string>) => ({
         id: c.id || `CITA-${Date.now()}`,
-        pacienteNombre:
-          c.pacienteNombre || pacienteDefault?.nombre || "Paciente Registrado",
-        pacienteEmail:
-          c.pacienteEmail || pacienteDefault?.email || "paciente@gmail.com",
+        pacienteNombre: c.pacienteNombre || pacienteDefault?.nombre || "Paciente Registrado",
+        pacienteEmail: c.pacienteEmail || pacienteDefault?.email || "paciente@gmail.com",
         servicioNombre: c.servicioNombre || c.tipo || "Consulta Clínica",
-        profesional:
-          c.profesional || nutricionistaActual?.nombre || "Staff NutriVida",
+        profesional: c.profesional || nutricionistaActual?.nombre || "Staff NutriVida",
         fecha: c.fecha || "Por definir",
         hora: c.hora || "--:--",
         estado: (c.estado as CitaNormalizada["estado"]) || "Programada",
@@ -203,9 +221,7 @@ export default function Nutricionista(): JSX.Element {
     }
   };
 
-  const [citas, setCitas] = useState<CitaNormalizada[]>(
-    obtenerCitasNormalizadas,
-  );
+  const [citas, setCitas] = useState<CitaNormalizada[]>(obtenerCitasNormalizadas);
 
   const guardarCitasEnStorage = (nuevasCitas: CitaNormalizada[]) => {
     setCitas(nuevasCitas);
@@ -216,10 +232,7 @@ export default function Nutricionista(): JSX.Element {
     localStorage.setItem("db_citas", JSON.stringify(formatoCompatible));
   };
 
-  const cambiarEstadoCita = (
-    id: string,
-    nuevoEstado: CitaNormalizada["estado"],
-  ) => {
+  const cambiarEstadoCita = (id: string, nuevoEstado: CitaNormalizada["estado"]) => {
     const actualizadas = citas.map((c) =>
       c.id === id ? { ...c, estado: nuevoEstado } : c,
     );
@@ -229,26 +242,35 @@ export default function Nutricionista(): JSX.Element {
 
   const handleCrearCitaManual = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // VALIDACIÓN ESTRICTA: El paciente debe existir en la BD
+    const pacienteValido = pacientes.find(p => p.email === nuevaCitaForm.pacienteEmail);
+    if (!pacienteValido) {
+      mostrarNotificacion("Error de integridad: Debes seleccionar un paciente registrado.", "danger");
+      return;
+    }
+
     const nueva: CitaNormalizada = {
       id: `c-${Date.now()}`,
-      pacienteNombre: nuevaCitaForm.pacienteNombre.trim(),
-      pacienteEmail: nuevaCitaForm.pacienteEmail.trim(),
+      pacienteNombre: pacienteValido.nombre,
+      pacienteEmail: pacienteValido.email,
       servicioNombre: nuevaCitaForm.servicioNombre,
       profesional: nutricionistaActual?.nombre || "Nutricionista",
       fecha: nuevaCitaForm.fecha,
       hora: nuevaCitaForm.hora,
       estado: "Confirmada",
     };
+
     guardarCitasEnStorage([nueva, ...citas]);
     setIsCreatingCita(false);
     setNuevaCitaForm({
       pacienteNombre: "",
       pacienteEmail: "",
-      servicioNombre: "Consulta Nutricional",
+      servicioNombre: "Consulta Presencial",
       fecha: "",
       hora: "",
     });
-    mostrarNotificacion("Cita agendada manualmente en el sistema.", "success");
+    mostrarNotificacion("Cita agendada correctamente en la plataforma.", "success");
   };
 
   const citasFiltradas = citas.filter((c) => {
@@ -261,27 +283,18 @@ export default function Nutricionista(): JSX.Element {
     const coincideEstado =
       filtroEstadoCita === "TODOS" ||
       (filtroEstadoCita === "ACTIVAS" &&
-        (c.estado === "Pendiente" ||
-          c.estado === "Programada" ||
-          c.estado === "Confirmada")) ||
+        (c.estado === "Pendiente" || c.estado === "Programada" || c.estado === "Confirmada")) ||
       c.estado === filtroEstadoCita;
 
     return coincideTexto && coincideEstado;
   });
 
-  // 4. MÓDULO CLÍNICO
-  const [pacientes, setPacientes] = useState<Usuario[]>(() =>
-    StorageUsuario.getUsuarios().filter((u) => u.rol === "usuario"),
-  );
-  const [examenes, setExamenes] = useState<Examen[]>(() =>
-    PlanService.getExamenes(),
-  );
-  const [planActivo, setPlanActivo] = useState<PlanNutricional | null>(() =>
-    PlanService.getPlan(),
-  );
-  const [metricasPaciente, setMetricasPaciente] = useState<Metrica[]>(() =>
-    PlanService.getMetricas(),
-  );
+  // =========================================================
+  // 5. MÓDULO CLÍNICO (FICHAS, PAUTAS Y LABORATORIO)
+  // =========================================================
+  const [examenes, setExamenes] = useState<Examen[]>(() => PlanService.getExamenes());
+  const [planActivo, setPlanActivo] = useState<PlanNutricional | null>(() => PlanService.getPlan());
+  const [metricasPaciente, setMetricasPaciente] = useState<Metrica[]>(() => PlanService.getMetricas());
   const [isEditingPlan, setIsEditingPlan] = useState(false);
 
   const [nuevaComida, setNuevaComida] = useState({
@@ -296,29 +309,9 @@ export default function Nutricionista(): JSX.Element {
     musculo: "",
   });
 
-  const cargarDatosClinicos = () => {
-    const todosUsuarios = StorageUsuario.getUsuarios();
-    setPacientes(todosUsuarios.filter((u) => u.rol === "usuario"));
-    setExamenes(PlanService.getExamenes());
-    setPlanActivo(PlanService.getPlan());
-    setMetricasPaciente(PlanService.getMetricas());
-  };
-
-  const cambiarTab = (tab: NutricionistaTab) => {
-    if (tab !== activeTab) {
-      cargarDatosClinicos();
-    }
-    setActiveTab(tab);
-  };
-
   const handleToggleEstadoExamen = (id: string) => {
     const actualizados: Examen[] = examenes.map((ex) =>
-      ex.id === id
-        ? {
-            ...ex,
-            estado: ex.estado === "Revisado" ? "Pendiente" : "Revisado",
-          }
-        : ex,
+      ex.id === id ? { ...ex, estado: ex.estado === "Revisado" ? "Pendiente" : "Revisado" } : ex
     );
     setExamenes(actualizados);
     localStorage.setItem("db_examenes", JSON.stringify(actualizados));
@@ -362,9 +355,7 @@ export default function Nutricionista(): JSX.Element {
     mostrarNotificacion("Tiempo de comida eliminado de la pauta.", "info");
   };
 
-  const handleRegistrarAntropometria = (
-    e: React.FormEvent<HTMLFormElement>,
-  ) => {
+  const handleRegistrarAntropometria = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const peso = parseFloat(nuevoControlClinico.peso);
     const grasa = parseFloat(nuevoControlClinico.grasa);
@@ -373,11 +364,7 @@ export default function Nutricionista(): JSX.Element {
 
     const nuevaMetrica: Metrica = {
       id: `m-${Date.now()}`,
-      fecha: new Date().toLocaleDateString("es-CL", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
+      fecha: new Date().toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric" }),
       peso,
       grasa,
       musculo,
@@ -390,20 +377,16 @@ export default function Nutricionista(): JSX.Element {
     mostrarNotificacion("Medición InBody registrada en la evolución del paciente.", "success");
   };
 
-  const citasPendientesCount = citas.filter(
-    (c) => c.estado === "Pendiente" || c.estado === "Programada",
-  ).length;
-  const examenesPendientesCount = examenes.filter(
-    (e) => e.estado === "Pendiente",
-  ).length;
+  const citasPendientesCount = citas.filter((c) => c.estado === "Pendiente" || c.estado === "Programada").length;
+  const examenesPendientesCount = examenes.filter((e) => e.estado === "Pendiente").length;
 
+  // =========================================================
+  // RENDERS SECUNDARIOS (SIN ANIMACIONES DOBLES PARA EVITAR SALTOS)
+  // =========================================================
   const renderDashboard = () => {
-    const totalPlanesActivos = servicios.filter(
-      (s) => s.estado === "Activo",
-    ).length;
-
+    const totalPlanesActivos = servicios.filter((s) => s.estado === "Activo").length;
     return (
-      <div style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}>
+      <>
         <div className="row g-4 mb-4">
           <AdminStatCard title="Planes Publicados" value={totalPlanesActivos} icon="🥗" theme="success" />
           <AdminStatCard title="Consultas Activas" value={citasPendientesCount} icon="📅" theme="warning" />
@@ -500,12 +483,12 @@ export default function Nutricionista(): JSX.Element {
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   };
 
   const renderCitas = () => (
-    <div className="glass-panel p-4 p-md-5 rounded-5 border-0" style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}>
+    <div className="glass-panel p-4 p-md-5 rounded-5 border-0">
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
           <h4 className="fw-bolder text-dark mb-1 tracking-tight">Control de Agenda y Consultas</h4>
@@ -520,13 +503,26 @@ export default function Nutricionista(): JSX.Element {
         <form onSubmit={handleCrearCitaManual} className="p-4 rounded-4 bg-white border shadow-sm mb-4">
           <h6 className="fw-bolder text-dark mb-3">Asignar Nueva Hora de Consulta</h6>
           <div className="row g-3 mb-3">
-            <div className="col-md-4">
-              <label className="form-label small fw-bold text-muted text-uppercase">Nombre del Paciente</label>
-              <input type="text" className="form-control apple-input" placeholder="Ej. Javiera Morales" value={nuevaCitaForm.pacienteNombre} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, pacienteNombre: e.target.value })} required />
-            </div>
-            <div className="col-md-4">
-              <label className="form-label small fw-bold text-muted text-uppercase">Correo del Paciente</label>
-              <input type="email" className="form-control apple-input" placeholder="paciente@gmail.com" value={nuevaCitaForm.pacienteEmail} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, pacienteEmail: e.target.value })} required />
+            <div className="col-md-8">
+              <label className="form-label small fw-bold text-muted text-uppercase">Paciente Registrado</label>
+              <select 
+                className="form-select apple-input" 
+                value={nuevaCitaForm.pacienteEmail} 
+                onChange={(e) => {
+                  const pac = pacientes.find(p => p.email === e.target.value);
+                  setNuevaCitaForm({ 
+                    ...nuevaCitaForm, 
+                    pacienteEmail: pac?.email || "",
+                    pacienteNombre: pac?.nombre || ""
+                  });
+                }} 
+                required
+              >
+                <option value="">Seleccione un paciente de la base de datos...</option>
+                {pacientes.map(p => (
+                  <option key={p.email} value={p.email}>{p.nombre} ({p.email})</option>
+                ))}
+              </select>
             </div>
             <div className="col-md-4">
               <label className="form-label small fw-bold text-muted text-uppercase">Prestación / Plan</label>
@@ -624,7 +620,7 @@ export default function Nutricionista(): JSX.Element {
   );
 
   const renderClinical = () => (
-    <div style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}>
+    <>
       <div className="row g-4 mb-4">
         <div className="col-lg-7">
           <div className="glass-panel p-4 p-md-5 rounded-5 border-0 h-100">
@@ -784,7 +780,7 @@ export default function Nutricionista(): JSX.Element {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 
   const renderProducts = () => {
@@ -808,21 +804,26 @@ export default function Nutricionista(): JSX.Element {
     );
   };
 
+  // Wrapper Estructural (El Andamio Anti-Terremotos)
   const renderActiveContent = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return renderDashboard();
-      case "users":
-        return renderCitas();
-      case "clinical":
-        return renderClinical();
-      case "products":
-        return renderProducts();
-      case "categories":
-        return renderCategories();
-      default:
-        return renderDashboard();
-    }
+    return (
+      <div
+        ref={activeContentRef}
+        style={{
+          minHeight: contentMinHeight
+            ? `max(75vh, ${contentMinHeight}px)`
+            : "75vh",
+          overflowAnchor: "none",
+          animation: "fadeIn 0.3s ease-out",
+        }}
+      >
+        {activeTab === "dashboard" && renderDashboard()}
+        {activeTab === "users" && renderCitas()}
+        {activeTab === "clinical" && renderClinical()}
+        {activeTab === "products" && renderProducts()}
+        {activeTab === "categories" && renderCategories()}
+      </div>
+    );
   };
 
   return (
@@ -930,6 +931,7 @@ export default function Nutricionista(): JSX.Element {
               </div>
             </div>
 
+            {/* Inyección del contenido estabilizado */}
             {renderActiveContent()}
           </section>
         </div>

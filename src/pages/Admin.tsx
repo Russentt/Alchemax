@@ -37,6 +37,32 @@ export default function Admin(): JSX.Element {
 
   // Estados Servicios
   const [servicios, setServicios] = useState<Servicio[]>(() => StorageServicios.getServicios());
+  const [busquedaServicios, setBusquedaServicios] = useState("");
+  const [paginaServicios, setPaginaServicios] = useState(1);
+  const serviciosPorPagina = 5;
+  const terminoBusquedaServicios = busquedaServicios.trim().toLocaleLowerCase("es-CL");
+  const serviciosFiltrados = servicios.filter((servicio) =>
+    `${servicio.id ?? ""} ${servicio.nombre ?? ""} ${servicio.categoriaNombre ?? ""}`
+      .toLocaleLowerCase("es-CL")
+      .includes(terminoBusquedaServicios),
+  );
+  const totalPaginasServicios = Math.max(
+    1,
+    Math.ceil(serviciosFiltrados.length / serviciosPorPagina),
+  );
+  const paginaServiciosActual = Math.min(paginaServicios, totalPaginasServicios);
+  const serviciosPagina = serviciosFiltrados.slice(
+    (paginaServiciosActual - 1) * serviciosPorPagina,
+    paginaServiciosActual * serviciosPorPagina,
+  );
+  const primerServicio =
+    serviciosFiltrados.length === 0
+      ? 0
+      : (paginaServiciosActual - 1) * serviciosPorPagina + 1;
+  const ultimoServicio = Math.min(
+    paginaServiciosActual * serviciosPorPagina,
+    serviciosFiltrados.length,
+  );
   const [modalProducto, setModalProducto] = useState(false);
   const [servicioAEditar, setServicioAEditar] = useState<Servicio | null>(null);
 
@@ -365,6 +391,28 @@ export default function Admin(): JSX.Element {
         </button>
       </div>
 
+      <div className="row g-3 align-items-end mb-3">
+        <div className="col-12 col-md-7">
+          <label className="form-label small text-secondary" htmlFor="buscar-servicios-admin">
+            Buscar servicio
+          </label>
+          <input
+            id="buscar-servicios-admin"
+            type="search"
+            className="form-control bg-dark text-white border-secondary"
+            placeholder="Nombre, ID o categoría..."
+            value={busquedaServicios}
+            onChange={(event) => {
+              setBusquedaServicios(event.target.value);
+              setPaginaServicios(1);
+            }}
+          />
+        </div>
+        <div className="col-12 col-md-5 text-md-end small text-secondary" aria-live="polite">
+          Mostrando {primerServicio}–{ultimoServicio} de {serviciosFiltrados.length} servicios
+        </div>
+      </div>
+
       <div className="table-responsive rounded-3 overflow-hidden" style={{ border: '1px solid #374151' }}>
         <table className="table table-dark table-hover align-middle mb-0" style={{ backgroundColor: '#111827' }}>
           <thead style={{ borderBottom: '2px solid #374151' }}>
@@ -378,10 +426,10 @@ export default function Admin(): JSX.Element {
             </tr>
           </thead>
           <tbody>
-            {servicios.length === 0 ? (
+            {serviciosFiltrados.length === 0 ? (
               <tr><td colSpan={6} className="text-center py-4 text-white">No se encontraron servicios registrados.</td></tr>
             ) : (
-              servicios.map((s) => (
+              serviciosPagina.map((s) => (
                 <tr key={s.id} style={{ borderBottom: '1px solid #374151' }}>
                   <td className="small font-monospace" style={{ color: '#9ca3af' }}>{s.id}</td>
                   <td className="fw-semibold text-white"><span className="me-2">{s.icono}</span>{s.nombre}</td>
@@ -403,6 +451,36 @@ export default function Admin(): JSX.Element {
             )}
           </tbody>
         </table>
+      </div>
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 pt-3">
+        <span className="small text-secondary">Máximo 5 servicios por página</span>
+        <div className="d-flex align-items-center gap-2">
+          <span className="small text-secondary">
+            Página {paginaServiciosActual} de {totalPaginasServicios}
+          </span>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-light"
+            aria-label="Página anterior de servicios"
+            disabled={paginaServiciosActual <= 1}
+            onClick={() => setPaginaServicios((pagina) => Math.max(1, pagina - 1))}
+          >
+            Anterior
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-light"
+            aria-label="Página siguiente de servicios"
+            disabled={paginaServiciosActual >= totalPaginasServicios}
+            onClick={() =>
+              setPaginaServicios((pagina) =>
+                Math.min(totalPaginasServicios, pagina + 1),
+              )
+            }
+          >
+            Siguiente
+          </button>
+        </div>
       </div>
       <ModalProducto isOpen={modalProducto} servicioEditar={servicioAEditar} categorias={categorias} onClose={() => setModalProducto(false)} onSave={handleGuardarServicio} />
     </div>

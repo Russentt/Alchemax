@@ -20,9 +20,9 @@ export default function AdminSidebar({
     }`;
 
   return (
-    <aside className="col-lg-3 col-md-4 mb-4 mb-md-0">
+    <aside className="col-lg-3 col-md-4 mb-4 mb-md-0 align-self-start">
       <div 
-        className="p-4 rounded-4 shadow-lg h-100 border-0 d-flex flex-column justify-content-between"
+        className="p-4 rounded-4 shadow-lg border-0 d-flex flex-column justify-content-between"
         style={{ background: 'linear-gradient(145deg, #111827 0%, #1f2937 100%)', color: '#e5e7eb' }}
       >
         <div>
@@ -88,7 +88,7 @@ export default function AdminSidebar({
 
         <div className="mt-4 p-3 rounded-3" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="d-flex align-items-center justify-content-between mb-1">
-            <small className="fw-bold text-muted" style={{ fontSize: '0.7rem' }}>ESTADO DEL NÚCLEO</small>
+            <small className="fw-bold text-white" style={{ fontSize: '0.7rem' }}>ESTADO DEL NÚCLEO</small>
             <span style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%', boxShadow: '0 0 8px #10b981' }}></span>
           </div>
           <p className="mb-0 text-secondary" style={{ fontSize: '0.75rem', fontFamily: 'monospace' }}>

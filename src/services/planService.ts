@@ -21,4 +21,14 @@ export const PlanService = {
     const examenes = PlanService.getExamenes().filter((e) => e.id !== id);
     localStorage.setItem("db_examenes", JSON.stringify(examenes));
   },
+  // Añadir dentro de PlanService en src/services/planService.ts
+  updatePlan: (nuevoPlan: PlanNutricional): void => {
+    localStorage.setItem("db_plan", JSON.stringify(nuevoPlan));
+  },
+  updateEstadoExamen: (id: string, estado: "Pendiente" | "Revisado"): void => {
+    const examenes = PlanService.getExamenes().map((ex) =>
+      ex.id === id ? { ...ex, estado } : ex,
+    );
+    localStorage.setItem("db_examenes", JSON.stringify(examenes));
+  },
 };

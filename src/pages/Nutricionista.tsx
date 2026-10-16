@@ -1,583 +1,1687 @@
 import { useEffect, useState, type JSX } from "react";
-import AdminStatCard from "../components/admin/AdminStatCard";
-import type { Categoria, Servicio } from "../data/types";
-import { StorageUsuario } from "../services/storageUsuario";
 import { useNavigate } from "react-router";
-import { StorageCategorias } from "../services/storageCategorias";
-import { StorageServicios } from "../services/storageProductos";
+import AdminStatCard from "../components/admin/AdminStatCard";
 import ModalProducto from "../components/admin/ModalProducto";
 import ModalCategoria from "../components/admin/ModalCategoria";
-import NutricionistaSidebar from "../components/nutricionista/NutriSidebar";
+import NutricionistaSidebar, {
+  type nutriTab,
+} from "../components/nutricionista/NutriSidebar";
 
-interface CitaPlan {
-    id: string;
-    pacienteNombre: string;
-    pacienteEmail: string;
-    servicioNombre: string;
-    fecha: string;
-    hora: string;
-    estado: "Pendiente" | "Confirmada" | "Completada" | "Cancelada";
+import type {
+  Categoria,
+  Servicio,
+  Usuario,
+  PlanNutricional,
+  Examen,
+  Metrica,
+} from "../data/types";
+import { StorageUsuario } from "../services/storageUsuario";
+import { StorageCategorias } from "../services/storageCategorias";
+import { StorageServicios } from "../services/storageProductos";
+import { PlanService } from "../services/planService";
+import "../index.css";
+
+interface CitaNormalizada {
+  id: string;
+  pacienteNombre: string;
+  pacienteEmail: string;
+  servicioNombre: string;
+  profesional: string;
+  fecha: string;
+  hora: string;
+  estado: "Pendiente" | "Programada" | "Confirmada" | "Completada" | "Cancelada";
 }
 
-    export type NutricionistaTab = "dashboard" | "products" | "categories" | "users";
-    export default function Nutricionista(): JSX.Element {
-    const [activeTab, setActiveTab] = useState<NutricionistaTab>("dashboard");
-    const navigate = useNavigate();
+export type NutricionistaTab = nutriTab;
 
-    useEffect(() => {
-        const sesion = StorageUsuario.getUsuarioSesion();
-        console.log("Sesion en Nutricionista:", sesion);
+export default function Nutricionista(): JSX.Element {
+  const [activeTab, setActiveTab] = useState<NutricionistaTab>("dashboard");
+  const navigate = useNavigate();
 
-        if (!sesion || sesion.rol !== "nutricionista") {
-            navigate("/login");
-        }
-}, [navigate]);
+  // Estado del profesional autenticado (Corrige el bug de "Especialista")
+  const [nutricionistaActual, setNutricionistaActual] =
+    useState<Usuario | null>(null);
 
-    const [notificacion, setNotificacion] = useState<{
-        texto: string;
-        tipo: "info" | "success" | "danger";
-    } | null>(null);
+  useEffect(() => {
+    const sesion = StorageUsuario.getUsuarioSesion();
+    if (!sesion || sesion.rol !== "nutricionista") {
+      navigate("/login");
+      return;
+    }
+    setNutricionistaActual(sesion);
+  }, [navigate]);
 
-    const mostrarNotificacion = (
-        texto: string,
-        tipo: "info" | "success" | "danger" = "info"
-    ) => {
-        setNotificacion({ texto, tipo });
-        setTimeout(() => setNotificacion(null), 3500);
+  // Sistema de Notificaciones Flotantes
+  const [notificacion, setNotificacion] = useState<{
+    texto: string;
+    tipo: "info" | "success" | "danger";
+  } | null>(null);
+
+  const mostrarNotificacion = (
+    texto: string,
+    tipo: "info" | "success" | "danger" = "info",
+  ) => {
+    setNotificacion({ texto, tipo });
+    setTimeout(() => setNotificacion(null), 3800);
+  };
+
+  // =========================================================
+  // 1. GESTIÓN DE CATEGORÍAS
+  // =========================================================
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [busquedaCategoria, setBusquedaCategoria] = useState("");
+  const [categoriaEditar, setCategoriaEditar] = useState<Categoria | null>(
+    null,
+  );
+  const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(
+    null,
+  );
+  const [modalCrearCategoria, setModalCrearCategoria] = useState(false);
+
+  const cargarCategorias = () => {
+    setCategorias(StorageCategorias.getCategorias());
+  };
+
+  useEffect(() => {
+    cargarCategorias();
+  }, []);
+
+  const handleGuardarCategoria = (
+    datos: Omit<Categoria, "id" | "serviciosAsociados">,
+  ) => {
+    if (categoriaEditar) {
+      const res = StorageCategorias.updateCategoria({
+        ...categoriaEditar,
+        ...datos,
+      });
+      if (!res.success) {
+        mostrarNotificacion(res.mensaje, "danger");
+        return;
+      }
+      mostrarNotificacion("Categoría actualizada correctamente.", "success");
+    } else {
+      const res = StorageCategorias.crearCategoria(datos);
+      if (!res.success) {
+        mostrarNotificacion(res.mensaje, "danger");
+        return;
+      }
+      mostrarNotificacion("Nueva categoría creada.", "success");
+    }
+
+    cargarCategorias();
+    setModalCrearCategoria(false);
+    setCategoriaEditar(null);
+  };
+
+  const EliminarCategoria = () => {
+    if (!categoriaEliminar) return;
+    StorageCategorias.deleteCategoria(categoriaEliminar.id);
+    cargarCategorias();
+    mostrarNotificacion(
+      `Categoría "${categoriaEliminar.nombre}" eliminada.`,
+      "success",
+    );
+    setCategoriaEliminar(null);
+  };
+
+  // =========================================================
+  // 2. GESTIÓN DE SERVICIOS Y PLANES (CATÁLOGO)
+  // =========================================================
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [busquedaServicio, setBusquedaServicio] = useState("");
+  const [filtroCategoriaSrv, setFiltroCategoriaSrv] = useState("todas");
+  const [modalProducto, setModalProducto] = useState(false);
+  const [servicioAEditar, setServicioAEditar] = useState<Servicio | null>(null);
+
+  const cargarServicios = () => {
+    setServicios(StorageServicios.getServicios());
+  };
+
+  useEffect(() => {
+    cargarServicios();
+  }, []);
+
+  const abrirCrearServicio = () => {
+    setServicioAEditar(null);
+    setModalProducto(true);
+  };
+
+  const abrirEditarServicio = (item: Servicio) => {
+    setServicioAEditar(item);
+    setModalProducto(true);
+  };
+
+  const handleGuardarServicio = (datos: Omit<Servicio, "id" | "estado">) => {
+    const categoriaEncontrada = categorias.find(
+      (c) => c.id === datos.categoriaId,
+    );
+    const nombreCategoria = categoriaEncontrada
+      ? categoriaEncontrada.nombre
+      : "General";
+
+    if (servicioAEditar) {
+      const res = StorageServicios.updateServicio({
+        ...servicioAEditar,
+        ...datos,
+        categoriaNombre: nombreCategoria,
+      });
+      if (!res.success) {
+        mostrarNotificacion(res.mensaje, "danger");
+        return;
+      }
+      mostrarNotificacion("Plan o servicio actualizado.", "success");
+    } else {
+      const res = StorageServicios.crearServicio({
+        ...datos,
+        categoriaNombre: nombreCategoria,
+        estado: "Activo",
+      });
+      if (!res.success) {
+        mostrarNotificacion(res.mensaje, "danger");
+        return;
+      }
+      mostrarNotificacion("Nuevo plan publicado en el catálogo.", "success");
+    }
+
+    cargarServicios();
+    cargarCategorias();
+    setModalProducto(false);
+    setServicioAEditar(null);
+  };
+
+  const handleToggleEstado = (id: string) => {
+    StorageServicios.toggleEstado(id);
+    cargarServicios();
+    mostrarNotificacion("Visibilidad del servicio actualizada.", "info");
+  };
+
+  // =========================================================
+  // 3. GESTIÓN DE AGENDA Y CITAS (COMPATIBLE CON ACCOUNT.TSX)
+  // =========================================================
+  const [busquedaCitas, setBusquedaCitas] = useState("");
+  const [filtroEstadoCita, setFiltroEstadoCita] = useState<string>("TODOS");
+  const [isCreatingCita, setIsCreatingCita] = useState(false);
+  const [nuevaCitaForm, setNuevaCitaForm] = useState({
+    pacienteNombre: "",
+    pacienteEmail: "",
+    servicioNombre: "Consulta Nutricional",
+    fecha: "",
+    hora: "",
+  });
+
+  // Adaptador que normaliza citas creadas desde Account.tsx y citas del seed
+  const obtenerCitasNormalizadas = (): CitaNormalizada[] => {
+    const raw = localStorage.getItem("db_citas");
+    const usuariosReg = StorageUsuario.getUsuarios().filter(
+      (u) => u.rol === "usuario",
+    );
+    const pacienteDefault = usuariosReg[0];
+
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed.map((c: Record<string, string>) => ({
+        id: c.id || `CITA-${Date.now()}`,
+        pacienteNombre:
+          c.pacienteNombre || pacienteDefault?.nombre || "Paciente Registrado",
+        pacienteEmail:
+          c.pacienteEmail || pacienteDefault?.email || "paciente@gmail.com",
+        servicioNombre: c.servicioNombre || c.tipo || "Consulta Clínica",
+        profesional:
+          c.profesional || nutricionistaActual?.nombre || "Staff NutriVida",
+        fecha: c.fecha || "Por definir",
+        hora: c.hora || "--:--",
+        estado: (c.estado as CitaNormalizada["estado"]) || "Programada",
+      }));
+    } catch {
+      return [];
+    }
+  };
+
+  const [citas, setCitas] = useState<CitaNormalizada[]>(
+    obtenerCitasNormalizadas,
+  );
+
+  const guardarCitasEnStorage = (nuevasCitas: CitaNormalizada[]) => {
+    setCitas(nuevasCitas);
+    // Guardamos manteniendo compatibilidad con la interfaz Cita de Account.tsx (propiedad 'tipo')
+    const formatoCompatible = nuevasCitas.map((c) => ({
+      ...c,
+      tipo: c.servicioNombre,
+    }));
+    localStorage.setItem("db_citas", JSON.stringify(formatoCompatible));
+  };
+
+  const cambiarEstadoCita = (
+    id: string,
+    nuevoEstado: CitaNormalizada["estado"],
+  ) => {
+    const actualizadas = citas.map((c) =>
+      c.id === id ? { ...c, estado: nuevoEstado } : c,
+    );
+    guardarCitasEnStorage(actualizadas);
+    mostrarNotificacion(`Cita marcada como ${nuevoEstado}.`, "success");
+  };
+
+  const handleCrearCitaManual = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const nueva: CitaNormalizada = {
+      id: `c-${Date.now()}`,
+      pacienteNombre: nuevaCitaForm.pacienteNombre.trim(),
+      pacienteEmail: nuevaCitaForm.pacienteEmail.trim(),
+      servicioNombre: nuevaCitaForm.servicioNombre,
+      profesional: nutricionistaActual?.nombre || "Nutricionista",
+      fecha: nuevaCitaForm.fecha,
+      hora: nuevaCitaForm.hora,
+      estado: "Confirmada",
     };
-
-    // --- Estados de Categorías ---
-    const [categorias, setCategorias] = useState<Categoria[]>([]);
-    const [categoriaEditar, setCategoriaEditar] = useState<Categoria | null>(null);
-    const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(null);
-    const [modalCrearCategoria, setModalCrearCategoria] = useState(false);
-
-    const cargarCategorias = () => {
-        setCategorias(StorageCategorias.getCategorias());
-    };
-
-    useEffect(() => {
-        cargarCategorias();
-    }, []);
-
-    const handleGuardarCategoria = (
-        datos: Omit<Categoria, "id" | "serviciosAsociados">
-    ) => {
-        if (categoriaEditar) {
-        const res = StorageCategorias.updateCategoria({
-            ...categoriaEditar,
-            ...datos,
-        });
-        if (!res.success) {
-            mostrarNotificacion(res.mensaje, "danger");
-            return;
-        }
-        mostrarNotificacion("Categoría actualizada", "success");
-        } else {
-        const res = StorageCategorias.crearCategoria(datos);
-        if (!res.success) {
-            mostrarNotificacion(res.mensaje, "danger");
-            return;
-        }
-        mostrarNotificacion("Categoría creada", "success");
-        }
-
-        cargarCategorias();
-        setModalCrearCategoria(false);
-        setCategoriaEditar(null);
-    };
-
-    const EliminarCategoria = () => {
-        if (!categoriaEliminar) return;
-        StorageCategorias.deleteCategoria(categoriaEliminar.id);
-        cargarCategorias();
-        mostrarNotificacion(`Categoría "${categoriaEliminar.nombre}" eliminada`, "success");
-        setCategoriaEliminar(null);
-    };
-
-    // --- Estados de Servicios / Planes ---
-    const [servicios, setServicios] = useState<Servicio[]>([]);
-    const [modalProducto, setModalProducto] = useState(false);
-    const [servicioAEditar, setServicioAEditar] = useState<Servicio | null>(null);
-
-    const cargarServicios = () => {
-        setServicios(StorageServicios.getServicios());
-    };
-
-    useEffect(() => {
-        cargarServicios();
-    }, []);
-
-    const abrirCrearServicio = () => {
-        setServicioAEditar(null);
-        setModalProducto(true);
-    };
-
-    const abrirEditarServicio = (item: Servicio) => {
-        setServicioAEditar(item);
-        setModalProducto(true);
-    };
-
-    const handleGuardarServicio = (datos: Omit<Servicio, "id" | "estado">) => {
-        const categoriaEncontrada = categorias.find((c) => c.id === datos.categoriaId);
-        const nombreCategoria = categoriaEncontrada ? categoriaEncontrada.nombre : "General";
-
-        if (servicioAEditar) {
-        const res = StorageServicios.updateServicio({
-            ...servicioAEditar,
-            ...datos,
-            categoriaNombre: nombreCategoria,
-        });
-        if (!res.success) {
-            mostrarNotificacion(res.mensaje, "danger");
-            return;
-        }
-        mostrarNotificacion("Servicio actualizado", "success");
-        } else {
-        const res = StorageServicios.crearServicio({
-            ...datos,
-            categoriaNombre: nombreCategoria,
-            estado: "Activo",
-        });
-        if (!res.success) {
-            mostrarNotificacion(res.mensaje, "danger");
-            return;
-        }
-        mostrarNotificacion("Servicio creado", "success");
-        }
-
-        cargarServicios();
-        cargarCategorias();
-        setModalProducto(false);
-        setServicioAEditar(null);
-    };
-
-    const handleToggleEstado = (id: string) => {
-        StorageServicios.toggleEstado(id);
-        cargarServicios();
-        mostrarNotificacion("Estado actualizado.", "info");
-    };
-
-    // --- Estados de Citas y Planes Adquiridos ---
-    const [busquedaCitas, setBusquedaCitas] = useState("");
-    const [citas, setCitas] = useState<CitaPlan[]>(() => {
-        const citasGuardadas = localStorage.getItem("db_citas");
-        if (citasGuardadas) return JSON.parse(citasGuardadas);
-        return [
-        {
-            id: "CITA-101",
-            pacienteNombre: "Camila Soto",
-            pacienteEmail: "camila.soto@gmail.com",
-            servicioNombre: "Plan Nutrición Deportiva",
-            fecha: "2026-10-20",
-            hora: "10:30",
-            estado: "Confirmada",
-        },
-        {
-            id: "CITA-102",
-            pacienteNombre: "Ignacio Torres",
-            pacienteEmail: "ignacio.t@gmail.com",
-            servicioNombre: "Control Mensual",
-            fecha: "2026-10-22",
-            hora: "15:00",
-            estado: "Pendiente",
-        },
-        ];
+    guardarCitasEnStorage([nueva, ...citas]);
+    setIsCreatingCita(false);
+    setNuevaCitaForm({
+      pacienteNombre: "",
+      pacienteEmail: "",
+      servicioNombre: "Consulta Nutricional",
+      fecha: "",
+      hora: "",
     });
+    mostrarNotificacion("Cita agendada manualmente en el sistema.", "success");
+  };
 
-    const cambiarEstadoCita = (id: string, nuevoEstado: CitaPlan["estado"]) => {
-        const actualizadas = citas.map((c) => (c.id === id ? { ...c, estado: nuevoEstado } : c));
-        setCitas(actualizadas);
-        localStorage.setItem("db_citas", JSON.stringify(actualizadas));
-        mostrarNotificacion("Estado de la cita modificado.", "info");
+  const citasFiltradas = citas.filter((c) => {
+    const termino = busquedaCitas.toLowerCase();
+    const coincideTexto =
+      c.pacienteNombre.toLowerCase().includes(termino) ||
+      c.pacienteEmail.toLowerCase().includes(termino) ||
+      c.servicioNombre.toLowerCase().includes(termino);
+
+    const coincideEstado =
+      filtroEstadoCita === "TODOS" ||
+      (filtroEstadoCita === "ACTIVAS" &&
+        (c.estado === "Pendiente" ||
+          c.estado === "Programada" ||
+          c.estado === "Confirmada")) ||
+      c.estado === filtroEstadoCita;
+
+    return coincideTexto && coincideEstado;
+  });
+
+  // =========================================================
+  // 4. NUEVO MÓDULO CLÍNICO: FICHAS, PAUTAS Y LABORATORIO
+  // =========================================================
+  const [pacientes, setPacientes] = useState<Usuario[]>([]);
+  const [examenes, setExamenes] = useState<Examen[]>([]);
+  const [planActivo, setPlanActivo] = useState<PlanNutricional | null>(null);
+  const [metricasPaciente, setMetricasPaciente] = useState<Metrica[]>([]);
+  const [isEditingPlan, setIsEditingPlan] = useState(false);
+
+  // Formulario para agregar comida a la pauta del paciente
+  const [nuevaComida, setNuevaComida] = useState({
+    horario: "08:30",
+    tipo: "Desayuno",
+    descripcion: "",
+  });
+
+  // Formulario para registrar antropometría desde consulta
+  const [nuevoControlClinico, setNuevoControlClinico] = useState({
+    peso: "",
+    grasa: "",
+    musculo: "",
+  });
+
+  const cargarDatosClinicos = () => {
+    const todosUsuarios = StorageUsuario.getUsuarios();
+    setPacientes(todosUsuarios.filter((u) => u.rol === "usuario"));
+    setExamenes(PlanService.getExamenes());
+    setPlanActivo(PlanService.getPlan());
+    setMetricasPaciente(PlanService.getMetricas());
+  };
+
+  useEffect(() => {
+    cargarDatosClinicos();
+  }, [activeTab]);
+
+  const handleToggleEstadoExamen = (id: string) => {
+    const actualizados: Examen[] = examenes.map((ex) =>
+      ex.id === id
+        ? {
+            ...ex,
+            estado: ex.estado === "Revisado" ? "Pendiente" : "Revisado",
+          }
+        : ex,
+    );
+    setExamenes(actualizados);
+    localStorage.setItem("db_examenes", JSON.stringify(actualizados));
+    mostrarNotificacion(
+      "Estado de revisión del examen actualizado en la ficha del paciente.",
+      "success",
+    );
+  };
+
+  const handleGuardarPlanNutricional = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!planActivo) return;
+    localStorage.setItem("db_plan", JSON.stringify(planActivo));
+    setIsEditingPlan(false);
+    mostrarNotificacion(
+      "Pauta alimentaria sincronizada con el Portal del Paciente.",
+      "success",
+    );
+  };
+
+  const handleAgregarComidaPlan = () => {
+    if (!planActivo || !nuevaComida.descripcion.trim()) return;
+    const comidaObj = {
+      id: `com-${Date.now()}`,
+      horario: nuevaComida.horario,
+      tipo: nuevaComida.tipo,
+      descripcion: nuevaComida.descripcion.trim(),
+    };
+    const actualizado: PlanNutricional = {
+      ...planActivo,
+      comidas: [...(planActivo.comidas || []), comidaObj],
+    };
+    setPlanActivo(actualizado);
+    localStorage.setItem("db_plan", JSON.stringify(actualizado));
+    setNuevaComida({ horario: "13:30", tipo: "Almuerzo", descripcion: "" });
+    mostrarNotificacion("Tiempo de comida añadido a la pauta.", "success");
+  };
+
+  const handleEliminarComidaPlan = (idComida: string) => {
+    if (!planActivo) return;
+    const actualizado: PlanNutricional = {
+      ...planActivo,
+      comidas: planActivo.comidas.filter((c) => c.id !== idComida),
+    };
+    setPlanActivo(actualizado);
+    localStorage.setItem("db_plan", JSON.stringify(actualizado));
+    mostrarNotificacion("Tiempo de comida eliminado de la pauta.", "info");
+  };
+
+  const handleRegistrarAntropometria = (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+    const peso = parseFloat(nuevoControlClinico.peso);
+    const grasa = parseFloat(nuevoControlClinico.grasa);
+    const musculo = parseFloat(nuevoControlClinico.musculo);
+    if (!peso || !grasa || !musculo) return;
+
+    const nuevaMetrica: Metrica = {
+      id: `m-${Date.now()}`,
+      fecha: new Date().toLocaleDateString("es-CL", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      peso,
+      grasa,
+      musculo,
     };
 
-    const citasFiltradas = citas.filter((c) => {
-    const termino = busquedaCitas.toLowerCase();
-    const nombre = (c.pacienteNombre || "").toLowerCase();
-    const email = (c.pacienteEmail || "").toLowerCase();
-    const plan = (c.servicioNombre || "").toLowerCase();
+    const actualizadas = [nuevaMetrica, ...metricasPaciente];
+    setMetricasPaciente(actualizadas);
+    localStorage.setItem("db_metricas", JSON.stringify(actualizadas));
+    setNuevoControlClinico({ peso: "", grasa: "", musculo: "" });
+    mostrarNotificacion(
+      "Medición InBody registrada en la evolución del paciente.",
+      "success",
+    );
+  };
+
+  // Contadores operativos para insignias del Sidebar
+  const citasPendientesCount = citas.filter(
+    (c) => c.estado === "Pendiente" || c.estado === "Programada",
+  ).length;
+  const examenesPendientesCount = examenes.filter(
+    (e) => e.estado === "Pendiente",
+  ).length;
+
+  /* =========================================================
+     RENDERS DE LAS 5 SUB-VISTAS DEL PROFESIONAL
+     ========================================================= */
+
+  const renderDashboard = () => {
+    const totalPlanesActivos = servicios.filter(
+      (s) => s.estado === "Activo",
+    ).length;
 
     return (
-        nombre.includes(termino) ||
-        email.includes(termino) ||
-        plan.includes(termino)
-    );
-});
-
-    // --- Sub-vistas ---
-    const renderDashboard = () => {
-
-        const totalPlanes = servicios.filter(
-            (s) => s.estado === "Activo"
-        ).length;
-        return (
-            <>
-            <div className="row g-4 mb-4">
-                <AdminStatCard
-                title="Total Planes Activos"
-                value={totalPlanes}
-                icon="🛒"
-                theme="success"
-                />
-                <AdminStatCard
-                title="Categorías"
-                value={categorias.length}
-                icon="📁"
-                theme="info"
-                />
-                <AdminStatCard
-                title="Citas Programadas"
-                value={citas.length}
-                icon="📅"
-                theme="warning"
-                />
-            </div>
-            <div className="bg-white p-4 rounded-4 shadow-sm border-0">
-                <h5 className="fw-bold text-dark mb-3">Agenda del Nutricionista</h5>
-                <p className="text-muted mb-0">
-                Revisa las compras de tus planes y el estado de las consultas médicas agendadas.
-                </p>
-            </div>
-            </>
-        );
-};
-
-    const renderProducts = () => (
-        <div className="bg-white p-4 rounded-4 shadow-sm border-0">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-            <h5 className="fw-bold text-dark mb-0">Catálogo de Servicios y Planes</h5>
-            <button
-            type="button"
-            className="btn btn-outline-success btn-sm fw-bold"
-            onClick={abrirCrearServicio}
-            >
-            + Nuevo Producto
-            </button>
+      <div style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}>
+        <div className="row g-4 mb-4">
+          <AdminStatCard
+            title="Planes Publicados"
+            value={totalPlanesActivos}
+            icon="🥗"
+            theme="success"
+          />
+          <AdminStatCard
+            title="Consultas Activas"
+            value={citasPendientesCount}
+            icon="📅"
+            theme="warning"
+          />
+          <AdminStatCard
+            title="Exámenes por Revisar"
+            value={examenesPendientesCount}
+            icon="🔬"
+            theme="info"
+          />
         </div>
 
-        <div className="table-responsive">
-            <table className="table align-middle">
-            <thead className="table-light">
-                <tr>
-                <th>ID</th>
-                <th>Nombre del Plan</th>
-                <th>Categoría</th>
-                <th>Precio</th>
-                <th>Estado</th>
-                <th>Acción</th>
+        <div className="row g-4">
+          {/* Columna Izquierda: Próximas Consultas en Cola */}
+          <div className="col-lg-7">
+            <div className="glass-panel p-4 rounded-5 border-0 h-100">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                  <h5 className="fw-bolder text-dark mb-0 tracking-tight">
+                    Cola de Atención Inmediata
+                  </h5>
+                  <small className="text-muted">
+                    Pacientes con horas programadas o pendientes de confirmación
+                  </small>
+                </div>
+                <button
+                  onClick={() => setActiveTab("users")}
+                  className="btn btn-sm btn-dark rounded-pill px-3 fw-bold"
+                >
+                  Gestionar Agenda →
+                </button>
+              </div>
+
+              {citas.filter(
+                (c) => c.estado !== "Cancelada" && c.estado !== "Completada",
+              ).length === 0 ? (
+                <div className="text-center py-5 bg-white rounded-4 border">
+                  <div className="fs-2 mb-2">✨</div>
+                  <p className="text-muted small mb-0">
+                    No tienes consultas pendientes por atender.
+                  </p>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {citas
+                    .filter(
+                      (c) =>
+                        c.estado !== "Cancelada" && c.estado !== "Completada",
+                    )
+                    .slice(0, 4)
+                    .map((c) => (
+                      <div
+                        key={c.id}
+                        className="p-3 rounded-4 bg-white border shadow-sm d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3"
+                      >
+                        <div>
+                          <div className="d-flex align-items-center gap-2 mb-1">
+                            <span className="fw-bolder text-dark">
+                              {c.pacienteNombre}
+                            </span>
+                            <span className="badge bg-success-subtle text-success rounded-pill">
+                              {c.servicioNombre}
+                            </span>
+                          </div>
+                          <small className="text-muted">
+                            🕒 {c.fecha} a las {c.hora} hrs • {c.pacienteEmail}
+                          </small>
+                        </div>
+                        <div className="d-flex gap-2">
+                          {(c.estado === "Pendiente" ||
+                            c.estado === "Programada") && (
+                            <button
+                              onClick={() =>
+                                cambiarEstadoCita(c.id, "Confirmada")
+                              }
+                              className="btn btn-sm btn-success rounded-pill px-3 fw-bold"
+                            >
+                              Confirmar
+                            </button>
+                          )}
+                          <button
+                            onClick={() =>
+                              cambiarEstadoCita(c.id, "Completada")
+                            }
+                            className="btn btn-sm btn-outline-dark rounded-pill px-3 fw-semibold"
+                          >
+                            Finalizar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Columna Derecha: Bandeja de Laboratorio Rápida */}
+          <div className="col-lg-5">
+            <div className="glass-panel p-4 rounded-5 border-0 h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                  <div>
+                    <h5 className="fw-bolder text-dark mb-0 tracking-tight">
+                      Laboratorio Clínico
+                    </h5>
+                    <small className="text-muted">
+                      Últimos archivos subidos por pacientes
+                    </small>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("clinical")}
+                    className="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold"
+                  >
+                    Abrir Fichas
+                  </button>
+                </div>
+
+                {examenes.length === 0 ? (
+                  <p className="text-muted small">
+                    No hay documentos médicos en bandeja.
+                  </p>
+                ) : (
+                  <div className="d-flex flex-column gap-2">
+                    {examenes.slice(0, 4).map((ex) => (
+                      <div
+                        key={ex.id}
+                        className="p-3 rounded-4 bg-white border d-flex justify-content-between align-items-center gap-2"
+                      >
+                        <div className="text-truncate">
+                          <div className="fw-bold text-dark small text-truncate">
+                            📄 {ex.nombre}
+                          </div>
+                          <small className="text-muted">
+                            Subido: {ex.fechaSubida}
+                          </small>
+                        </div>
+                        <button
+                          onClick={() => handleToggleEstadoExamen(ex.id)}
+                          className={`btn btn-sm rounded-pill px-3 fw-bold flex-shrink-0 ${
+                            ex.estado === "Revisado"
+                              ? "btn-success"
+                              : "btn-warning text-dark"
+                          }`}
+                        >
+                          {ex.estado === "Revisado"
+                            ? "✓ Revisado"
+                            : "Marcar Visto"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div
+                className="p-3 rounded-4 mt-4 d-flex align-items-center justify-content-between"
+                style={{
+                  background: "linear-gradient(90deg, #0f172a, #1e293b)",
+                  color: "white",
+                }}
+              >
+                <div>
+                  <div className="small fw-bold text-success">
+                    Pauta Activa Global
+                  </div>
+                  <div className="fw-bolder">
+                    {planActivo?.caloriasDiarias || 1800} kcal •{" "}
+                    {planActivo?.objetivo || "Mantenimiento"}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveTab("clinical")}
+                  className="btn btn-sm btn-light rounded-pill px-3 fw-bold"
+                >
+                  Editar Pauta
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCitas = () => (
+    <div
+      className="glass-panel p-4 p-md-5 rounded-5 border-0"
+      style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}
+    >
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+          <h4 className="fw-bolder text-dark mb-1 tracking-tight">
+            Control de Agenda y Consultas
+          </h4>
+          <p className="text-muted small mb-0">
+            Sincronizado en tiempo real con el agendamiento de los pacientes.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsCreatingCita(!isCreatingCita)}
+          className="btn-kinetic-health py-2 px-4 border-0 shadow-sm"
+        >
+          {isCreatingCita ? "Cerrar Formulario" : "+ Agendar Paciente"}
+        </button>
+      </div>
+
+      {/* Formulario para agendar manualmente a un paciente */}
+      {isCreatingCita && (
+        <form
+          onSubmit={handleCrearCitaManual}
+          className="p-4 rounded-4 bg-white border shadow-sm mb-4"
+        >
+          <h6 className="fw-bolder text-dark mb-3">
+            Asignar Nueva Hora de Consulta
+          </h6>
+          <div className="row g-3 mb-3">
+            <div className="col-md-4">
+              <label className="form-label small fw-bold text-muted text-uppercase">
+                Nombre del Paciente
+              </label>
+              <input
+                type="text"
+                className="form-control apple-input"
+                placeholder="Ej. Javiera Morales"
+                value={nuevaCitaForm.pacienteNombre}
+                onChange={(e) =>
+                  setNuevaCitaForm({
+                    ...nuevaCitaForm,
+                    pacienteNombre: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label small fw-bold text-muted text-uppercase">
+                Correo del Paciente
+              </label>
+              <input
+                type="email"
+                className="form-control apple-input"
+                placeholder="paciente@gmail.com"
+                value={nuevaCitaForm.pacienteEmail}
+                onChange={(e) =>
+                  setNuevaCitaForm({
+                    ...nuevaCitaForm,
+                    pacienteEmail: e.target.value,
+                  })
+                }
+                required
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label small fw-bold text-muted text-uppercase">
+                Prestación / Plan
+              </label>
+              <select
+                className="form-select apple-input fw-semibold"
+                value={nuevaCitaForm.servicioNombre}
+                onChange={(e) =>
+                  setNuevaCitaForm({
+                    ...nuevaCitaForm,
+                    servicioNombre: e.target.value,
+                  })
+                }
+              >
+                <option value="Consulta Presencial">Consulta Presencial</option>
+                <option value="Control Telemedicina">
+                  Control Telemedicina
+                </option>
+                {servicios.map((s) => (
+                  <option key={s.id} value={s.nombre}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="row g-3 align-items-end">
+            <div className="col-md-4">
+              <label className="form-label small fw-bold text-muted text-uppercase">
+                Fecha
+              </label>
+              <input
+                type="date"
+                className="form-control apple-input"
+                value={nuevaCitaForm.fecha}
+                onChange={(e) =>
+                  setNuevaCitaForm({ ...nuevaCitaForm, fecha: e.target.value })
+                }
+                required
+              />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label small fw-bold text-muted text-uppercase">
+                Hora
+              </label>
+              <input
+                type="time"
+                className="form-control apple-input"
+                value={nuevaCitaForm.hora}
+                onChange={(e) =>
+                  setNuevaCitaForm({ ...nuevaCitaForm, hora: e.target.value })
+                }
+                required
+              />
+            </div>
+            <div className="col-md-4 text-end">
+              <button
+                type="submit"
+                className="btn btn-success rounded-pill w-100 py-2 fw-bold"
+              >
+                Guardar en Agenda
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {/* Barra de Filtros y Buscador */}
+      <div className="row g-3 align-items-center mb-4">
+        <div className="col-md-6">
+          <input
+            type="search"
+            className="form-control apple-input"
+            placeholder="🔍 Buscar por paciente, correo o servicio..."
+            value={busquedaCitas}
+            onChange={(e) => setBusquedaCitas(e.target.value)}
+          />
+        </div>
+        <div className="col-md-6 d-flex flex-wrap gap-2 justify-content-md-end">
+          {["TODOS", "ACTIVAS", "Confirmada", "Completada", "Cancelada"].map(
+            (est) => (
+              <button
+                key={est}
+                type="button"
+                onClick={() => setFiltroEstadoCita(est)}
+                className={`btn btn-sm rounded-pill px-3 fw-bold ${
+                  filtroEstadoCita === est
+                    ? "btn-dark"
+                    : "btn-light text-secondary border"
+                }`}
+              >
+                {est}
+              </button>
+            ),
+          )}
+        </div>
+      </div>
+
+      <div className="table-responsive rounded-4 bg-white border shadow-sm overflow-hidden">
+        <table className="table table-hover align-middle mb-0">
+          <thead className="table-light">
+            <tr>
+              <th className="py-3 ps-4 small text-uppercase text-muted">
+                Paciente
+              </th>
+              <th className="py-3 small text-uppercase text-muted">
+                Prestación / Modalidad
+              </th>
+              <th className="py-3 small text-uppercase text-muted">
+                Fecha y Hora
+              </th>
+              <th className="py-3 small text-uppercase text-muted">Estado</th>
+              <th className="py-3 pe-4 text-end small text-uppercase text-muted">
+                Resolución Clínica
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {citasFiltradas.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-center py-5 text-muted">
+                  No se encontraron registros para el filtro seleccionado.
+                </td>
+              </tr>
+            ) : (
+              citasFiltradas.map((c) => (
+                <tr key={c.id}>
+                  <td className="ps-4 py-3">
+                    <div className="fw-bolder text-dark">{c.pacienteNombre}</div>
+                    <small className="text-muted">{c.pacienteEmail}</small>
+                  </td>
+                  <td>
+                    <span className="badge bg-light text-dark border rounded-pill px-3 py-1">
+                      {c.servicioNombre}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="fw-bold text-dark small">{c.fecha}</div>
+                    <small className="text-muted">{c.hora} hrs</small>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge rounded-pill px-3 py-1 ${
+                        c.estado === "Confirmada"
+                          ? "bg-success-subtle text-success"
+                          : c.estado === "Pendiente" ||
+                              c.estado === "Programada"
+                            ? "bg-warning-subtle text-dark"
+                            : c.estado === "Completada"
+                              ? "bg-primary-subtle text-primary"
+                              : "bg-danger-subtle text-danger"
+                      }`}
+                    >
+                      {c.estado}
+                    </span>
+                  </td>
+                  <td className="pe-4 text-end">
+                    <div className="d-inline-flex gap-2">
+                      {(c.estado === "Pendiente" ||
+                        c.estado === "Programada") && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-success rounded-pill px-3 fw-bold"
+                          onClick={() => cambiarEstadoCita(c.id, "Confirmada")}
+                        >
+                          Confirmar
+                        </button>
+                      )}
+                      {c.estado === "Confirmada" && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary rounded-pill px-3 fw-bold"
+                          onClick={() => cambiarEstadoCita(c.id, "Completada")}
+                        >
+                          Marcar Atendida
+                        </button>
+                      )}
+                      {c.estado !== "Cancelada" &&
+                        c.estado !== "Completada" && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold"
+                            onClick={() => cambiarEstadoCita(c.id, "Cancelada")}
+                          >
+                            Anular
+                          </button>
+                        )}
+                    </div>
+                  </td>
                 </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  // NUEVA PESTAÑA: GESTIÓN CLÍNICA DE FICHAS, PAUTA Y EXÁMENES
+  const renderClinical = () => (
+    <div style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}>
+      <div className="row g-4 mb-4">
+        {/* Editor de Pauta Alimentaria (Sincronizado con Account.tsx) */}
+        <div className="col-lg-7">
+          <div className="glass-panel p-4 p-md-5 rounded-5 border-0 h-100">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <div>
+                <span className="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-bold mb-1">
+                  Sincronizado con Portal del Paciente
+                </span>
+                <h4 className="fw-bolder text-dark mb-0 tracking-tight">
+                  Prescripción Dietoterapéutica
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditingPlan(!isEditingPlan)}
+                className="btn btn-dark rounded-pill px-3 py-2 fw-bold small"
+              >
+                {isEditingPlan ? "Cerrar Editor" : "✏️ Ajustar Macros y Kcal"}
+              </button>
+            </div>
+
+            {planActivo && (
+              <>
+                {isEditingPlan ? (
+                  <form
+                    onSubmit={handleGuardarPlanNutricional}
+                    className="p-4 rounded-4 bg-white border shadow-sm mb-4"
+                  >
+                    <h6 className="fw-bolder text-dark mb-3">
+                      Parámetros Energéticos y Objetivo
+                    </h6>
+                    <div className="row g-3 mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label small fw-bold text-muted text-uppercase">
+                          Objetivo Clínico
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control apple-input"
+                          value={planActivo.objetivo}
+                          onChange={(e) =>
+                            setPlanActivo({
+                              ...planActivo,
+                              objetivo: e.target.value,
+                            })
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label small fw-bold text-muted text-uppercase">
+                          Requerimiento (kcal/día)
+                        </label>
+                        <input
+                          type="number"
+                          className="form-control apple-input"
+                          value={planActivo.caloriasDiarias}
+                          onChange={(e) =>
+                            setPlanActivo({
+                              ...planActivo,
+                              caloriasDiarias: Number(e.target.value),
+                            })
+                          }
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="row g-3 mb-3">
+                      {planActivo.macros?.map((m, idx) => (
+                        <div key={idx} className="col-md-4">
+                          <label className="form-label small fw-bold text-muted">
+                            {m.nombre} (g)
+                          </label>
+                          <input
+                            type="number"
+                            className="form-control apple-input"
+                            value={m.gramos}
+                            onChange={(e) => {
+                              const nuevosMacros = [...planActivo.macros];
+                              nuevosMacros[idx] = {
+                                ...m,
+                                gramos: Number(e.target.value),
+                              };
+                              setPlanActivo({
+                                ...planActivo,
+                                macros: nuevosMacros,
+                              });
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="text-end">
+                      <button
+                        type="submit"
+                        className="btn btn-success rounded-pill px-4 py-2 fw-bold small"
+                      >
+                        Publicar Cambios en Ficha
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="row g-3 mb-4">
+                    <div className="col-sm-4">
+                      <div className="p-3 rounded-4 bg-dark text-white text-center">
+                        <small className="text-secondary text-uppercase fw-bold d-block">
+                          Meta Diaria
+                        </small>
+                        <h4 className="fw-bolder mb-0 text-success">
+                          {planActivo.caloriasDiarias} kcal
+                        </h4>
+                      </div>
+                    </div>
+                    <div className="col-sm-8">
+                      <div className="p-3 rounded-4 bg-white border h-100 d-flex align-items-center justify-content-around">
+                        {planActivo.macros?.map((m, idx) => (
+                          <div key={idx} className="text-center">
+                            <small className="text-muted fw-bold d-block">
+                              {m.nombre}
+                            </small>
+                            <span className="fw-bolder text-dark">
+                              {m.gramos}g
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Creador de tiempos de comida */}
+                <div className="p-3 rounded-4 bg-white border mb-4">
+                  <div className="small fw-bold text-dark text-uppercase mb-2">
+                    + Añadir Tiempo de Comida a la Pauta
+                  </div>
+                  <div className="row g-2">
+                    <div className="col-sm-3">
+                      <input
+                        type="time"
+                        className="form-control form-control-sm apple-input"
+                        value={nuevaComida.horario}
+                        onChange={(e) =>
+                          setNuevaComida({
+                            ...nuevaComida,
+                            horario: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="col-sm-3">
+                      <select
+                        className="form-select form-select-sm apple-input fw-semibold"
+                        value={nuevaComida.tipo}
+                        onChange={(e) =>
+                          setNuevaComida({
+                            ...nuevaComida,
+                            tipo: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="Desayuno">Desayuno</option>
+                        <option value="Colación">Colación</option>
+                        <option value="Almuerzo">Almuerzo</option>
+                        <option value="Once / Pre-entreno">
+                          Once / Pre-entreno
+                        </option>
+                        <option value="Cena">Cena</option>
+                      </select>
+                    </div>
+                    <div className="col-sm-4">
+                      <input
+                        type="text"
+                        className="form-control form-control-sm apple-input"
+                        placeholder="Indicación alimentaria..."
+                        value={nuevaComida.descripcion}
+                        onChange={(e) =>
+                          setNuevaComida({
+                            ...nuevaComida,
+                            descripcion: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="col-sm-2 d-grid">
+                      <button
+                        type="button"
+                        onClick={handleAgregarComidaPlan}
+                        className="btn btn-sm btn-success rounded-3 fw-bold"
+                      >
+                        Añadir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de comidas prescritas */}
+                <div className="d-flex flex-column gap-2">
+                  {planActivo.comidas?.map((c) => (
+                    <div
+                      key={c.id}
+                      className="p-3 rounded-4 bg-white border d-flex justify-content-between align-items-center gap-3"
+                    >
+                      <div>
+                        <span className="badge bg-success-subtle text-success me-2">
+                          {c.horario}
+                        </span>
+                        <strong className="text-dark">{c.tipo}:</strong>{" "}
+                        <span className="text-muted small">
+                          {c.descripcion}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleEliminarComidaPlan(c.id)}
+                        className="btn btn-sm btn-light text-danger rounded-pill px-2"
+                        title="Quitar comida"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Columna Derecha: Validación de Exámenes y Antropometría */}
+        <div className="col-lg-5">
+          <div className="d-flex flex-column gap-4 h-100">
+            {/* Bandeja de Revisión de Exámenes */}
+            <div className="glass-panel p-4 rounded-5 border-0">
+              <h5 className="fw-bolder text-dark mb-1 tracking-tight">
+                Auditoría de Exámenes
+              </h5>
+              <p className="text-muted small mb-3">
+                Valida los documentos subidos por el paciente para actualizar su
+                estado a "Revisado".
+              </p>
+
+              <div className="d-flex flex-column gap-2">
+                {examenes.map((ex) => (
+                  <div
+                    key={ex.id}
+                    className="p-3 rounded-4 bg-white border d-flex justify-content-between align-items-center gap-2"
+                  >
+                    <div className="text-truncate">
+                      <div className="fw-bold text-dark small text-truncate">
+                        🩺 {ex.nombre}
+                      </div>
+                      <small className="text-muted">
+                        Fecha: {ex.fechaSubida}
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEstadoExamen(ex.id)}
+                      className={`btn btn-sm rounded-pill px-3 fw-bold flex-shrink-0 ${
+                        ex.estado === "Revisado"
+                          ? "btn-outline-success"
+                          : "btn-success"
+                      }`}
+                    >
+                      {ex.estado === "Revisado"
+                        ? "✓ Revisado"
+                        : "Aprobar Examen"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Ingreso Rápido de Antropometría InBody */}
+            <div className="glass-panel p-4 rounded-5 border-0">
+              <h5 className="fw-bolder text-dark mb-1 tracking-tight">
+                Cargar Control InBody
+              </h5>
+              <p className="text-muted small mb-3">
+                Añade un punto biométrico a la tabla evolutiva del paciente.
+              </p>
+              <form onSubmit={handleRegistrarAntropometria}>
+                <div className="row g-2 mb-3">
+                  <div className="col-4">
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="form-control apple-input form-control-sm"
+                      placeholder="Peso (kg)"
+                      value={nuevoControlClinico.peso}
+                      onChange={(e) =>
+                        setNuevoControlClinico({
+                          ...nuevoControlClinico,
+                          peso: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="col-4">
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="form-control apple-input form-control-sm"
+                      placeholder="% Grasa"
+                      value={nuevoControlClinico.grasa}
+                      onChange={(e) =>
+                        setNuevoControlClinico({
+                          ...nuevoControlClinico,
+                          grasa: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="col-4">
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="form-control apple-input form-control-sm"
+                      placeholder="Músculo (kg)"
+                      value={nuevoControlClinico.musculo}
+                      onChange={(e) =>
+                        setNuevoControlClinico({
+                          ...nuevoControlClinico,
+                          musculo: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="btn btn-dark rounded-pill w-100 py-2 fw-bold small"
+                >
+                  Registrar Medición en Ficha
+                </button>
+              </form>
+
+              {pacientes.length > 0 && (
+                <div className="mt-4 pt-3 border-top">
+                  <small className="text-uppercase fw-bold text-muted d-block mb-2">
+                    Pacientes Activos en Plataforma ({pacientes.length})
+                  </small>
+                  <div className="d-flex flex-wrap gap-2">
+                    {pacientes.map((p) => (
+                      <span
+                        key={p.email}
+                        className="badge bg-white text-dark border rounded-pill px-3 py-2"
+                      >
+                        👤 {p.nombre} ({p.pesoActual || "--"} kg)
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderProducts = () => {
+    const serviciosFiltrados = servicios.filter((s) => {
+      const coincideTexto = s.nombre
+        .toLowerCase()
+        .includes(busquedaServicio.toLowerCase());
+      const coincideCat =
+        filtroCategoriaSrv === "todas" ||
+        String(s.categoriaId) === String(filtroCategoriaSrv);
+      return coincideTexto && coincideCat;
+    });
+
+    return (
+      <div
+        className="glass-panel p-4 p-md-5 rounded-5 border-0"
+        style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}
+      >
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+          <div>
+            <h4 className="fw-bolder text-dark mb-1 tracking-tight">
+              Catálogo de Planes y Prestaciones
+            </h4>
+            <p className="text-muted small mb-0">
+              Administra los servicios clínicos que los pacientes pueden adquirir.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-kinetic-health py-2 px-4 border-0 shadow-sm"
+            onClick={abrirCrearServicio}
+          >
+            + Crear Nuevo Plan
+          </button>
+        </div>
+
+        <div className="row g-3 mb-4">
+          <div className="col-md-7">
+            <input
+              type="search"
+              className="form-control apple-input"
+              placeholder="🔍 Filtrar planes por nombre..."
+              value={busquedaServicio}
+              onChange={(e) => setBusquedaServicio(e.target.value)}
+            />
+          </div>
+          <div className="col-md-5">
+            <select
+              className="form-select apple-input fw-semibold"
+              value={filtroCategoriaSrv}
+              onChange={(e) => setFiltroCategoriaSrv(e.target.value)}
+            >
+              <option value="todas">Todas las categorías</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="table-responsive rounded-4 bg-white border shadow-sm overflow-hidden">
+          <table className="table table-hover align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th className="ps-4 py-3 small text-uppercase text-muted">
+                  Código
+                </th>
+                <th className="py-3 small text-uppercase text-muted">
+                  Servicio / Plan
+                </th>
+                <th className="py-3 small text-uppercase text-muted">
+                  Categoría
+                </th>
+                <th className="py-3 small text-uppercase text-muted">
+                  Arancel
+                </th>
+                <th className="py-3 small text-uppercase text-muted">
+                  Visibilidad
+                </th>
+                <th className="pe-4 py-3 text-end small text-uppercase text-muted">
+                  Acciones
+                </th>
+              </tr>
             </thead>
             <tbody>
-                {servicios.length === 0 ? (
+              {serviciosFiltrados.length === 0 ? (
                 <tr>
-                    <td colSpan={6} className="text-center py-4 text-muted">
-                    No hay productos ni planes registrados.
-                    </td>
+                  <td colSpan={6} className="text-center py-5 text-muted">
+                    No se encontraron planes con los filtros aplicados.
+                  </td>
                 </tr>
-                ) : (
-                servicios.map((s) => (
-                    <tr key={s.id}>
-                    <td className="text-muted small fw-bold">#{s.id}</td>
-                    <td className="fw-semibold">
-                        <span className="me-2">{s.icono}</span>
-                        {s.nombre}
+              ) : (
+                serviciosFiltrados.map((s) => (
+                  <tr key={s.id}>
+                    <td className="ps-4 text-muted small fw-bold">#{s.id}</td>
+                    <td>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="fs-4">{s.icono}</span>
+                        <div>
+                          <div className="fw-bolder text-dark">{s.nombre}</div>
+                          <small className="text-muted">{s.tipo}</small>
+                        </div>
+                      </div>
                     </td>
                     <td>
-                        <span className="badge bg-secondary-subtle text-secondary">
-                        {s.categoriaNombre || "Sin categoría"}
-                        </span>
+                      <span className="badge bg-light text-dark border rounded-pill px-3">
+                        {s.categoriaNombre || "General"}
+                      </span>
                     </td>
-                    <td>${Number(s.precio).toLocaleString("es-CL")}</td>
+                    <td className="fw-bold text-success">
+                      ${Number(s.precio).toLocaleString("es-CL")}
+                    </td>
                     <td>
-                        <span
-                        className={`badge ${
-                            s.estado === "Activo" ? "bg-success" : "bg-secondary"
+                      <span
+                        className={`badge rounded-pill px-3 ${
+                          s.estado === "Activo" ? "bg-success" : "bg-secondary"
                         }`}
-                        >
+                      >
                         {s.estado}
-                        </span>
+                      </span>
                     </td>
-                    <td>
-                        <button
+                    <td className="pe-4 text-end">
+                      <button
                         type="button"
-                        className="btn btn-sm btn-light text-primary me-2"
+                        className="btn btn-sm btn-light border rounded-pill px-3 fw-semibold me-2"
                         onClick={() => abrirEditarServicio(s)}
-                        >
+                      >
                         Editar
-                        </button>
-                        <button
+                      </button>
+                      <button
                         type="button"
-                        className={`btn btn-sm btn-light ${
-                            s.estado === "Activo" ? "text-danger" : "text-success"
+                        className={`btn btn-sm rounded-pill px-3 fw-bold ${
+                          s.estado === "Activo"
+                            ? "btn-outline-danger"
+                            : "btn-outline-success"
                         }`}
                         onClick={() => handleToggleEstado(s.id)}
-                        >
-                        {s.estado === "Activo" ? "Bajar" : "Activar"}
-                        </button>
+                      >
+                        {s.estado === "Activo" ? "Ocultar" : "Activar"}
+                      </button>
                     </td>
-                    </tr>
+                  </tr>
                 ))
-                )}
+              )}
             </tbody>
-            </table>
+          </table>
         </div>
 
         <ModalProducto
-            isOpen={modalProducto}
-            servicioEditar={servicioAEditar}
-            categorias={categorias}
-            onClose={() => setModalProducto(false)}
-            onSave={handleGuardarServicio}
+          isOpen={modalProducto}
+          servicioEditar={servicioAEditar}
+          categorias={categorias}
+          onClose={() => setModalProducto(false)}
+          onSave={handleGuardarServicio}
         />
-        </div>
+      </div>
+    );
+  };
+
+  const renderCategories = () => {
+    const categoriasFiltradas = categorias.filter((c) =>
+      c.nombre.toLowerCase().includes(busquedaCategoria.toLowerCase()),
     );
 
-    const renderCategories = () => (
-        <div className="bg-white p-4 rounded-4 shadow-sm border-0">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-            <h5 className="fw-bold text-dark mb-0">Gestión de Categorías</h5>
-            <button
+    return (
+      <div
+        className="glass-panel p-4 p-md-5 rounded-5 border-0"
+        style={{ animation: "fadeSlideUp 0.35s var(--ease-spring)" }}
+      >
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+          <div>
+            <h4 className="fw-bolder text-dark mb-1 tracking-tight">
+              Taxonomía y Categorías Clínicas
+            </h4>
+            <p className="text-muted small mb-0">
+              Estructura las áreas de especialidad para el filtro del catálogo público.
+            </p>
+          </div>
+          <button
             type="button"
-            className="btn btn-outline-success btn-sm fw-bold"
+            className="btn-kinetic-health py-2 px-4 border-0 shadow-sm"
             onClick={() => setModalCrearCategoria(true)}
-            >
+          >
             + Nueva Categoría
-            </button>
+          </button>
         </div>
 
-        {notificacion && (
-            <div className={`alert alert-${notificacion.tipo} py-2 px-3 small border-0`}>
-            {notificacion.texto}
-            </div>
-        )}
+        <div className="mb-4" style={{ maxWidth: "420px" }}>
+          <input
+            type="search"
+            className="form-control apple-input"
+            placeholder="🔍 Buscar categoría..."
+            value={busquedaCategoria}
+            onChange={(e) => setBusquedaCategoria(e.target.value)}
+          />
+        </div>
 
-        <div className="table-responsive">
-            <table className="table align-middle">
+        <div className="table-responsive rounded-4 bg-white border shadow-sm overflow-hidden">
+          <table className="table table-hover align-middle mb-0">
             <thead className="table-light">
-                <tr>
-                <th>ID Categoría</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Servicios Asociados</th>
-                <th>Acción</th>
-                </tr>
+              <tr>
+                <th className="ps-4 py-3 small text-uppercase text-muted">
+                  ID
+                </th>
+                <th className="py-3 small text-uppercase text-muted">
+                  Nombre de Especialidad
+                </th>
+                <th className="py-3 small text-uppercase text-muted">
+                  Descripción Clínica
+                </th>
+                <th className="py-3 text-center small text-uppercase text-muted">
+                  Planes Vinculados
+                </th>
+                <th className="pe-4 py-3 text-end small text-uppercase text-muted">
+                  Acciones
+                </th>
+              </tr>
             </thead>
             <tbody>
-                {categorias.length === 0 ? (
+              {categoriasFiltradas.length === 0 ? (
                 <tr>
-                    <td colSpan={5} className="text-center py-4 text-muted">
-                    No hay categorías registradas.
-                    </td>
+                  <td colSpan={5} className="text-center py-5 text-muted">
+                    No hay categorías que coincidan con la búsqueda.
+                  </td>
                 </tr>
-                ) : (
-                categorias.map((cat: Categoria) => (
-                    <tr key={cat.id}>
-                    <td className="text-muted small fw-bold">#{cat.id}</td>
-                    <td className="fw-semibold">{cat.nombre}</td>
-                    <td className="text-muted small">{cat.descripcion || "-"}</td>
-                    <td>{cat.serviciosAsociados ?? 0}</td>
-                    <td>
-                        <button
-                        type="button"
-                        className="btn btn-sm btn-light text-primary me-2"
-                        onClick={() => setCategoriaEditar({ ...cat })}
-                        >
-                        Modificar
-                        </button>
-                        <button
-                        type="button"
-                        className="btn btn-sm btn-light text-danger"
-                        onClick={() => setCategoriaEliminar(cat)}
-                        >
-                        Eliminar
-                        </button>
+              ) : (
+                categoriasFiltradas.map((cat: Categoria) => (
+                  <tr key={cat.id}>
+                    <td className="ps-4 text-muted small fw-bold">#{cat.id}</td>
+                    <td className="fw-bolder text-dark">{cat.nombre}</td>
+                    <td className="text-muted small">
+                      {cat.descripcion || "Sin descripción"}
                     </td>
-                    </tr>
+                    <td className="text-center">
+                      <span className="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-bold">
+                        {cat.serviciosAsociados ?? 0} planes
+                      </span>
+                    </td>
+                    <td className="pe-4 text-end">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light border rounded-pill px-3 fw-semibold me-2"
+                        onClick={() => setCategoriaEditar({ ...cat })}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold"
+                        onClick={() => setCategoriaEliminar(cat)}
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
                 ))
-                )}
+              )}
             </tbody>
-            </table>
+          </table>
         </div>
 
         <ModalCategoria
-            isOpen={modalCrearCategoria || Boolean(categoriaEditar)}
-            categoriaEditar={categoriaEditar}
-            categoriaEliminar={categoriaEliminar}
-            onClose={() => {
+          isOpen={modalCrearCategoria || Boolean(categoriaEditar)}
+          categoriaEditar={categoriaEditar}
+          categoriaEliminar={categoriaEliminar}
+          onClose={() => {
             setModalCrearCategoria(false);
             setCategoriaEditar(null);
             setCategoriaEliminar(null);
-            }}
-            onSave={handleGuardarCategoria}
-            onDeleteConfirm={EliminarCategoria}
+          }}
+          onSave={handleGuardarCategoria}
+          onDeleteConfirm={EliminarCategoria}
         />
-        </div>
+      </div>
     );
+  };
 
-    // Vista de Citas y Compras de Planes
-    const renderCitas = () => (
-        <div className="bg-white p-4 rounded-4 shadow-sm border-0">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-            <h5 className="fw-bold text-dark mb-0">Citas y Planes Comprados</h5>
-            <div className="d-flex gap-2">
-            <input
-                type="search"
-                className="form-control form-control-sm"
-                placeholder="Buscar por paciente o plan..."
-                value={busquedaCitas}
-                onChange={(e) => setBusquedaCitas(e.target.value)}
-            />
-            </div>
-        </div>
+  const renderActiveContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return renderDashboard();
+      case "users":
+        return renderCitas();
+      case "clinical":
+        return renderClinical();
+      case "products":
+        return renderProducts();
+      case "categories":
+        return renderCategories();
+      default:
+        return renderDashboard();
+    }
+  };
 
-        {notificacion && (
-            <div
-            className={`alert alert-${notificacion.tipo} py-2 px-3 small d-flex justify-content-between align-items-center mb-3 border-0`}
-            role="alert"
-            >
-            <span>{notificacion.texto}</span>
+  return (
+    <main className="app-wrapper py-4 py-lg-5 position-relative">
+      <div className="ambient-glow-health"></div>
+
+      {/* Notificación Flotante Global */}
+      {notificacion && (
+        <div
+          className="position-fixed top-0 start-50 translate-middle-x p-3"
+          style={{
+            zIndex: 1100,
+            marginTop: "75px",
+            animation: "fadeSlideUp 0.3s var(--ease-spring)",
+          }}
+        >
+          <div className="glass-panel-small px-4 py-3 rounded-pill shadow-glass d-flex align-items-center gap-3 border">
+            <span>
+              {notificacion.tipo === "success"
+                ? "✅"
+                : notificacion.tipo === "danger"
+                  ? "⛔"
+                  : "ℹ️"}
+            </span>
+            <span className="fw-bold text-dark small">
+              {notificacion.texto}
+            </span>
             <button
-                type="button"
-                className="btn-close small"
-                style={{ fontSize: "0.65rem" }}
-                aria-label="Cerrar"
-                onClick={() => setNotificacion(null)}
+              type="button"
+              className="btn-close"
+              style={{ fontSize: "0.75rem" }}
+              onClick={() => setNotificacion(null)}
             />
-            </div>
-        )}
-
-        <div className="table-responsive">
-            <table className="table align-middle">
-            <thead className="table-light">
-                <tr>
-                <th>ID Cita</th>
-                <th>Paciente</th>
-                <th>Plan Adquirido</th>
-                <th>Fecha y Hora</th>
-                <th>Estado</th>
-                <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                {citasFiltradas.length === 0 ? (
-                <tr>
-                    <td colSpan={6} className="text-center py-4 text-muted">
-                    No se encontraron citas o compras registradas.
-                    </td>
-                </tr>
-                ) : (
-                citasFiltradas.map((c) => (
-                    <tr key={c.id}>
-                    <td className="text-muted small fw-bold">#{c.id}</td>
-                    <td>
-                        <div className="fw-semibold text-dark">{c.pacienteNombre}</div>
-                        <small className="text-muted">{c.pacienteEmail}</small>
-                    </td>
-                    <td>
-                        <span className="badge bg-light text-dark border">
-                        {c.servicioNombre}
-                        </span>
-                    </td>
-                    <td>
-                        <span className="small text-dark fw-medium">{c.fecha}</span>
-                        <span className="text-muted small d-block">{c.hora} hrs</span>
-                    </td>
-                    <td>
-                        <span
-                        className={`badge ${
-                            c.estado === "Confirmada"
-                            ? "bg-success-subtle text-success fw-bold"
-                            : c.estado === "Pendiente"
-                            ? "bg-warning-subtle text-dark"
-                            : c.estado === "Completada"
-                            ? "bg-primary-subtle text-primary"
-                            : "bg-danger-subtle text-danger"
-                        }`}
-                        >
-                        {c.estado}
-                        </span>
-                    </td>
-                    <td>
-                        {c.estado === "Pendiente" && (
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-outline-success me-2"
-                            onClick={() => cambiarEstadoCita(c.id, "Confirmada")}
-                        >
-                            Confirmar
-                        </button>
-                        )}
-                        {c.estado === "Confirmada" && (
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-outline-primary me-2"
-                            onClick={() => cambiarEstadoCita(c.id, "Completada")}
-                        >
-                            Completar
-                        </button>
-                        )}
-                        {c.estado !== "Cancelada" && c.estado !== "Completada" && (
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-light text-danger"
-                            onClick={() => cambiarEstadoCita(c.id, "Cancelada")}
-                        >
-                            Cancelar
-                        </button>
-                        )}
-                    </td>
-                    </tr>
-                ))
-                )}
-            </tbody>
-            </table>
+          </div>
         </div>
-        </div>
-    );
+      )}
 
-    const renderActiveContent = () => {
-        switch (activeTab) {
-        case "dashboard":
-            return renderDashboard();
-        case "products":
-            return renderProducts();
-        case "categories":
-            return renderCategories();
-        case "users":
-            return renderCitas();
-        default:
-            return renderDashboard();
-        }
-    };
-
-    return (
-        <main className="container-fluid py-4 px-4 px-md-5 bg-light flex-grow-1">
+      <div
+        className="container-fluid px-3 px-md-5 position-relative"
+        style={{ zIndex: 2 }}
+      >
         <div className="row g-4">
-            <NutricionistaSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+          {/* CONSOLA DE NAVEGACIÓN CON NOMBRE REAL DEL NUTRICIONISTA */}
+          <NutricionistaSidebar
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            nombreNutricionista={nutricionistaActual?.nombre || "Nutricionista"}
+            emailNutricionista={nutricionistaActual?.email}
+            fotoPerfil={nutricionistaActual?.fotoPerfil}
+            pendientesCount={{
+              citas: citasPendientesCount,
+              examenes: examenesPendientesCount,
+            }}
+          />
 
-            <section className="col-lg-9 col-md-8">
-            <div className="bg-dark text-white p-4 rounded-4 shadow-sm mb-4 d-flex justify-content-between align-items-center">
-                <div>
-                <h3 className="fw-bold mb-1">Panel de Nutrición</h3>
-                <p className="mb-0 text-white-50">
-                    {activeTab === "dashboard" &&
-                    "Métricas generales y control de agenda de consultas."}
-                    {activeTab === "products" &&
-                    "Administra los planes nutricionales y servicios disponibles."}
-                    {activeTab === "categories" &&
-                    "Organiza las categorías de tus servicios."}
-                    {activeTab === "users" &&
-                    "Seguimiento de compras y citas de tus pacientes."}
-                </p>
+          <section className="col-12 col-lg-9">
+            {/* Banner Superior de Estación de Trabajo */}
+            <div
+              className="p-4 p-md-5 rounded-5 shadow-glass mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3"
+              style={{
+                background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                color: "white",
+              }}
+            >
+              <div>
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  <span className="badge bg-success text-white rounded-pill px-3 py-1 fw-bold">
+                    ESTACIÓN CLÍNICA
+                  </span>
+                  <span className="text-secondary small">
+                    •{" "}
+                    {new Date().toLocaleDateString("es-CL", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    })}
+                  </span>
                 </div>
-                <div className="d-none d-sm-block fs-1">🥗</div>
+                <h2 className="fw-bolder mb-1 tracking-tight">
+                  Bienvenido/a,{" "}
+                  <span style={{ color: "#34d399" }}>
+                    {nutricionistaActual?.nombre || "Especialista"}
+                  </span>
+                </h2>
+                <p className="mb-0 text-secondary small">
+                  {activeTab === "dashboard" &&
+                    "Panorama operativo de tu consulta, pacientes en espera y bandeja de laboratorio."}
+                  {activeTab === "users" &&
+                    "Gestión de reservas de horas, confirmación de asistencia y programación manual."}
+                  {activeTab === "clinical" &&
+                    "Prescripción de pautas alimentarias, auditoría de exámenes y registro InBody."}
+                  {activeTab === "products" &&
+                    "Administración de planes nutricionales y aranceles publicados en el catálogo."}
+                  {activeTab === "categories" &&
+                    "Organización de especialidades clínicas del centro."}
+                </p>
+              </div>
+              <div className="d-none d-xl-flex align-items-center gap-3 bg-white bg-opacity-10 p-3 rounded-4">
+                <div className="fs-2">🩺</div>
+                <div>
+                  <div className="fw-bolder text-white leading-tight">
+                    {pacientes.length} Pacientes
+                  </div>
+                  <small className="text-secondary">
+                    Registrados en plataforma
+                  </small>
+                </div>
+              </div>
             </div>
 
             {renderActiveContent()}
-            </section>
+          </section>
         </div>
-        </main>
-    );
-
+      </div>
+    </main>
+  );
 }

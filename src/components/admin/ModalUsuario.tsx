@@ -1,5 +1,5 @@
 import { useState, useEffect, type JSX } from "react";
-import type { Usuario } from "../../data/types";
+import type { Usuario } from "../../types/index";
 
 interface ModalUsuarioProps {
   usuarioEditar: Usuario | null;

@@ -1,6 +1,6 @@
 import { useState, useEffect, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { Servicio, Compra } from "../data/types";
+import type { Compra, Servicio } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
 // 1. [SOLID] Importamos nuestro servicio que ahora es la única "fuente de la verdad"
 import { TiendaService } from "../services/tiendaService";

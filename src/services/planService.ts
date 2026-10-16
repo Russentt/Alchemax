@@ -1,4 +1,5 @@
-import type { PlanNutricional, Metrica, Examen } from "../data/types";
+import type { PlanNutricional, Examen,  Metrica} from "../types/index";
+
 
 export const PlanService = {
   getPlan: (): PlanNutricional =>

@@ -1,7 +1,7 @@
 import { useEffect, useState, type JSX } from "react";
 import AdminSidebar, { type AdminTab } from "../components/admin/AdminSidebar";
 import AdminStatCard from "../components/admin/AdminStatCard";
-import type { Categoria, Usuario, Servicio } from "../data/types";
+import type { Categoria, Servicio, Usuario } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
 import { useNavigate } from "react-router";
 import { StorageCategorias } from "../services/storageCategorias";

@@ -1,4 +1,4 @@
-import type { Servicio } from "../data/types";
+import type { Servicio } from "../types/index";
 import { StorageCategorias } from "./storageCategorias";
 
 export const StorageServicios = {

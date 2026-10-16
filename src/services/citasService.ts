@@ -1,4 +1,4 @@
-import type { Cita } from "../data/types";
+import type { Cita } from "../types/index";
 
 export const CitasService = {
   getCitas: (): Cita[] => JSON.parse(localStorage.getItem("db_citas") || "[]"),

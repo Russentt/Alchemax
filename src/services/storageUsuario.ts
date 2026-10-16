@@ -1,4 +1,4 @@
-import type { Usuario } from "../data/types";
+import type { Usuario } from "../types/index";
 
 export const StorageUsuario = {
   getUsuarios: (): Usuario[] =>

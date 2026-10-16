@@ -1,5 +1,5 @@
 import { useState, useEffect, type JSX } from "react";
-import type { Categoria, Servicio } from "../../data/types";
+import type { Categoria, Servicio } from "../../types/index";
 
 interface ModalProductoProps {
     isOpen: boolean;

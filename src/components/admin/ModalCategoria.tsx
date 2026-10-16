@@ -1,5 +1,5 @@
 import { useState, useEffect, type JSX } from "react";
-import type { Categoria } from "../../data/types";
+import type { Categoria } from "../../types/index";
 
 interface ModalCategoriaProps {
     isOpen: boolean;

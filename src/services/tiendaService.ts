@@ -1,4 +1,5 @@
-import type { Servicio, Compra } from "../data/types";
+import type { Servicio } from "../types/servicio";
+import type {Compra } from "../types/compra";
 import { StorageUsuario } from "./storageUsuario";
 
 // ---------------------------------------------------------

@@ -13,7 +13,6 @@ import { StorageInit } from "../services/storage_init";
 import { StorageUsuario } from "../services/storageUsuario";
 import { CitasService } from "../services/citasService";
 import { PlanService } from "../services/planService";
-// 1. [SOLID] Importamos TiendaService para leer las compras reales
 import { TiendaService } from "../services/tiendaService";
 
 export type AccountTab =
@@ -41,14 +40,12 @@ export default function Account(): JSX.Element {
   const [plan, setPlan] = useState<PlanNutricional | null>(null);
   const [metricas, setMetricas] = useState<Metrica[]>([]);
   const [examenes, setExamenes] = useState<Examen[]>([]);
-  // 2. Estado para almacenar las compras reales
   const [compras, setCompras] = useState<Compra[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
   const [profileForm, setProfileForm] = useState<Usuario | null>(null);
 
-  // Estados para el cambio de contraseña
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
   const [passwordActual, setPasswordActual] = useState<string>("");
   const [nuevaPassword, setNuevaPassword] = useState<string>("");
@@ -69,6 +66,7 @@ export default function Account(): JSX.Element {
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     StorageInit.initDB();
@@ -94,8 +92,6 @@ export default function Account(): JSX.Element {
       setPlan(PlanService.getPlan());
       setMetricas(PlanService.getMetricas());
       setExamenes(PlanService.getExamenes());
-
-      // 3. Obtenemos las compras reales de este usuario
       setCompras(TiendaService.getCompras());
 
       setIsLoading(false);
@@ -125,10 +121,38 @@ export default function Account(): JSX.Element {
     showNotification("Cita cancelada exitosamente.", "warning");
   };
 
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     if (profileForm) {
-      setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
+      const value =
+        e.target.name === "pesoActual"
+          ? parseFloat(e.target.value)
+          : e.target.value;
+      setProfileForm({ ...profileForm, [e.target.name]: value });
     }
+  };
+
+  // Modificado: Ahora solo actualiza el estado temporal (profileForm)
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profileForm) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      showNotification("La imagen no debe superar los 2MB", "warning");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setProfileForm({ ...profileForm, fotoPerfil: base64String });
+      showNotification(
+        "Foto precargada. Guarda los cambios para confirmarla.",
+        "success",
+      );
+    };
+    reader.readAsDataURL(file);
   };
 
   const resetPasswordFields = () => {
@@ -315,7 +339,6 @@ export default function Account(): JSX.Element {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // 4. [KISS] Helper para formatear los precios
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-CL", {
       style: "currency",
@@ -346,10 +369,16 @@ export default function Account(): JSX.Element {
               Último Peso Registrado
             </p>
             <h5 className="fw-bold text-dark mb-2">
-              {metricas.length > 0 ? metricas[0].peso : "--"} kg
+              {usuario?.pesoActual ||
+                (metricas.length > 0 ? metricas[0].peso : "--")}{" "}
+              kg
             </h5>
             <p className="text-muted small mb-0">
-              Registrado el {metricas.length > 0 ? metricas[0].fecha : "--"}
+              {usuario?.pesoActual
+                ? "Actualizado recientemente"
+                : metricas.length > 0
+                  ? `Registrado el ${metricas[0].fecha}`
+                  : "--"}
             </p>
           </div>
         </div>
@@ -358,13 +387,15 @@ export default function Account(): JSX.Element {
             <p className="text-muted mb-1 fw-semibold small text-uppercase">
               Objetivo Actual
             </p>
-            <h5 className="fw-bold text-dark mb-2">{plan?.objetivo || "--"}</h5>
-            <p className="text-muted small mb-0">Déficit calórico leve</p>
+            <h5 className="fw-bold text-dark mb-2">
+              {usuario?.objetivoPrincipal || plan?.objetivo || "--"}
+            </h5>
+            <p className="text-muted small mb-0">Personalizado</p>
           </div>
         </div>
       </div>
 
-      <div className="row g-4">
+      <div className="row g-4 mb-5">
         <div className="col-lg-7">
           <div className="bg-white p-4 rounded-4 shadow-sm border-0 h-100">
             {!isEditingProfile ? (
@@ -433,6 +464,61 @@ export default function Account(): JSX.Element {
                     </button>
                   </div>
                 </div>
+
+                {/* NUEVA SECCIÓN DE FOTO DE PERFIL EN EL FORMULARIO */}
+                <div className="mb-4 p-3 bg-light rounded-3 border d-flex align-items-center gap-3">
+                  <input
+                    type="file"
+                    ref={avatarInputRef}
+                    style={{ display: "none" }}
+                    accept="image/jpeg, image/png"
+                    onChange={handleAvatarChange}
+                  />
+                  <div
+                    className="rounded-circle d-inline-flex justify-content-center align-items-center fw-bold shadow-sm overflow-hidden"
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      fontSize: "1.5rem",
+                      backgroundColor: profileForm?.fotoPerfil
+                        ? "transparent"
+                        : "#198754",
+                      color: "white",
+                    }}
+                  >
+                    {profileForm?.fotoPerfil ? (
+                      <img
+                        src={profileForm.fotoPerfil}
+                        alt="Perfil"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : profileForm?.nombre ? (
+                      profileForm.nombre.substring(0, 2).toUpperCase()
+                    ) : (
+                      "US"
+                    )}
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="btn btn-outline-success btn-sm fw-bold mb-1"
+                    >
+                      📷 Cambiar Foto
+                    </button>
+                    <div
+                      className="small text-muted"
+                      style={{ fontSize: "0.75rem" }}
+                    >
+                      Formatos soportados: JPG, PNG (Max. 2MB)
+                    </div>
+                  </div>
+                </div>
+
                 <div className="mb-3 row">
                   <label className="col-sm-4 col-form-label text-muted fw-semibold">
                     Nombre Completo
@@ -463,6 +549,49 @@ export default function Account(): JSX.Element {
                     />
                   </div>
                 </div>
+
+                <div className="mb-3 row">
+                  <label className="col-sm-4 col-form-label text-muted fw-semibold">
+                    Peso Actual (kg)
+                  </label>
+                  <div className="col-sm-8">
+                    <input
+                      type="number"
+                      step="0.1"
+                      name="pesoActual"
+                      className="form-control form-control-sm"
+                      value={profileForm?.pesoActual || ""}
+                      onChange={handleProfileChange}
+                      placeholder="Ej: 70.5"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-3 row">
+                  <label className="col-sm-4 col-form-label text-muted fw-semibold">
+                    Objetivo Principal
+                  </label>
+                  <div className="col-sm-8">
+                    <select
+                      name="objetivoPrincipal"
+                      className="form-select form-select-sm"
+                      value={profileForm?.objetivoPrincipal || ""}
+                      onChange={handleProfileChange}
+                    >
+                      <option value="">Selecciona un objetivo...</option>
+                      <option value="Pérdida de Grasa">Pérdida de Grasa</option>
+                      <option value="Ganancia Muscular">
+                        Ganancia Muscular
+                      </option>
+                      <option value="Mantenimiento">Mantenimiento</option>
+                      <option value="Rendimiento Deportivo">
+                        Rendimiento Deportivo
+                      </option>
+                      <option value="Salud Clínica">Salud Clínica</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="mb-3 row">
                   <label className="col-sm-4 col-form-label text-muted fw-semibold">
                     Fecha de Nac.
@@ -604,7 +733,7 @@ export default function Account(): JSX.Element {
 
   const renderCitas = () => (
     <div
-      className="bg-white p-4 rounded-4 shadow-sm border-0 h-100"
+      className="bg-white p-4 rounded-4 shadow-sm border-0 mb-5"
       style={{ minHeight: "50vh" }}
     >
       {!isBookingCita ? (
@@ -746,7 +875,7 @@ export default function Account(): JSX.Element {
     if (!plan) return null;
     return (
       <div
-        className="bg-white p-4 rounded-4 shadow-sm border-0 h-100"
+        className="bg-white p-4 rounded-4 shadow-sm border-0 mb-5"
         style={{ minHeight: "50vh" }}
       >
         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -807,7 +936,7 @@ export default function Account(): JSX.Element {
     ).toFixed(1);
     return (
       <div
-        className="bg-white p-4 rounded-4 shadow-sm border-0 h-100"
+        className="bg-white p-4 rounded-4 shadow-sm border-0 mb-5"
         style={{ minHeight: "50vh" }}
       >
         <h5 className="fw-bold text-success mb-4">Métricas Biométricas</h5>
@@ -856,7 +985,7 @@ export default function Account(): JSX.Element {
 
   const renderExamenes = () => (
     <div
-      className="bg-white p-4 rounded-4 shadow-sm border-0 h-100"
+      className="bg-white p-4 rounded-4 shadow-sm border-0 mb-5"
       style={{ minHeight: "50vh" }}
     >
       <h5 className="fw-bold text-success mb-4">Registro Médico</h5>
@@ -910,7 +1039,7 @@ export default function Account(): JSX.Element {
   const renderCompras = () => {
     return (
       <div
-        className="bg-white p-4 rounded-4 shadow-sm border-0 h-100"
+        className="bg-white p-4 rounded-4 shadow-sm border-0 mb-5"
         style={{ minHeight: "50vh" }}
       >
         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -927,7 +1056,6 @@ export default function Account(): JSX.Element {
           </Link>
         </div>
 
-        {/* 5. Agregamos validación visual si no hay compras */}
         {compras.length === 0 ? (
           <div className="text-center py-5">
             <div className="fs-1 mb-3">🛍️</div>
@@ -951,7 +1079,6 @@ export default function Account(): JSX.Element {
                 </tr>
               </thead>
               <tbody>
-                {/* 6. [DRY] Mapeamos las compras reales obtenidas del servicio */}
                 {compras.map((compra) => (
                   <tr key={compra.id}>
                     <td className="fw-semibold">{compra.nombre}</td>
@@ -981,7 +1108,7 @@ export default function Account(): JSX.Element {
 
   if (isLoading)
     return (
-      <main className="container-fluid py-5 text-center flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+      <main className="container-fluid py-5 text-center flex-grow-1 d-flex flex-column justify-content-center align-items-center bg-light">
         <div className="spinner-border text-success mb-3" role="status"></div>
         <p className="text-muted fw-semibold">
           Sincronizando portal del paciente...
@@ -992,7 +1119,7 @@ export default function Account(): JSX.Element {
   if (!usuario) return <></>;
 
   return (
-    <main className="container-fluid py-4 px-4 px-md-5 position-relative">
+    <main className="container-fluid py-5 px-4 px-md-5 position-relative flex-grow-1 bg-light">
       {notification && (
         <div
           className="position-fixed top-0 end-0 p-4"
@@ -1023,15 +1150,37 @@ export default function Account(): JSX.Element {
         <aside className="col-lg-3 col-md-4">
           <div className="bg-white p-4 rounded-4 shadow-sm h-100 border-0">
             <div className="text-center mb-4">
+              {/* Modificado: Avatar revertido a modo solo visual (sin eventos de click ni overlays) */}
               <div
-                className="bg-success text-white rounded-circle d-inline-flex justify-content-center align-items-center fw-bold mb-2"
-                style={{ width: "60px", height: "60px", fontSize: "1.5rem" }}
+                className="rounded-circle d-inline-flex justify-content-center align-items-center fw-bold mb-2 shadow-sm overflow-hidden"
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  fontSize: "1.8rem",
+                  backgroundColor: usuario?.fotoPerfil
+                    ? "transparent"
+                    : "#198754",
+                  color: "white",
+                  border: "3px solid #e9ecef",
+                }}
               >
-                {usuario?.nombre
-                  ? usuario.nombre.substring(0, 2).toUpperCase()
-                  : "US"}
+                {usuario?.fotoPerfil ? (
+                  <img
+                    src={usuario.fotoPerfil}
+                    alt="Perfil"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : usuario?.nombre ? (
+                  usuario.nombre.substring(0, 2).toUpperCase()
+                ) : (
+                  "US"
+                )}
               </div>
-              <h5 className="fw-bold text-dark mb-1">
+              <h5 className="fw-bold text-dark mb-1 mt-2">
                 {usuario?.nombre || "Usuario"}
               </h5>
               <p className="text-muted small">Paciente activo</p>

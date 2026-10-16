@@ -84,9 +84,9 @@ export default function Register() {
 
     if (!formData.password.trim()) {
       nuevosErrores.password = "Debes ingresar una contraseña.";
-    } else if (formData.password.length < 6) {
+    } else if (formData.password.length < 9) {
       nuevosErrores.password =
-        "La contraseña debe tener al menos 6 caracteres.";
+        "La contraseña debe tener al menos 9 caracteres.";
     }
 
     if (!confirmPassword.trim()) {
@@ -120,42 +120,90 @@ export default function Register() {
   return (
     <main className="app-wrapper d-flex align-items-center min-vh-100 py-4">
       <div className="ambient-glow-health"></div>
-      
+
       <div className="container position-relative" style={{ zIndex: 2 }}>
-        <div className="row g-0 rounded-5 overflow-hidden shadow-glass bg-white" style={{ border: '1px solid rgba(0,0,0,0.05)' }}>
-          
+        <div
+          className="row g-0 rounded-5 overflow-hidden shadow-glass bg-white"
+          style={{ border: "1px solid rgba(0,0,0,0.05)" }}
+        >
           {/* Panel Visual Izquierdo (Avant-garde / Hoverstat inspired) */}
-          <div className="col-lg-5 d-none d-lg-flex flex-column justify-content-between position-relative p-5 text-white" style={{ backgroundColor: '#1a4d2e', overflow: 'hidden' }}>
+          <div
+            className="col-lg-5 d-none d-lg-flex flex-column justify-content-between position-relative p-5 text-white"
+            style={{ backgroundColor: "#1a4d2e", overflow: "hidden" }}
+          >
             {/* Elemento cinético de fondo */}
-            <div className="position-absolute" style={{ top: '-10%', right: '-20%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(46,204,113,0.3) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(40px)' }}></div>
-            
+            <div
+              className="position-absolute"
+              style={{
+                top: "-10%",
+                right: "-20%",
+                width: "400px",
+                height: "400px",
+                background:
+                  "radial-gradient(circle, rgba(46,204,113,0.3) 0%, transparent 70%)",
+                borderRadius: "50%",
+                filter: "blur(40px)",
+              }}
+            ></div>
+
             <div className="position-relative z-index-2">
-              <Link to="/" className="text-white text-decoration-none fw-bolder fs-4 tracking-tight">
+              <Link
+                to="/"
+                className="text-white text-decoration-none fw-bolder fs-4 tracking-tight"
+              >
                 NutriVida.
               </Link>
             </div>
 
             <div className="position-relative z-index-2 my-5">
-              <h2 className="display-4 fw-bolder tracking-tight mb-4" style={{ lineHeight: 1.1 }}>
-                Diseña tu <br/>
-                <span style={{ color: '#2ecc71' }}>mejor versión.</span>
+              <h2
+                className="display-4 fw-bolder tracking-tight mb-4"
+                style={{ lineHeight: 1.1 }}
+              >
+                Diseña tu <br />
+                <span style={{ color: "#2ecc71" }}>mejor versión.</span>
               </h2>
               <p className="fs-5 opacity-75 fw-light">
-                Únete a cientos de pacientes que ya están transformando sus hábitos con ciencia y empatía.
+                Únete a cientos de pacientes que ya están transformando sus
+                hábitos con ciencia y empatía.
               </p>
             </div>
 
             {/* Micro-componentes: Badges de confianza tipo Bento flotantes */}
             <div className="position-relative z-index-2 d-flex flex-column gap-3">
-              <div className="glass-panel-small p-3 rounded-4 d-flex align-items-center gap-3 w-75 hover-lift" style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
-                <div className="icon-badge text-success" style={{ width: '40px', height: '40px', fontSize: '1.2rem' }}>🔒</div>
+              <div
+                className="glass-panel-small p-3 rounded-4 d-flex align-items-center gap-3 w-75 hover-lift"
+                style={{
+                  background: "rgba(255,255,255,0.1)",
+                  borderColor: "rgba(255,255,255,0.2)",
+                  color: "white",
+                }}
+              >
+                <div
+                  className="icon-badge text-success"
+                  style={{ width: "40px", height: "40px", fontSize: "1.2rem" }}
+                >
+                  🔒
+                </div>
                 <div>
                   <h6 className="fw-bold mb-0">Privacidad Clínica</h6>
                   <small className="opacity-75">Tus datos encriptados</small>
                 </div>
               </div>
-              <div className="glass-panel-small p-3 rounded-4 d-flex align-items-center gap-3 w-75 hover-lift ms-4" style={{ background: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
-                <div className="icon-badge text-success" style={{ width: '40px', height: '40px', fontSize: '1.2rem' }}>📱</div>
+              <div
+                className="glass-panel-small p-3 rounded-4 d-flex align-items-center gap-3 w-75 hover-lift ms-4"
+                style={{
+                  background: "rgba(255,255,255,0.1)",
+                  borderColor: "rgba(255,255,255,0.2)",
+                  color: "white",
+                }}
+              >
+                <div
+                  className="icon-badge text-success"
+                  style={{ width: "40px", height: "40px", fontSize: "1.2rem" }}
+                >
+                  📱
+                </div>
                 <div>
                   <h6 className="fw-bold mb-0">Portal Interactivo</h6>
                   <small className="opacity-75">Pautas en tu bolsillo</small>
@@ -166,18 +214,29 @@ export default function Register() {
 
           {/* Panel del Formulario Derecho (Apple Minimalist) */}
           <div className="col-lg-7 p-4 p-md-5 bg-white">
-            <div className="max-w-md mx-auto" style={{ maxWidth: '500px' }}>
+            <div className="max-w-md mx-auto" style={{ maxWidth: "500px" }}>
               <div className="text-start mb-5">
-                <h3 className="fw-bold text-dark tracking-tight">Crear cuenta</h3>
-                <p className="text-muted">Completa tus datos para configurar tu perfil de paciente.</p>
+                <h3 className="fw-bold text-dark tracking-tight">
+                  Crear cuenta
+                </h3>
+                <p className="text-muted">
+                  Completa tus datos para configurar tu perfil de paciente.
+                </p>
               </div>
 
               <form className="formulario" onSubmit={handleSubmit} noValidate>
                 <div className="mb-4">
-                  <label htmlFor="regNombre" className="form-label fw-semibold text-dark small text-uppercase tracking-tight">
+                  <label
+                    htmlFor="regNombre"
+                    className="form-label fw-semibold text-dark small text-uppercase tracking-tight"
+                  >
                     Nombre completo
                   </label>
-                  {errors.nombre && <div className="text-danger small fw-semibold mb-2">⚠️ {errors.nombre}</div>}
+                  {errors.nombre && (
+                    <div className="text-danger small fw-semibold mb-2">
+                      ⚠️ {errors.nombre}
+                    </div>
+                  )}
                   <input
                     type="text"
                     className={`form-control apple-input ${errors.nombre ? "is-invalid" : ""}`}
@@ -192,10 +251,17 @@ export default function Register() {
 
                 <div className="row g-3 mb-4">
                   <div className="col-md-6">
-                    <label htmlFor="regFechaNac" className="form-label fw-semibold text-dark small text-uppercase tracking-tight">
+                    <label
+                      htmlFor="regFechaNac"
+                      className="form-label fw-semibold text-dark small text-uppercase tracking-tight"
+                    >
                       Nacimiento
                     </label>
-                    {errors.fechaNacimiento && <div className="text-danger small fw-semibold mb-2">⚠️ {errors.fechaNacimiento}</div>}
+                    {errors.fechaNacimiento && (
+                      <div className="text-danger small fw-semibold mb-2">
+                        ⚠️ {errors.fechaNacimiento}
+                      </div>
+                    )}
                     <input
                       type="date"
                       className={`form-control apple-input ${errors.fechaNacimiento ? "is-invalid" : ""}`}
@@ -208,10 +274,17 @@ export default function Register() {
                   </div>
 
                   <div className="col-md-6">
-                    <label htmlFor="regGenero" className="form-label fw-semibold text-dark small text-uppercase tracking-tight">
+                    <label
+                      htmlFor="regGenero"
+                      className="form-label fw-semibold text-dark small text-uppercase tracking-tight"
+                    >
                       Género
                     </label>
-                    {errors.genero && <div className="text-danger small fw-semibold mb-2">⚠️ {errors.genero}</div>}
+                    {errors.genero && (
+                      <div className="text-danger small fw-semibold mb-2">
+                        ⚠️ {errors.genero}
+                      </div>
+                    )}
                     <select
                       className={`form-select apple-input ${errors.genero ? "is-invalid" : ""}`}
                       id="regGenero"
@@ -219,22 +292,35 @@ export default function Register() {
                       value={formData.genero}
                       onChange={handleChange}
                       required
-                      style={{ borderColor: errors.genero ? "#dc3545" : undefined }}
+                      style={{
+                        borderColor: errors.genero ? "#dc3545" : undefined,
+                      }}
                     >
-                      <option value="" disabled>Seleccionar...</option>
+                      <option value="" disabled>
+                        Seleccionar...
+                      </option>
                       <option value="femenino">Femenino</option>
                       <option value="masculino">Masculino</option>
                       <option value="otro">Otro</option>
-                      <option value="prefiero-no-decirlo">Prefiero no decirlo</option>
+                      <option value="prefiero-no-decirlo">
+                        Prefiero no decirlo
+                      </option>
                     </select>
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor="regEmail" className="form-label fw-semibold text-dark small text-uppercase tracking-tight">
+                  <label
+                    htmlFor="regEmail"
+                    className="form-label fw-semibold text-dark small text-uppercase tracking-tight"
+                  >
                     Correo electrónico
                   </label>
-                  {errors.email && <div className="text-danger small fw-semibold mb-2">⚠️ {errors.email}</div>}
+                  {errors.email && (
+                    <div className="text-danger small fw-semibold mb-2">
+                      ⚠️ {errors.email}
+                    </div>
+                  )}
                   <input
                     type="email"
                     className={`form-control apple-input ${errors.email ? "is-invalid" : ""}`}
@@ -249,10 +335,17 @@ export default function Register() {
 
                 <div className="row g-3 mb-4">
                   <div className="col-md-6">
-                    <label htmlFor="regPassword" className="form-label fw-semibold text-dark small text-uppercase tracking-tight">
+                    <label
+                      htmlFor="regPassword"
+                      className="form-label fw-semibold text-dark small text-uppercase tracking-tight"
+                    >
                       Contraseña
                     </label>
-                    {errors.password && <div className="text-danger small fw-semibold mb-2">⚠️ {errors.password}</div>}
+                    {errors.password && (
+                      <div className="text-danger small fw-semibold mb-2">
+                        ⚠️ {errors.password}
+                      </div>
+                    )}
                     <input
                       type="password"
                       className={`form-control apple-input ${errors.password ? "is-invalid" : ""}`}
@@ -269,7 +362,11 @@ export default function Register() {
                     <label className="form-label fw-semibold text-dark small text-uppercase tracking-tight">
                       Confirmar
                     </label>
-                    {errors.confirmPassword && <div className="text-danger small fw-semibold mb-2">⚠️ {errors.confirmPassword}</div>}
+                    {errors.confirmPassword && (
+                      <div className="text-danger small fw-semibold mb-2">
+                        ⚠️ {errors.confirmPassword}
+                      </div>
+                    )}
                     <input
                       type="password"
                       name="confirmPassword"
@@ -279,7 +376,10 @@ export default function Register() {
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
                         if (errors.confirmPassword) {
-                          setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                          setErrors((prev) => ({
+                            ...prev,
+                            confirmPassword: "",
+                          }));
                         }
                       }}
                       required
@@ -288,7 +388,10 @@ export default function Register() {
                 </div>
 
                 <div className="d-grid mt-5">
-                  <button type="submit" className="btn btn-success btn-lg fw-bold apple-btn py-3">
+                  <button
+                    type="submit"
+                    className="btn btn-success btn-lg fw-bold apple-btn py-3"
+                  >
                     Crear perfil médico
                   </button>
                 </div>
@@ -296,7 +399,10 @@ export default function Register() {
                 <div className="text-center mt-4">
                   <p className="text-muted small">
                     ¿Ya tienes un perfil?{" "}
-                    <Link to="/login" className="text-success text-decoration-none fw-bold hover-lift d-inline-block">
+                    <Link
+                      to="/login"
+                      className="text-success text-decoration-none fw-bold hover-lift d-inline-block"
+                    >
                       Inicia sesión
                     </Link>
                   </p>

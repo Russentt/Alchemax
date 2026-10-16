@@ -6,15 +6,23 @@ export default function Navbar(): JSX.Element {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+
+  // Estados para controlar los submenús
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false); // Para Recursos
+  const [isServiciosOpen, setIsServiciosOpen] = useState<boolean>(false); // Para Servicios
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const recursosRef = useRef<HTMLLIElement>(null);
+  const serviciosRef = useRef<HTMLLIElement>(null);
+
+  // Referencias para controlar el delay del hover en ambos menús
+  const hoverTimeoutRef = useRef<number | null>(null);
+  const recursosTimeoutRef = useRef<number | null>(null);
+
   const location = useLocation();
   const navigate = useNavigate();
 
-  // obtener datos de la sesión para saber el rol
   const sesionActual = StorageUsuario.getUsuarioSesion();
 
   useEffect(() => {
@@ -24,21 +32,12 @@ export default function Navbar(): JSX.Element {
     setIsAuthenticated(!!sesion);
   }, [location]);
 
-  // ruta de perfil según el rol
   const rutaPerfil =
     sesionActual?.rol === "admin"
       ? "/admin"
       : sesionActual?.rol === "nutricionista"
-      ? "/nutricionista"
-      : "/account";
-
-  // Sincroniza el estado de la sesión cada vez que el usuario navega entre páginas
-  useEffect(() => {
-    const sesion =
-      StorageUsuario.getUsuarioSesion() ||
-      sessionStorage.getItem("session_user");
-    setIsAuthenticated(!!sesion);
-  }, [location]);
+        ? "/nutricionista"
+        : "/account";
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -50,6 +49,7 @@ export default function Navbar(): JSX.Element {
       } else {
         setIsVisible(false);
         setIsDropdownOpen(false);
+        setIsServiciosOpen(false);
       }
       lastScrollY = currentScrollY;
     };
@@ -64,6 +64,9 @@ export default function Navbar(): JSX.Element {
       if (recursosRef.current && !recursosRef.current.contains(target)) {
         setIsDropdownOpen(false);
       }
+      if (serviciosRef.current && !serviciosRef.current.contains(target)) {
+        setIsServiciosOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -73,6 +76,7 @@ export default function Navbar(): JSX.Element {
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
     setIsDropdownOpen(false);
+    setIsServiciosOpen(false);
   };
 
   const handleLogout = () => {
@@ -83,13 +87,38 @@ export default function Navbar(): JSX.Element {
     navigate("/login", { replace: true });
   };
 
-  const toggleRecursos = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDropdownOpen((prev) => !prev);
+  // --- Lógica unificada para el hover de Servicios ---
+  const handleMouseEnterServicios = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setIsServiciosOpen(true);
+      setIsDropdownOpen(false); // Cierra Recursos para evitar que se pisen
+    }, 200);
   };
 
-  // Funciones para pintar de verde la sección activa en el header
+  const handleMouseLeaveServicios = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = window.setTimeout(() => {
+      setIsServiciosOpen(false);
+    }, 200);
+  };
+
+  // --- Lógica unificada para el hover de Recursos ---
+  const handleMouseEnterRecursos = () => {
+    if (recursosTimeoutRef.current) clearTimeout(recursosTimeoutRef.current);
+    recursosTimeoutRef.current = window.setTimeout(() => {
+      setIsDropdownOpen(true);
+      setIsServiciosOpen(false); // Cierra Servicios para evitar que se pisen
+    }, 200);
+  };
+
+  const handleMouseLeaveRecursos = () => {
+    if (recursosTimeoutRef.current) clearTimeout(recursosTimeoutRef.current);
+    recursosTimeoutRef.current = window.setTimeout(() => {
+      setIsDropdownOpen(false);
+    }, 200);
+  };
+
   const getNavLinkClass = (path: string, hash: string = "") => {
     const isActive = hash
       ? location.pathname === path && location.hash === hash
@@ -160,18 +189,68 @@ export default function Navbar(): JSX.Element {
                     className={getNavLinkClass("/", "#servicios")}
                     onClick={handleLinkClick}
                   >
-                    Servicios
+                    Nuestros metodos
                   </Link>
                 </li>
-                <li className="nav-item w-100 w-lg-auto">
+
+                {/* Submenú de Servicios con Hover */}
+                <li
+                  className="nav-item dropdown w-100 w-lg-auto"
+                  ref={serviciosRef}
+                  onMouseEnter={handleMouseEnterServicios}
+                  onMouseLeave={handleMouseLeaveServicios}
+                >
                   <Link
                     to="/metodologia"
-                    className={getNavLinkClass("/metodologia")}
+                    className={`nav-link dropdown-toggle w-100 ${
+                      location.pathname.startsWith("/metodologia")
+                        ? "text-success fw-bold"
+                        : ""
+                    }`}
                     onClick={handleLinkClick}
+                    aria-expanded={isServiciosOpen}
                   >
-                    Nuestro Método
+                    Servicios
                   </Link>
+                  <ul
+                    className={`dropdown-menu border-0 shadow-sm text-center text-lg-start ${
+                      isServiciosOpen ? "show" : ""
+                    }`}
+                    style={{
+                      display: isServiciosOpen ? "block" : "none",
+                      marginTop: "0.5rem",
+                      position: isMobileMenuOpen ? "static" : "absolute",
+                    }}
+                  >
+                    <li>
+                      <Link
+                        className={`dropdown-item py-2 ${
+                          location.pathname === "/metodologia" && !location.hash
+                            ? "text-success fw-bold bg-light"
+                            : ""
+                        }`}
+                        to="/metodologia"
+                        onClick={handleLinkClick}
+                      >
+                        Calculadora de Triage
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        className={`dropdown-item py-2 ${
+                          location.hash === "#catalogo"
+                            ? "text-success fw-bold bg-light"
+                            : ""
+                        }`}
+                        to="/metodologia#catalogo"
+                        onClick={handleLinkClick}
+                      >
+                        Catálogo Clínico
+                      </Link>
+                    </li>
+                  </ul>
                 </li>
+
                 <li className="nav-item w-100 w-lg-auto">
                   <Link
                     to="/testimonios"
@@ -182,16 +261,23 @@ export default function Navbar(): JSX.Element {
                   </Link>
                 </li>
 
+                {/* Submenú de Recursos con Hover */}
                 <li
                   className="nav-item dropdown w-100 w-lg-auto"
                   ref={recursosRef}
+                  onMouseEnter={handleMouseEnterRecursos}
+                  onMouseLeave={handleMouseLeaveRecursos}
                 >
                   <a
                     href="#recursos"
                     className={`nav-link dropdown-toggle w-100 ${
                       isRecursosActive ? "text-success fw-bold" : ""
                     }`}
-                    onClick={toggleRecursos}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsDropdownOpen(!isDropdownOpen);
+                      setIsServiciosOpen(false);
+                    }}
                     aria-expanded={isDropdownOpen}
                   >
                     Recursos
@@ -277,7 +363,8 @@ export default function Navbar(): JSX.Element {
                       className="btn btn-success btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm w-100 w-lg-auto text-nowrap"
                       onClick={handleLinkClick}
                     >
-                      {sesionActual?.rol === "nutricionista" || sesionActual?.rol === "admin"
+                      {sesionActual?.rol === "nutricionista" ||
+                      sesionActual?.rol === "admin"
                         ? "Mi Perfil"
                         : "Mi Perfil"}
                     </Link>

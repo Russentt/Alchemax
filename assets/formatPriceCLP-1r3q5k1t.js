@@ -1,0 +1,1 @@
+var e=new Intl.NumberFormat(`es-CL`,{style:`currency`,currency:`CLP`});function t(t){return e.format(t)}export{t};

@@ -82,7 +82,7 @@ export default function Register() {
     return { errores: nuevosErrores, isValid: Object.keys(nuevosErrores).length === 0, nombreLimpio, emailLimpio };
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     const { errores, isValid, nombreLimpio, emailLimpio } = validarFormulario();
@@ -92,7 +92,7 @@ export default function Register() {
       return;
     }
 
-    const guardado = StorageUsuario.registrarUsuario({
+    const guardado = await StorageUsuario.registrarUsuario({
       nombre: nombreLimpio,
       fechaNacimiento: formData.fechaNacimiento,
       genero: formData.genero,

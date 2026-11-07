@@ -189,7 +189,7 @@ export default function Account(): JSX.Element {
     setPasswordError("");
   };
 
-  const handleSaveProfile = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setPasswordError("");
 
@@ -225,7 +225,7 @@ export default function Account(): JSX.Element {
         }
       }
 
-      const updatedUser: Usuario = {
+      const updatedUser:  Usuario = {
         ...profileForm,
         fotoPerfil: profileForm.fotoPerfil, // Asegura que si es undefined se actualice
         ...(isChangingPassword && nuevaPassword.trim() !== ""
@@ -233,7 +233,7 @@ export default function Account(): JSX.Element {
           : {}),
       };
 
-      const resultado = StorageUsuario.updateUsuario(
+      const resultado = await StorageUsuario.updateUsuario(
         updatedUser,
         usuario.email,
       );

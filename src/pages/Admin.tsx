@@ -24,7 +24,7 @@ export default function Admin(): JSX.Element {
   }, [navigate]);
 
   // Estados Globales
-  const [usuarios, setUsuarios] = useState<Usuario[]>(() => StorageUsuario.getUsuarios());
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [emailOriginal, setEmailOriginal] = useState<string>("");
   const [notificacion, setNotificacion] = useState<{ texto: string; tipo: "info" | "success" | "danger"; } | null>(null);
@@ -118,7 +118,15 @@ export default function Admin(): JSX.Element {
   // Helpers de Carga
   const cargarCategorias = () => setCategorias(StorageCategorias.getCategorias());
   const cargarServicios = () => setServicios(StorageServicios.getServicios());
-  const cargarUsuario = () => setUsuarios(StorageUsuario.getUsuarios());
+
+  const cargarUsuarios = async () => {
+    const data = await StorageUsuario.getUsuarios();
+    setUsuarios(data);
+  };
+
+  useEffect(() => {
+    cargarUsuarios();
+  }, []);
 
   // Handlers Categorías
   const handleGuardarCategoria = (datos: Omit<Categoria, "id" | "serviciosAsociados">) => {
@@ -174,32 +182,37 @@ export default function Admin(): JSX.Element {
   };
 
   // Handlers Usuarios
-  const handleCrearUsuario = (nuevoUsuario: Usuario) => {
-    const usuariosActuales = StorageUsuario.getUsuarios();
-    if (usuariosActuales.some((u) => u.email.toLowerCase() === nuevoUsuario.email.toLowerCase())) {
-      return mostrarNotificacion("La identidad de red ya existe.", "danger");
+  const handleCrearUsuario = async (nuevoUsuario: Usuario) => {
+    const res = await StorageUsuario.registrarUsuario(nuevoUsuario);
+
+    if (!res.success) {
+      return mostrarNotificacion(res.mensaje, "danger");
     }
-    usuariosActuales.push(nuevoUsuario);
-    localStorage.setItem("db_usuarios", JSON.stringify(usuariosActuales));
-    cargarUsuario();
+
+    await cargarUsuarios();
     setModalCrearUsuario(false);
-    mostrarNotificacion("Identidad registrada exitosamente.", "success");
+    mostrarNotificacion("Usuario registrado exitosamente.", "success");
   };
 
-  const confirmarEliminacion = () => {
-    if (!usuarioAEliminar) return;
-    StorageUsuario.deleteUsuario(usuarioAEliminar.email);
-    cargarUsuario();
-    mostrarNotificacion(`Identidad revocada del sistema.`, "success");
+  const confirmarEliminacion = async () => {
+    if (!usuarioAEliminar || !usuarioAEliminar.id) return;
+    const res = await StorageUsuario.deleteUsuario(Number(usuarioAEliminar.id));
+    if (res.success) {
+      await cargarUsuarios();
+      mostrarNotificacion("Identidad revocada del sistema.", "success");
+    } else {
+      mostrarNotificacion(res.mensaje, "danger");
+    }
+
     setUsuarioAEliminar(null);
   };
 
-  const guardarEdicion = (usuarioActualizado: Usuario) => {
-    const res = StorageUsuario.updateUsuario(usuarioActualizado, emailOriginal);
-    if (!res.success) return mostrarNotificacion(res.mensaje, "danger");
-    cargarUsuario();
-    mostrarNotificacion("Identidad actualizada.", "success");
-    setUsuarioAEditar(null);
+  const guardarEdicion = async (usuarioActualizado: Usuario) => {
+  const res = await StorageUsuario.updateUsuario(usuarioActualizado, emailOriginal);
+  if (!res.success) return mostrarNotificacion(res.mensaje, "danger");
+  await cargarUsuarios();
+  mostrarNotificacion("Identidad actualizada.", "success");
+  setUsuarioAEditar(null);
   };
 
   const usuariosFiltrados = usuarios.filter((u) => 
@@ -234,7 +247,7 @@ export default function Admin(): JSX.Element {
     }
   };
 
-  const handleTerminalCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleTerminalCommand = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       const cmd = currentCmd.trim();
       const newHistory = [...terminalHistory, { id: `in-${Date.now()}`, type: 'cmd' as const, content: cmd }];
@@ -316,15 +329,22 @@ export default function Admin(): JSX.Element {
           break;
         case "useradd":
           if (args[1] && args[2] && args[3]) {
-            const newU: Usuario = { email: args[1], nombre: args[2], rol: args[3] as any, password: "password123", genero: "otro", fechaNacimiento: "1990-01-01" };
-            const uList = StorageUsuario.getUsuarios();
-            if(uList.some(u => u.email === newU.email)) {
-              output = `useradd: el correo ${newU.email} ya existe en el sistema.`;
-            } else {
-              uList.push(newU);
-              localStorage.setItem("db_usuarios", JSON.stringify(uList));
-              cargarUsuario();
+            const newU: Omit<Usuario, "id"> = {
+              email: args[1],
+              nombre: args[2],
+              rol: args[3] as any,
+              password: "password123",
+              genero: "otro",
+              fechaNacimiento: "1990-01-01",
+            };
+
+            const res = await StorageUsuario.registrarUsuario(newU);
+
+            if (res.success) {
+              await cargarUsuarios();
               output = `Usuario ${newU.email} creado con éxito.`;
+            } else {
+              output = `useradd: ${res.mensaje}`;
             }
           } else {
             output = "useradd: faltan argumentos. Uso: useradd [email] [nombre] [rol]";
@@ -332,20 +352,26 @@ export default function Admin(): JSX.Element {
           break;
         case "userdel":
           if (args[1]) {
-            StorageUsuario.deleteUsuario(args[1]);
-            cargarUsuario();
-            output = `Usuario ${args[1]} eliminado del sistema.`;
+            const correoAEliminar = args[1].trim().toLowerCase();
+            
+            const targetUser = usuarios.find(
+              (u) => u.email.toLowerCase() === correoAEliminar
+            );
+
+            if (targetUser && targetUser.id) {
+              const res = await StorageUsuario.deleteUsuario(Number(targetUser.id));
+
+              if (res.success) {
+                await cargarUsuarios();
+                output = `Usuario ${args[1]} eliminado del sistema.`;
+              } else {
+                output = `userdel: ${res.mensaje}`;
+              }
+            } else {
+              output = `userdel: no se encontró ningún usuario con el correo '${args[1]}'.`;
+            }
           } else {
             output = "userdel: faltan argumentos. Uso: userdel [email]";
-          }
-          break;
-        case "svctoggle":
-          if (args[1]) {
-            StorageServicios.toggleEstado(args[1]);
-            cargarServicios();
-            output = `Estado del servicio ${args[1]} alternado exitosamente.`;
-          } else {
-            output = "svctoggle: faltan argumentos. Uso: svctoggle [id]";
           }
           break;
         default:

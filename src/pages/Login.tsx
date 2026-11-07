@@ -6,7 +6,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -16,7 +16,7 @@ export default function Login() {
     const password = form.get("password") as string;
 
     // Validar con el localStorage[cite: 4]
-    const usuarioValido = StorageUsuario.login(email, password);
+    const usuarioValido = await StorageUsuario.login(email, password);
 
     if (!usuarioValido) {
       setError("Correo o contraseña incorrectos.");

@@ -1,105 +1,129 @@
 import type { Usuario } from "../types/index";
+import { api } from "../api/axiosConfig";
+
+const SESION_KEY = "db_sesion";
 
 export const StorageUsuario = {
-  getUsuarios: (): Usuario[] =>
-    JSON.parse(localStorage.getItem("db_usuarios") || "[]"),
+  getUsuarios: async (): Promise<Usuario[]> => {
+    try {
+      const response = await api.get<Usuario[]>("/api/usuarios");
+      return response.data;
+    } catch (error) {
+      console.error("Error al obtener usuarios", error)
+      return [];
+    }
+  },
 
   getUsuarioSesion: (): Usuario | null => {
-    const sesion = localStorage.getItem("db_sesion");
+    const sesion = localStorage.getItem(SESION_KEY);
     return sesion ? JSON.parse(sesion) : null;
   },
 
-  registrarUsuario: (
-    nuevoUsuario: Usuario,
-  ): { success: boolean; mensaje: string } => {
-    const usuarios = StorageUsuario.getUsuarios();
-
-    const existe = usuarios.some(
-      (u) => u.email.toLowerCase() === nuevoUsuario.email.toLowerCase(),
-    );
-
-    if (existe) {
-      return {
-        success: false,
-        mensaje: "El correo ya se encuentra registrado.",
-      };
-    }
-
-    usuarios.push(nuevoUsuario);
-    localStorage.setItem("db_usuarios", JSON.stringify(usuarios));
-    return { success: true, mensaje: "Usuario registrado con éxito." };
+  logout: (): void => {
+    localStorage.removeItem(SESION_KEY);
   },
 
-  login: (email: string, pass: string): Usuario | null => {
-    const usuarios = StorageUsuario.getUsuarios();
+  registrarUsuario: async (
+    nuevoUsuario: Omit<Usuario, "id">,
+  ): Promise<{ success: boolean; mensaje: string; usuario?: Usuario }> => {
+    try {
+      
+      const response = await api.post<Usuario>("/api/usuarios", nuevoUsuario);
+
+      if (response.status === 201 || response.status === 200) {
+        return {
+          success: true,
+          mensaje: "Usuario registrado con éxito.",
+          usuario: response.data,
+        };
+      }
+
+      return { success: false, mensaje: "No se pudo registrar el usuario." };
+    } catch (error: any) {
+      console.error("Error al registrar usuario:", error);
+      const mensajeError =
+        error.response?.data?.message || "Error al conectar con el servidor.";
+      return { success: false, mensaje: mensajeError };
+    }
+  },
+
+  login: async (email: string, pass: string): Promise <Usuario | null> => {
+    const usuarios = await StorageUsuario.getUsuarios();
     const usuarioValido = usuarios.find(
       (u) =>
         u.email.toLowerCase() === email.toLowerCase() && u.password === pass,
     );
 
     if (usuarioValido) {
-      localStorage.setItem("db_sesion", JSON.stringify(usuarioValido));
+      localStorage.setItem(SESION_KEY, JSON.stringify(usuarioValido));
       return usuarioValido;
     }
     return null;
   },
 
-  logout: (): void => {
-    localStorage.removeItem("db_sesion");
-  },
-
-  updateUsuario: (
+  updateUsuario: async (
     usuarioActualizado: Usuario,
     emailOriginal?: string,
-  ): { success: boolean; mensaje: string } => {
-    const usuarios = StorageUsuario.getUsuarios();
-    const sesionActual = StorageUsuario.getUsuarioSesion();
+  ): Promise<{ success: boolean; mensaje: string }> => {
+    try {
+      const usuarios = await StorageUsuario.getUsuarios();
 
-    const correoBuscar = (emailOriginal || usuarioActualizado.email).toLowerCase();
+      if (
+        emailOriginal &&
+        emailOriginal.toLowerCase() !== usuarioActualizado.email.toLowerCase()
+      ) {
+        const correoDuplicado = usuarios.some(
+          (u) =>
+            u.id !== usuarioActualizado.id &&
+            u.email.toLowerCase() === usuarioActualizado.email.toLowerCase(),
+        );
 
-    // Validar si intentó cambiar a un correo que ya tiene otra persona
-    if (
-      emailOriginal &&
-      emailOriginal.toLowerCase() !== usuarioActualizado.email.toLowerCase()
-    ) {
-      const correoDuplicado = usuarios.some(
-        (u) => u.email.toLowerCase() === usuarioActualizado.email.toLowerCase(),
-      );
-
-      if (correoDuplicado) {
-        return {
-          success: false,
-          mensaje: "Correo invalido, intenta con otro.",
-        };
+        if (correoDuplicado) {
+          return {
+            success: false,
+            mensaje: "Correo invalido.",
+          };
+        }
       }
-    }
 
-    // Actualizar la lista mapeando por el correo de búsqueda
-    const usuariosNuevos = usuarios.map((u) => {
-      if (u.email.toLowerCase() === correoBuscar) {
-        return { ...u, ...usuarioActualizado };
+      let idObjetivo = usuarioActualizado.id;
+      if (!idObjetivo) {
+        const correoBuscar = (emailOriginal || usuarioActualizado.email).toLowerCase();
+        const coincidencia = usuarios.find((u) => u.email.toLowerCase() === correoBuscar);
+        idObjetivo = coincidencia?.id;
       }
-      return u;
-    });
 
-    localStorage.setItem("db_usuarios", JSON.stringify(usuariosNuevos));
+      if (!idObjetivo) {
+        return { success: false, mensaje: "No se encontró el ID del usuario." };
+      }
 
-    // Si la sesión activa pertenecía a este usuario, actualizar también la sesion
-    if (sesionActual && sesionActual.email.toLowerCase() === correoBuscar) {
-      localStorage.setItem(
-        "db_sesion",
-        JSON.stringify({ ...sesionActual, ...usuarioActualizado }),
-      );
+      const response = await api.put<Usuario>(`/api/usuarios/${idObjetivo}`, usuarioActualizado);
+
+      const sesionActual = StorageUsuario.getUsuarioSesion();
+      if (sesionActual && sesionActual.id === idObjetivo) {
+        localStorage.setItem(SESION_KEY, JSON.stringify(response.data));
+      }
+
+      return { success: true, mensaje: "Usuario actualizado con éxito." };
+    } catch (error) {
+      console.error("Error al actualizar usuario:", error);
+      return { success: false, mensaje: "Error al actualizar en el servidor." };
     }
-
-    return { success: true, mensaje: "Usuario actualizado con éxito." };
   },
 
-  deleteUsuario: (email: string): void => {
-    const usuarios = StorageUsuario.getUsuarios();
-    const filtrados = usuarios.filter(
-      (u) => u.email.toLowerCase() !== email.toLowerCase(),
-    );
-    localStorage.setItem("db_usuarios", JSON.stringify(filtrados));
+  deleteUsuario: async (id: number): Promise<{ success: boolean; mensaje: string }> => {
+    try {
+      await api.delete(`/api/usuarios/${id}`);
+
+      const sesionActual = StorageUsuario.getUsuarioSesion();
+      if (sesionActual && sesionActual.id === id) {
+        StorageUsuario.logout();
+      }
+
+      return { success: true, mensaje: "Usuario eliminado con éxito." };
+    } catch (error) {
+      console.error("Error al eliminar usuario:", error);
+      return { success: false, mensaje: "Error al eliminar en el servidor." };
+    }
   },
 };

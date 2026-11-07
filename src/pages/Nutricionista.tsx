@@ -163,12 +163,20 @@ export default function Nutricionista(): JSX.Element {
   // =========================================================
   // 3. DATOS DE USUARIOS Y PACIENTES
   // =========================================================
-  const [pacientes, setPacientes] = useState<Usuario[]>(() =>
-    StorageUsuario.getUsuarios().filter((u) => u.rol === "usuario"),
-  );
+  const [pacientes, setPacientes] = useState<Usuario[]>([]);
 
-  const cargarDatosClinicos = () => {
-    const todosUsuarios = StorageUsuario.getUsuarios();
+  useEffect(() => {
+    const cargarPacientes = async () => {
+      const todosLosUsuarios = await StorageUsuario.getUsuarios();
+      const soloPacientes = todosLosUsuarios.filter((u) => u.rol === "usuario");
+      setPacientes(soloPacientes);
+    };
+
+    cargarPacientes();
+  }, []);
+
+  const cargarDatosClinicos = async () => {
+    const todosUsuarios = await StorageUsuario.getUsuarios();
     setPacientes(todosUsuarios.filter((u) => u.rol === "usuario"));
     setExamenes(PlanService.getExamenes());
     setPlanActivo(PlanService.getPlan());

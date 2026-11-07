@@ -1,5 +1,5 @@
 export interface Usuario {
-    id?: string;
+    id?: number;
     nombre: string;
     email: string;
     genero: "masculino" | "femenino" | "otro" | string;

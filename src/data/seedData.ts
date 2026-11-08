@@ -1,7 +1,6 @@
 export const SEED_DATA = {
   usuarios: [
     {
-      id: "u-1",
       nombre: "Administrador",
       email: "admin@gmail.com",
       password: "admin123",
@@ -10,7 +9,6 @@ export const SEED_DATA = {
       rol: "admin" as const,
     },
     {
-      id: "u-2",
       nombre: "Camila Andrea Soto",
       email: "camila.soto@gmail.com",
       password: "user123",
@@ -19,7 +17,6 @@ export const SEED_DATA = {
       rol: "usuario" as const,
     },
     {
-      id: "u-3",
       nombre: "Michael Jackson",
       email: "michael@gmail.com",
       password: "nutri123",

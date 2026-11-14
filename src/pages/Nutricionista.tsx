@@ -68,20 +68,23 @@ export default function Nutricionista(): JSX.Element {
   // =========================================================
   // 1. GESTIÓN DE CATEGORÍAS
   // =========================================================
-  const [categorias, setCategorias] = useState<Categoria[]>(() =>
-    StorageCategorias.getCategorias(),
-  );
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
 
-  const cargarCategorias = () => {
-    setCategorias(StorageCategorias.getCategorias());
+  const cargarCategorias = async () => {
+    const data = await StorageCategorias.getCategorias();
+    setCategorias(data);
   };
 
-  const handleGuardarCategoria = (
+  useEffect(() => {
+    cargarCategorias();
+  }, []);
+
+  const handleGuardarCategoria = async (
     datos: Omit<Categoria, "id" | "serviciosAsociados">,
     categoriaEditar: Categoria | null,
-  ): boolean => {
+  ): Promise<boolean> => {
     if (categoriaEditar) {
-      const res = StorageCategorias.updateCategoria({
+      const res = await StorageCategorias.updateCategoria({
         ...categoriaEditar,
         ...datos,
       });
@@ -91,44 +94,52 @@ export default function Nutricionista(): JSX.Element {
       }
       mostrarNotificacion("Categoría actualizada correctamente.", "success");
     } else {
-      const res = StorageCategorias.crearCategoria(datos);
+      const res = await StorageCategorias.crearCategoria(datos);
       if (!res.success) {
         mostrarNotificacion(res.mensaje, "danger");
         return false;
       }
       mostrarNotificacion("Nueva categoría creada.", "success");
     }
-    cargarCategorias();
+
+    await cargarCategorias();
     return true;
   };
 
-  const eliminarCategoria = (categoria: Categoria) => {
-    StorageCategorias.deleteCategoria(categoria.id);
-    cargarCategorias();
+  const eliminarCategoria = async (categoria: Categoria) => {
+    await StorageCategorias.deleteCategoria(categoria.id);
+    await cargarCategorias();
     mostrarNotificacion(`Categoría "${categoria.nombre}" eliminada.`, "success");
   };
 
   // =========================================================
   // 2. GESTIÓN DE SERVICIOS
   // =========================================================
-  const [servicios, setServicios] = useState<Servicio[]>(() =>
-    StorageServicios.getServicios(),
-  );
+  const [servicios, setServicios] = useState<Servicio[]>([]);
 
-  const cargarServicios = () => {
-    setServicios(StorageServicios.getServicios());
+  const cargarServicios = async () => {
+    const data = await StorageServicios.getServicios();
+    setServicios(data);
   };
 
-  const handleGuardarServicio = (
+  useEffect(() => {
+    cargarServicios();
+  }, []);
+  const handleGuardarServicio = async (
     datos: Omit<Servicio, "id" | "estado">,
-    servicioAEditar: Servicio | null,
-  ): boolean => {
-    const categoriaEncontrada = categorias.find((c) => c.id === datos.categoriaId);
-    const nombreCategoria = categoriaEncontrada ? categoriaEncontrada.nombre : "General";
+    servicioEditar?: Servicio | null,
+  ): Promise<boolean> => {
+    const objetivo = servicioEditar ?? servicioEditar;
+    const categoriaEncontrada = categorias.find(
+      (c) => Number(c.id) === Number(datos.categoriaId),
+    );
+    const nombreCategoria = categoriaEncontrada
+      ? categoriaEncontrada.nombre
+      : "General";
 
-    if (servicioAEditar) {
-      const res = StorageServicios.updateServicio({
-        ...servicioAEditar,
+    if (objetivo) {
+      const res = await StorageServicios.updateServicio({
+        ...objetivo,
         ...datos,
         categoriaNombre: nombreCategoria,
       });
@@ -138,7 +149,7 @@ export default function Nutricionista(): JSX.Element {
       }
       mostrarNotificacion("Plan o servicio actualizado.", "success");
     } else {
-      const res = StorageServicios.crearServicio({
+      const res = await StorageServicios.crearServicio({
         ...datos,
         categoriaNombre: nombreCategoria,
         estado: "Activo",
@@ -149,15 +160,15 @@ export default function Nutricionista(): JSX.Element {
       }
       mostrarNotificacion("Nuevo plan publicado en el catálogo.", "success");
     }
-    cargarServicios();
-    cargarCategorias();
+
+    await cargarServicios();
+    await cargarCategorias();
     return true;
   };
 
-  const handleToggleEstado = (id: string) => {
-    StorageServicios.toggleEstado(id);
-    cargarServicios();
-    mostrarNotificacion("Visibilidad del servicio actualizada.", "info");
+  const handleToggleEstado = async (id: number): Promise<void> => {
+    await StorageServicios.toggleEstado(id);
+    await cargarServicios();
   };
 
   // =========================================================

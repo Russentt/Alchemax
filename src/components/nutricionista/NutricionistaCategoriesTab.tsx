@@ -7,8 +7,8 @@ interface NutricionistaCategoriesTabProps {
   onSave: (
     datos: Omit<Categoria, "id" | "serviciosAsociados">,
     categoriaEditar: Categoria | null,
-  ) => boolean;
-  onDelete: (categoria: Categoria) => void;
+  ) => Promise<boolean>; // 👈 Antes decía: boolean
+  onDelete: (categoria: Categoria) => Promise<void> | void;
 }
 
 export default function NutricionistaCategoriesTab({

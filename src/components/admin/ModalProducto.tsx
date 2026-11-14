@@ -12,7 +12,7 @@ interface ModalProductoProps {
         precio: number;
         tipo: "evaluacion" | "plan" | "control";
         icono: string;
-        categoriaId: string;
+        categoriaId: number;
     }) => void;
 }
 
@@ -77,7 +77,7 @@ function ModalProductoContent({
                             <select
                                 className="form-select bg-dark text-white border-secondary shadow-none font-monospace"
                                 value={form.categoriaId}
-                                onChange={(e) => setForm({ ...form, categoriaId: e.target.value })}
+                                onChange={(e) => setForm({ ...form, categoriaId: Number(e.target.value)})}
                                 required
                             >
                                 <option value="">Seleccionar categoría</option>

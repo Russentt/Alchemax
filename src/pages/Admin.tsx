@@ -23,6 +23,10 @@ export default function Admin(): JSX.Element {
     }
   }, [navigate]);
 
+  useEffect(() => {
+  cargarCategorias();
+}, []);
+
   // Estados Globales
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [busqueda, setBusqueda] = useState("");
@@ -30,13 +34,23 @@ export default function Admin(): JSX.Element {
   const [notificacion, setNotificacion] = useState<{ texto: string; tipo: "info" | "success" | "danger"; } | null>(null);
 
   // Estados Categorías
-  const [categorias, setCategorias] = useState<Categoria[]>(() => StorageCategorias.getCategorias());
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaEditar, setCategoriaEditar] = useState<Categoria | null>(null);
   const [categoriaEliminar, setCategoriaEliminar] = useState<Categoria | null>(null);
   const [modalCrearCategoria, setModalCrearCategoria] = useState(false);
 
   // Estados Servicios
-  const [servicios, setServicios] = useState<Servicio[]>(() => StorageServicios.getServicios());
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+
+  const cargarServicios = async () => {
+    const data = await StorageServicios.getServicios();
+    setServicios(data);
+  };
+
+  useEffect(() => {
+    cargarServicios();
+  }, []);
+
   const [busquedaServicios, setBusquedaServicios] = useState("");
   const [paginaServicios, setPaginaServicios] = useState(1);
   const serviciosPorPagina = 5;
@@ -116,8 +130,7 @@ export default function Admin(): JSX.Element {
   }, [activeTab]);
 
   // Helpers de Carga
-  const cargarCategorias = () => setCategorias(StorageCategorias.getCategorias());
-  const cargarServicios = () => setServicios(StorageServicios.getServicios());
+  const cargarCategorias = async () => { const data = await StorageCategorias.getCategorias();setCategorias(data);};
 
   const cargarUsuarios = async () => {
     const data = await StorageUsuario.getUsuarios();
@@ -129,13 +142,13 @@ export default function Admin(): JSX.Element {
   }, []);
 
   // Handlers Categorías
-  const handleGuardarCategoria = (datos: Omit<Categoria, "id" | "serviciosAsociados">) => {
+  const handleGuardarCategoria = async (datos: Omit<Categoria, "id" | "serviciosAsociados">) => {
     if (categoriaEditar) {
-      const res = StorageCategorias.updateCategoria({ ...categoriaEditar, ...datos });
+      const res = await StorageCategorias.updateCategoria({ ...categoriaEditar, ...datos });
       if (!res.success) return mostrarNotificacion(res.mensaje, "danger");
       mostrarNotificacion("Área de especialidad actualizada", "success");
     } else {
-      const res = StorageCategorias.crearCategoria(datos);
+      const res = await StorageCategorias.crearCategoria(datos);
       if (!res.success) return mostrarNotificacion(res.mensaje, "danger");
       mostrarNotificacion("Área de especialidad creada", "success");
     }
@@ -144,11 +157,29 @@ export default function Admin(): JSX.Element {
     setCategoriaEditar(null);
   };
 
-  const EliminarCategoria = () => {
+  const EliminarCategoria = async () => {
     if (!categoriaEliminar) return;
-    StorageCategorias.deleteCategoria(categoriaEliminar.id);
-    cargarCategorias();
-    mostrarNotificacion(`Área "${categoriaEliminar.nombre}" eliminada`, "success");
+
+    const vinculados = servicios.filter(
+      (s) => Number(s.categoriaId) === Number(categoriaEliminar.id)
+    ).length;
+
+    if (vinculados > 0) {
+      mostrarNotificacion(
+        `No puedes eliminar "${categoriaEliminar.nombre}" porque tiene ${vinculados} servicio(s) asociado(s).`,
+        "danger"
+      );
+      setCategoriaEliminar(null);
+      return;
+    }
+
+    try {
+      await StorageCategorias.deleteCategoria(categoriaEliminar.id);
+      await cargarCategorias();
+      mostrarNotificacion(`Área "${categoriaEliminar.nombre}" eliminada`, "success");
+    } catch {
+      mostrarNotificacion("Error al eliminar la categoría.", "danger");
+    }
     setCategoriaEliminar(null);
   };
 
@@ -156,16 +187,17 @@ export default function Admin(): JSX.Element {
   const abrirCrearServicio = () => { setServicioAEditar(null); setModalProducto(true); };
   const abrirEditarServicio = (item: Servicio) => { setServicioAEditar(item); setModalProducto(true); };
 
-  const handleGuardarServicio = (datos: Omit<Servicio, "id" | "estado">) => {
-    const categoriaEncontrada = categorias.find((c) => c.id === datos.categoriaId);
+  const handleGuardarServicio = async (datos: Omit<Servicio, "id" | "estado">) => {
+    const categoriaEncontrada = categorias.find(
+(c) => Number(c.id) === Number(datos.categoriaId),);
     const nombreCategoria = categoriaEncontrada ? categoriaEncontrada.nombre : "General";
 
     if (servicioAEditar) {
-      const res = StorageServicios.updateServicio({ ...servicioAEditar, ...datos, categoriaNombre: nombreCategoria });
+      const res = await StorageServicios.updateServicio({ ...servicioAEditar, ...datos, categoriaNombre: nombreCategoria });
       if (!res.success) return mostrarNotificacion(res.mensaje, "danger");
       mostrarNotificacion("Servicio clínico actualizado", "success");
     } else {
-      const res = StorageServicios.crearServicio({ ...datos, categoriaNombre: nombreCategoria, estado: "Activo" });
+      const res = await StorageServicios.crearServicio({ ...datos, categoriaNombre: nombreCategoria, estado: "Activo" });
       if (!res.success) return mostrarNotificacion(res.mensaje, "danger");
       mostrarNotificacion("Servicio clínico creado", "success");
     }
@@ -175,9 +207,9 @@ export default function Admin(): JSX.Element {
     setServicioAEditar(null);
   };
 
-  const handleToggleEstado = (id: string) => {
-    StorageServicios.toggleEstado(id);
-    cargarServicios();
+  const handleToggleEstado = async (id: number) => {
+    await StorageServicios.toggleEstado(id);
+    await cargarServicios();
     mostrarNotificacion("Visibilidad de servicio actualizada.", "info");
   };
 
@@ -315,7 +347,7 @@ export default function Admin(): JSX.Element {
           break;
         case "catdel":
           if (args[1]) {
-            const catToDelete = categorias.find(c => c.id === args[1]);
+            const catToDelete = categorias.find((c) => Number(c.id) === Number(args[1]));
             if (catToDelete) {
               StorageCategorias.deleteCategoria(catToDelete.id);
               cargarCategorias();

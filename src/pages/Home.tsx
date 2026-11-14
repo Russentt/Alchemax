@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import { StorageServicios } from "../services/storageProductos";
 import { TiendaService } from "../services/tiendaService";
@@ -17,12 +17,19 @@ export default function Home(): JSX.Element {
   const [mostrarExito, setMostrarExito] = useState(false);
 
   // Estados de la Vitrina del Catálogo
-  const [serviciosPreview] = useState<Servicio[]>(() => {
-    const srvsGuardados = StorageServicios.getServicios() || [];
-    return srvsGuardados
-      .filter((s) => !s.estado || s.estado === "Activo")
-      .slice(0, 3);
-  });
+  const [serviciosPreview, setServiciosPreview] = useState<Servicio[]>([]);
+
+  useEffect(() => {
+    const cargarPreview = async () => {
+      const srvsGuardados = (await StorageServicios.getServicios()) || [];
+      setServiciosPreview(
+        srvsGuardados
+          .filter((s) => !s.estado || s.estado === "Activo")
+          .slice(0, 3)
+      );
+    };
+    cargarPreview();
+  }, []);
   const [notification, setNotification] = useState<{ message: string; type: "success" | "warning" } | null>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

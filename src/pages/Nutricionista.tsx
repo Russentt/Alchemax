@@ -817,8 +817,10 @@ export default function Nutricionista(): JSX.Element {
     return (
       <NutricionistaCategoriesTab
         categorias={categorias}
+        servicios={servicios}
         onSave={handleGuardarCategoria}
         onDelete={eliminarCategoria}
+        onError={(msg) => mostrarNotificacion(msg, "danger")}
       />
     );
   };

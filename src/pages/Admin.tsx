@@ -240,11 +240,23 @@ export default function Admin(): JSX.Element {
   };
 
   const guardarEdicion = async (usuarioActualizado: Usuario) => {
-  const res = await StorageUsuario.updateUsuario(usuarioActualizado, emailOriginal);
-  if (!res.success) return mostrarNotificacion(res.mensaje, "danger");
-  await cargarUsuarios();
-  mostrarNotificacion("Identidad actualizada.", "success");
-  setUsuarioAEditar(null);
+    const emailNormalizado = usuarioActualizado.email.trim().toLowerCase();
+    const duplicado = usuarios.some(
+      (u) =>
+        u.email.toLowerCase() === emailNormalizado &&
+        u.email.toLowerCase() !== emailOriginal.toLowerCase(),
+    );
+
+    if (duplicado) {
+      mostrarNotificacion("Ya existe otro usuario registrado con ese correo.", "danger");
+      return;
+    }
+
+    const res = await StorageUsuario.updateUsuario(usuarioActualizado, emailOriginal);
+    if (!res.success) return mostrarNotificacion(res.mensaje, "danger");
+    await cargarUsuarios();
+    mostrarNotificacion("Identidad actualizada.", "success");
+    setUsuarioAEditar(null);
   };
 
   const usuariosFiltrados = usuarios.filter((u) => 

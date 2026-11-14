@@ -68,6 +68,14 @@ export default function Account(): JSX.Element {
     profesional: "Nut. Andrea Valdés",
   });
 
+  useEffect(() => {
+    const cargarCompras = async () => {
+      const data = await TiendaService.getCompras();
+      setCompras(data);
+    };
+    cargarCompras();
+  }, []);
+
   // Nuevos Estados Interactivos para las Pestañas
   const [comidasCompletadas, setComidasCompletadas] = useState<string[]>([]);
   const [isAddingMetrica, setIsAddingMetrica] = useState<boolean>(false);
@@ -109,7 +117,7 @@ export default function Account(): JSX.Element {
       setPlan(PlanService.getPlan());
       setMetricas(PlanService.getMetricas());
       setExamenes(PlanService.getExamenes());
-      setCompras(TiendaService.getCompras());
+      TiendaService.getCompras().then(setCompras);
 
       // Cargar progreso diario de comidas desde localStorage
       const hoyKey = `comidas_${dbUser.email}_${new Date().toLocaleDateString("es-CL")}`;

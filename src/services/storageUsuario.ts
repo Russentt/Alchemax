@@ -3,6 +3,15 @@ import { api } from "../api/axiosConfig";
 
 const SESION_KEY = "db_sesion";
 
+let usuarioActual: Usuario | null = (() => {
+  try {
+    const raw = localStorage.getItem(SESION_KEY);
+    return raw ? (JSON.parse(raw) as Usuario) : null;
+  } catch {
+    return null;
+  }
+})();
+
 export const StorageUsuario = {
   getUsuarios: async (): Promise<Usuario[]> => {
     try {
@@ -15,11 +24,15 @@ export const StorageUsuario = {
   },
 
   getUsuarioSesion: (): Usuario | null => {
-    const sesion = localStorage.getItem(SESION_KEY);
-    return sesion ? JSON.parse(sesion) : null;
+    if (!usuarioActual) {
+      const raw = localStorage.getItem(SESION_KEY);
+      if (raw) usuarioActual = JSON.parse(raw);
+    }
+    return usuarioActual;
   },
 
   logout: (): void => {
+    usuarioActual = null;
     localStorage.removeItem(SESION_KEY);
   },
 
@@ -27,7 +40,6 @@ export const StorageUsuario = {
     nuevoUsuario: Omit<Usuario, "id">,
   ): Promise<{ success: boolean; mensaje: string; usuario?: Usuario }> => {
     try {
-      
       const response = await api.post<Usuario>("/api/usuarios", nuevoUsuario);
 
       if (response.status === 201 || response.status === 200) {
@@ -47,18 +59,22 @@ export const StorageUsuario = {
     }
   },
 
-  login: async (email: string, pass: string): Promise <Usuario | null> => {
-    const usuarios = await StorageUsuario.getUsuarios();
-    const usuarioValido = usuarios.find(
-      (u) =>
-        u.email.toLowerCase() === email.toLowerCase() && u.password === pass,
-    );
-
-    if (usuarioValido) {
-      localStorage.setItem(SESION_KEY, JSON.stringify(usuarioValido));
-      return usuarioValido;
+  login: async (email: string, pass: string): Promise<Usuario | null> => {
+    try {
+      const response = await api.post<Usuario>("/api/usuarios/login", {
+        email: email,
+        password: pass,
+      });
+      if (response.status === 200 && response.data) {
+        usuarioActual = response.data;
+        localStorage.setItem(SESION_KEY, JSON.stringify(usuarioActual));
+        return usuarioActual;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error al iniciar sesion: ", error);
+      return null;
     }
-    return null;
   },
 
   updateUsuario: async (
@@ -72,11 +88,16 @@ export const StorageUsuario = {
         emailOriginal &&
         emailOriginal.toLowerCase() !== usuarioActualizado.email.toLowerCase()
       ) {
-        const correoDuplicado = usuarios.some(
-          (u) =>
+        let correoDuplicado = false;
+        for (const u of usuarios) {
+          if (
             u.id !== usuarioActualizado.id &&
-            u.email.toLowerCase() === usuarioActualizado.email.toLowerCase(),
-        );
+            u.email.toLowerCase() === usuarioActualizado.email.toLowerCase()
+          ) {
+            correoDuplicado = true;
+            break;
+          }
+        }
 
         if (correoDuplicado) {
           return {
@@ -89,8 +110,12 @@ export const StorageUsuario = {
       let idObjetivo = usuarioActualizado.id;
       if (!idObjetivo) {
         const correoBuscar = (emailOriginal || usuarioActualizado.email).toLowerCase();
-        const coincidencia = usuarios.find((u) => u.email.toLowerCase() === correoBuscar);
-        idObjetivo = coincidencia?.id;
+        for (const u of usuarios) {
+          if (u.email.toLowerCase() === correoBuscar) {
+            idObjetivo = u.id;
+            break;
+          }
+        }
       }
 
       if (!idObjetivo) {
@@ -99,9 +124,8 @@ export const StorageUsuario = {
 
       const response = await api.put<Usuario>(`/api/usuarios/${idObjetivo}`, usuarioActualizado);
 
-      const sesionActual = StorageUsuario.getUsuarioSesion();
-      if (sesionActual && sesionActual.id === idObjetivo) {
-        localStorage.setItem(SESION_KEY, JSON.stringify(response.data));
+      if (usuarioActual && usuarioActual.id === idObjetivo) {
+        usuarioActual = response.data;
       }
 
       return { success: true, mensaje: "Usuario actualizado con éxito." };
@@ -115,8 +139,7 @@ export const StorageUsuario = {
     try {
       await api.delete(`/api/usuarios/${id}`);
 
-      const sesionActual = StorageUsuario.getUsuarioSesion();
-      if (sesionActual && sesionActual.id === id) {
+      if (usuarioActual && usuarioActual.id === id) {
         StorageUsuario.logout();
       }
 

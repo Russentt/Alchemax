@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import type { Categoria, Servicio } from "../types/index";
@@ -17,15 +17,27 @@ const chunkArray = <T,>(arr: T[], size: number): T[][] => {
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
 
-  const [servicios] = useState<Servicio[]>(() =>
-    StorageServicios.getServicios().filter(
-      (s) => !s.estado || s.estado === "Activo",
-    ),
-  );
-  const [categorias] = useState<Categoria[]>(() =>
-    StorageCategorias.getCategorias() || [],
-  );
-  const [categoriaActiva, setCategoriaActiva] = useState<string>("todas");
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+
+  const cargarServicios = async () => {
+    const data = await StorageServicios.getServicios();
+    setServicios(data);
+  };
+
+  useEffect(() => {
+    cargarServicios();
+  }, []);
+  
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaActiva, setCategoriaActiva] = useState<number | "todas">("todas");
+
+  useEffect(() => {
+    const cargarCategorias = async () => {
+      const data = await StorageCategorias.getCategorias();
+      setCategorias(data);
+    };
+    cargarCategorias();
+  }, []);
 
   // Nuevo estado para controlar el modal de redirección suave
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);

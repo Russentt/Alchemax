@@ -1,110 +1,147 @@
+import { api } from "../api/axiosConfig";
 import type { Servicio } from "../types/index";
 import { StorageCategorias } from "./storageCategorias";
 
+
+const mapearDesdeBackend = (item: any): Servicio => {
+  return {
+    id: Number(item.id),
+    nombre: item.nombre,
+    descripcion: item.descripcion,
+    precio: Number(item.precio),
+    tipo: (item.tipo ? item.tipo.toLowerCase() : "plan") as "evaluacion" | "plan" | "control",
+    icono: item.icono || "🥗",
+    categoriaId: Number(item.categoria?.id ?? item.categoriaId?.id ?? item.categoriaId ?? 0),
+    categoriaNombre: item.categoria?.nombre || item.categoriaNombre || "General",
+    estado: item.estado === false ? "Inactivo" : "Activo",
+  };
+};
+
+const mapearHaciaBackend = (servicio: Omit<Servicio, "id">) => {
+  return {
+    nombre: servicio.nombre,
+    descripcion: servicio.descripcion,
+    precio: Number(servicio.precio),
+    tipo: servicio.tipo,
+    icono: servicio.icono,
+    categoriaId: servicio.categoriaId
+  ? { id: Number(servicio.categoriaId) }
+  : null,
+    categoriaNombre: servicio.categoriaNombre,
+    estado: servicio.estado !== "Inactivo",
+  };
+};
+
 export const StorageServicios = {
-  // Obtener los servicios y productos
-  getServicios: (): Servicio[] => {
-    return JSON.parse(localStorage.getItem("db_servicios") || "[]");
+  getServicios: async (): Promise<Servicio[]> => {
+    try {
+      const response = await api.get<any[]>("/api/servicios");
+      return response.data.map(mapearDesdeBackend);
+    } catch (error) {
+      console.error("Error al obtener servicios:", error);
+      return [];
+    }
   },
 
-  crearServicio: (
+  crearServicio: async (
     servicio: Omit<Servicio, "id">,
-  ): { success: boolean; mensaje: string } => {
-    const servicios = StorageServicios.getServicios();
+  ): Promise<{ success: boolean; mensaje: string }> => {
+    try {
+      const servicios = await StorageServicios.getServicios();
+      const nombreNormalizado = servicio.nombre.trim().toLowerCase();
 
-    const existe = servicios.some(
-      (s) =>
-        s.nombre.trim().toLowerCase() === servicio.nombre.trim().toLowerCase(),
-    );
+      for (const s of servicios) {
+        if (s.nombre.trim().toLowerCase() === nombreNormalizado) {
+          return { success: false, mensaje: "El nombre del servicio ya existe" };
+        }
+      }
 
-    if (existe) {
-      return { success: false, mensaje: "EL nombre servicio ya existe" };
+      const payload = mapearHaciaBackend(servicio);
+      const response = await api.post("/api/servicios", payload);
+
+      if (response.status === 201 || response.status === 200) {
+        await StorageServicios.actualizarContadorCat();
+        return { success: true, mensaje: "Servicio creado exitosamente." };
+      }
+
+      return { success: false, mensaje: "No se pudo crear el servicio." };
+    } catch (error) {
+      console.error("Error al crear servicio:", error);
+      return { success: false, mensaje: "Error al conectar con el servidor." };
     }
-
-    const nuevoServicio: Servicio = {
-      ...servicio,
-      id: `PROD-${Date.now()}`,
-    };
-
-    servicios.push(nuevoServicio);
-    localStorage.setItem("db_servicios", JSON.stringify(servicios));
-
-    StorageServicios.actualizarContadorCat(servicios);
-
-    return { success: true, mensaje: "Servicio creado exitosamente." };
   },
 
-  updateServicio: (
+  updateServicio: async (
     servicioActualizado: Servicio,
-  ): { success: boolean; mensaje: string } => {
-    const servicios = StorageServicios.getServicios();
+  ): Promise<{ success: boolean; mensaje: string }> => {
+    try {
+      const servicios = await StorageServicios.getServicios();
+      const nombreNormalizado = servicioActualizado.nombre.trim().toLowerCase();
 
-    const existeNombre = servicios.some(
-      (s) =>
-        s.id !== servicioActualizado.id &&
-        s.nombre.trim().toLowerCase() ===
-          servicioActualizado.nombre.trim().toLowerCase(),
-    );
+      for (const s of servicios) {
+        if (
+          Number(s.id) !== Number(servicioActualizado.id) &&
+          s.nombre.trim().toLowerCase() === nombreNormalizado
+        ) {
+          return { success: false, mensaje: "Ese nombre ya está en uso" };
+        }
+      }
 
-    if (existeNombre) {
-      return { success: false, mensaje: "Ese nombre ya está en uso" };
+      const { id, ...sinId } = servicioActualizado;
+      const payload = mapearHaciaBackend(sinId);
+
+      await api.put(`/api/servicios/${id}`, payload);
+      await StorageServicios.actualizarContadorCat();
+
+      return { success: true, mensaje: "Servicio actualizado" };
+    } catch (error) {
+      console.error("Error al actualizar servicio:", error);
+      return { success: false, mensaje: "Error al actualizar en el servidor." };
     }
-
-    const nuevosServicios = servicios.map((s) =>
-      s.id === servicioActualizado.id ? servicioActualizado : s,
-    );
-
-    localStorage.setItem("db_servicios", JSON.stringify(nuevosServicios));
-    StorageServicios.actualizarContadorCat(nuevosServicios);
-
-    return { success: true, mensaje: "Servicio actualizado" };
   },
 
   // Cambiar estado del servicio
-  toggleEstado: (id: string): void => {
-    const servicios = StorageServicios.getServicios();
-    const actualizados = servicios.map((s) => {
-      if (s.id === id) {
-        return {
-          ...s,
-          estado: (s.estado === "Activo" ? "Inactivo" : "Activo") as
-            | "Activo"
-            | "Inactivo",
-        };
+  toggleEstado: async (id: number): Promise<void> => {
+    try {
+      await api.put(`/api/servicios/${id}/estado`);
+    } catch (error) {
+      console.error("Error al cambiar estado del servicio:", error);
+    }
+  },
+
+  deleteServicio: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/api/servicios/${id}`);
+      await StorageServicios.actualizarContadorCat();
+    } catch (error) {
+      console.error("Error al eliminar servicio:", error);
+    }
+  },
+
+  actualizarContadorCat: async (): Promise<void> => {
+    try {
+      const [servicios, categorias] = await Promise.all([
+        StorageServicios.getServicios(),
+        StorageCategorias.getCategorias(),
+      ]);
+
+      const conteoPorCategoria: Record<number, number> = {};
+      for (const s of servicios) {
+        const catId = Number(s.categoriaId);
+        conteoPorCategoria[catId] = (conteoPorCategoria[catId] || 0) + 1;
       }
-      return s;
-    });
-    localStorage.setItem("db_servicios", JSON.stringify(actualizados));
-  },
 
-  deleteServicio: (id: string): void => {
-    const servicios = StorageServicios.getServicios();
-    const filtrados = servicios.filter((s) => s.id !== id);
-    localStorage.setItem("db_servicios", JSON.stringify(filtrados));
-
-    StorageServicios.actualizarContadorCat(filtrados);
-  },
-
-  actualizarContadorCat: (
-    servicios: Servicio[] = StorageServicios.getServicios(),
-  ): void => {
-    const categorias = StorageCategorias.getCategorias();
-    const conteoPorCategoria = servicios.reduce(
-      (acc, s) => {
-        acc[s.categoriaId] = (acc[s.categoriaId] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-    const categoriasActualizadas = categorias.map((cat) => {
-      return {
-        ...cat,
-        serviciosAsociados: conteoPorCategoria[cat.id] || 0,
-      };
-    });
-    localStorage.setItem(
-      "db_categorias",
-      JSON.stringify(categoriasActualizadas),
-    );
+      for (const cat of categorias) {
+        const nuevoConteo = conteoPorCategoria[Number(cat.id)] || 0;
+        if (cat.serviciosAsociados !== nuevoConteo) {
+          await StorageCategorias.updateCategoria({
+            ...cat,
+            serviciosAsociados: nuevoConteo,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error al actualizar contador de categorías:", error);
+    }
   },
 };

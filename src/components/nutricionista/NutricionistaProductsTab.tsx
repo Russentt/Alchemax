@@ -8,9 +8,9 @@ interface NutricionistaProductsTabProps {
   categorias: Categoria[];
   onSave: (
     datos: Omit<Servicio, "id" | "estado">,
-    servicioEditar: Servicio | null,
-  ) => boolean;
-  onToggleState: (id: string) => void;
+    servicioEditar?: Servicio | null,
+  ) => Promise<boolean>;
+  onToggleState: (id: number) => Promise<void> | void;
 }
 
 export default function NutricionistaProductsTab({
@@ -33,7 +33,7 @@ export default function NutricionistaProductsTab({
       Boolean(
         servicio &&
           typeof servicio === "object" &&
-          typeof servicio.id === "string" &&
+          typeof servicio.id === "number" &&
           typeof servicio.nombre === "string",
       ),
   );
@@ -42,7 +42,7 @@ export default function NutricionistaProductsTab({
       Boolean(
         categoria &&
           typeof categoria === "object" &&
-          typeof categoria.id === "string" &&
+          typeof categoria.id === "number" &&
           typeof categoria.nombre === "string",
       ),
   );
@@ -96,8 +96,9 @@ export default function NutricionistaProductsTab({
     setModalAbierto(true);
   };
 
-  const guardarServicio = (datos: Omit<Servicio, "id" | "estado">) => {
-    if (!onSave(datos, servicioEditar)) return;
+  const guardarServicio = async (datos: Omit<Servicio, "id" | "estado">) => {
+    const exito = await onSave(datos, servicioEditar);
+    if (!exito) return;
     setModalAbierto(false);
     setServicioEditar(null);
   };

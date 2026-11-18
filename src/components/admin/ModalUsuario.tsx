@@ -27,13 +27,19 @@ function ModalUsuarioContent({
   onSave,
   onDeleteConfirm,
 }: ModalUsuarioProps): JSX.Element | null {
-  const [form, setForm] = useState<Usuario>(() => usuarioEditar ? { ...usuarioEditar } : {
-    nombre: "",
-    email: "",
-    genero: "otro",
-    rol: "usuario",
-    fechaNacimiento: "",
-  });
+  const [form, setForm] = useState<Usuario>(() =>
+    usuarioEditar
+      ? { ...usuarioEditar }
+      : {
+          nombre: "",
+          email: "",
+          genero: "otro",
+          rol: "usuario",
+          fechaNacimiento: "",
+        },
+  );
+
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   if (!usuarioEditar && !usuarioEliminar) return null;
 
@@ -53,11 +59,11 @@ function ModalUsuarioContent({
               <button type="button" className="btn-close" onClick={onClose} />
             </div>
             <div className="modal-body py-3">
-              <p className="mb-1 text-dark">
+              <p className="mb-1">
                 ¿Seguro que deseas eliminar a{" "}
                 <strong>{usuarioEliminar.nombre}</strong>?
               </p>
-              <small className="text-white">
+              <small className="opacity-75">
                 Correo: {usuarioEliminar.email}. Esta acción no se puede
                 deshacer.
               </small>
@@ -80,10 +86,57 @@ function ModalUsuarioContent({
     );
   }
 
-  //Modal Editar Usuario
-  const handleSubmit = (e: React.FormEvent) => {
+  const validarFormulario = () => {
+    const nuevosErrores: { [key: string]: string } = {};
+    const nombreLimpio = (form.nombre || "").trim();
+    const emailLimpio = (form.email || "").trim();
+
+    if (!nombreLimpio) {
+      nuevosErrores.nombre = "El nombre y apellido son obligatorios.";
+    } else if (nombreLimpio.length < 3) {
+      nuevosErrores.nombre = "El nombre debe tener al menos 3 caracteres.";
+    } else if (nombreLimpio.length > 60) {
+      nuevosErrores.nombre = "El nombre no puede superar los 60 caracteres.";
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailLimpio) {
+      nuevosErrores.email = "El correo electrónico es obligatorio.";
+    } else if (!emailRegex.test(emailLimpio)) {
+      nuevosErrores.email = "Ingresa un correo válido.";
+    } else if (!emailLimpio.toLowerCase().endsWith("@gmail.com")) {
+      nuevosErrores.email = "Solo se permiten correos @gmail.com.";
+    }
+
+    if (!form.rol) {
+      nuevosErrores.rol = "Selecciona un rol válido.";
+    }
+
+    return {
+      errores: nuevosErrores,
+      isValid: Object.keys(nuevosErrores).length === 0,
+      nombreLimpio,
+      emailLimpio,
+    };
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onSave(form);
+    e.stopPropagation();
+
+    const { errores, isValid, nombreLimpio, emailLimpio } = validarFormulario();
+
+    if (!isValid) {
+      setErrors(errores);
+      return;
+    }
+
+    setErrors({});
+    onSave({
+      ...form,
+      nombre: nombreLimpio,
+      email: emailLimpio,
+    });
   };
 
   return (
@@ -98,50 +151,90 @@ function ModalUsuarioContent({
             <h5 className="modal-title fw-bold">Editar Usuario</h5>
             <button type="button" className="btn-close" onClick={onClose} />
           </div>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="modal-body">
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-white">
+                <label className="form-label small fw-semibold">
                   Nombre Completo
                 </label>
+                {errors.nombre && (
+                  <div
+                    className="small fw-semibold mb-1 px-2 py-1 rounded"
+                    style={{
+                      color: "#ff6b6b",
+                      backgroundColor: "rgba(220, 53, 69, 0.15)",
+                    }}
+                  >
+                    ⚠️ {errors.nombre}
+                  </div>
+                )}
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.nombre ? "is-invalid" : ""}`}
                   value={form.nombre}
-                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setForm({ ...form, nombre: e.target.value });
+                    if (errors.nombre)
+                      setErrors((prev) => ({ ...prev, nombre: "" }));
+                  }}
                 />
               </div>
 
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-white">
+                <label className="form-label small fw-semibold">
                   Correo Electrónico
                 </label>
+                {errors.email && (
+                  <div
+                    className="small fw-semibold mb-1 px-2 py-1 rounded"
+                    style={{
+                      color: "#ff6b6b",
+                      backgroundColor: "rgba(220, 53, 69, 0.15)",
+                    }}
+                  >
+                    ⚠️ {errors.email}
+                  </div>
+                )}
                 <input
                   type="email"
-                  className="form-control"
+                  className={`form-control ${errors.email ? "is-invalid" : ""}`}
                   value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setForm({ ...form, email: e.target.value });
+                    if (errors.email)
+                      setErrors((prev) => ({ ...prev, email: "" }));
+                  }}
                 />
               </div>
 
               <div className="mb-3">
-                <label className="form-label small fw-semibold text-white">
+                <label className="form-label small fw-semibold">
                   Rol en el Sistema
                 </label>
+                {errors.rol && (
+                  <div
+                    className="small fw-semibold mb-1 px-2 py-1 rounded"
+                    style={{
+                      color: "#ff6b6b",
+                      backgroundColor: "rgba(220, 53, 69, 0.15)",
+                    }}
+                  >
+                    ⚠️ {errors.rol}
+                  </div>
+                )}
                 <select
-                  className="form-select"
+                  className={`form-select ${errors.rol ? "is-invalid" : ""}`}
                   value={form.rol}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setForm({
                       ...form,
                       rol: e.target.value as
                         | "admin"
                         | "usuario"
                         | "nutricionista",
-                    })
-                  }
+                    });
+                    if (errors.rol) setErrors((prev) => ({ ...prev, rol: "" }));
+                  }}
                 >
                   <option value="usuario">Paciente / Usuario</option>
                   <option value="admin">Administrador</option>

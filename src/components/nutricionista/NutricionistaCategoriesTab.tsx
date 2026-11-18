@@ -1,20 +1,24 @@
 import { useState, type JSX } from "react";
 import ModalCategoria from "../admin/ModalCategoria";
-import type { Categoria } from "../../types/index";
+import type { Categoria, Servicio } from "../../types/index";
 
 interface NutricionistaCategoriesTabProps {
-  categorias: Categoria[];
-  onSave: (
-    datos: Omit<Categoria, "id" | "serviciosAsociados">,
-    categoriaEditar: Categoria | null,
-  ) => Promise<boolean>; // 👈 Antes decía: boolean
-  onDelete: (categoria: Categoria) => Promise<void> | void;
+    categorias: Categoria[];
+    servicios?: Servicio[];
+    onSave: (
+      datos: Omit<Categoria, "id" | "serviciosAsociados">,
+      categoriaEditar: Categoria | null,
+    ) => Promise<boolean> | boolean;
+    onDelete: (categoria: Categoria) => Promise<void> | void;
+    onError?: (mensaje: string) => void;
 }
 
 export default function NutricionistaCategoriesTab({
   categorias,
+  servicios,
   onSave,
   onDelete,
+  onError,
 }: NutricionistaCategoriesTabProps): JSX.Element {
   const [busqueda, setBusqueda] = useState("");
   const [modalCrear, setModalCrear] = useState(false);
@@ -25,17 +29,29 @@ export default function NutricionistaCategoriesTab({
     categoria.nombre.toLowerCase().includes(busqueda.toLowerCase()),
   );
 
-  const guardarCategoria = (
+  const guardarCategoria = async (
     datos: Omit<Categoria, "id" | "serviciosAsociados">,
   ) => {
-    if (!onSave(datos, categoriaEditar)) return;
+    const ok = await onSave(datos, categoriaEditar);
+    if (!ok) return;
     setModalCrear(false);
     setCategoriaEditar(null);
   };
 
-  const eliminarCategoria = () => {
+  const eliminarCategoria = async () => {
     if (!categoriaEliminar) return;
-    onDelete(categoriaEliminar);
+
+    const vinculados = servicios
+      ? servicios.filter((s) => Number(s.categoriaId) === Number(categoriaEliminar.id)).length
+      : (categoriaEliminar.serviciosAsociados ?? 0);
+
+    if (vinculados > 0) {
+      onError?.(`No puedes eliminar "${categoriaEliminar.nombre}" porque tiene ${vinculados} servicio(s) asociado(s).`);
+      setCategoriaEliminar(null);
+      return;
+    }
+
+    await onDelete(categoriaEliminar);
     setCategoriaEliminar(null);
   };
 

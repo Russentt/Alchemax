@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Compra, Servicio } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
@@ -7,9 +7,17 @@ import { TiendaService } from "../services/tiendaService";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
 
 export default function Carrito(): JSX.Element {
-  const [carrito, setCarrito] = useState<Servicio[]>(() =>
-    TiendaService.getCarrito(),
-  );
+  const [carrito, setCarrito] = useState<Servicio[]>([]);
+
+  const cargarCarrito = async () => {
+    const items = await TiendaService.getCarrito();
+    setCarrito(items);
+  };
+
+  useEffect(() => {
+    cargarCarrito();
+  }, []);
+
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "warning";
@@ -23,19 +31,17 @@ export default function Carrito(): JSX.Element {
     }, 15000);
   };
 
-  const handleRemoveItem = (id: string) => {
-    // 3. [DRY] Usamos la lógica centralizada del servicio para eliminar de la DB
-    TiendaService.removerDelCarrito(id);
-    // Luego actualizamos la vista pidiendo de nuevo el carrito actualizado
-    setCarrito(TiendaService.getCarrito());
+  const handleRemoveItem = async (id: number | string) => {
+    await TiendaService.removerDelCarrito(id);
+    const carritoActualizado = await TiendaService.getCarrito();
+    setCarrito(carritoActualizado);
 
     showToast("Servicio removido del carrito de compras.", "warning");
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (carrito.length === 0) return;
 
-    // Verificamos la sesión activa desde StorageUsuario
     const sessionUser = StorageUsuario.getUsuarioSesion();
 
     if (!sessionUser) {
@@ -47,26 +53,18 @@ export default function Carrito(): JSX.Element {
       return;
     }
 
-    const nuevasCompras: Compra[] = carrito.map((item) => ({
-      id: `c-${crypto.randomUUID()}`,
-      servicioId: item.id,
+    const nuevasCompras = carrito.map((item) => ({
+      servicio: Number(item.id),
       nombre: item.nombre,
-      fechaCompra: new Date().toLocaleDateString("es-CL", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
+      fechaCompra: new Date().toISOString().split("T")[0],
       monto: item.precio,
-      estado: "Activo",
+      estado: "Activo" as const,
     }));
 
-    // 4. [SOLID] Registramos cada compra a través del servicio, él se encarga de la estructura relacional
-    nuevasCompras.forEach((compra) => {
-      TiendaService.registrarCompra(compra);
-    });
-
-    // 5. Vaciamos el carrito en la DB usando el servicio y luego limpiamos el estado local
-    TiendaService.vaciarCarrito();
+    for (const compra of nuevasCompras) {
+      await TiendaService.registrarCompra(compra);
+    }
+    await TiendaService.vaciarCarrito();
     setCarrito([]);
 
     showToast(
@@ -257,3 +255,4 @@ export default function Carrito(): JSX.Element {
     </main>
   );
 }
+

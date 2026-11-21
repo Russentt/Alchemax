@@ -1,12 +1,13 @@
 import { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import type { Categoria, Servicio } from "../types/index";
+import type { Categoria, Servicio, Usuario } from "../types/index";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
+import PaymentGatewayModal from "../components/PaymentGatewayModal";
 
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
   return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
@@ -19,12 +20,11 @@ export default function Metodologia(): JSX.Element {
 
   const [servicios, setServicios] = useState<Servicio[]>([]);
 
-  const cargarServicios = async () => {
-    const data = await StorageServicios.getServicios();
-    setServicios(data);
-  };
-
   useEffect(() => {
+    const cargarServicios = async () => {
+      const data = await StorageServicios.getServicios();
+      setServicios(data);
+    };
     cargarServicios();
   }, []);
   
@@ -41,6 +41,12 @@ export default function Metodologia(): JSX.Element {
 
   // Nuevo estado para controlar el modal de redirección suave
   const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
+
+  // Estados para la pasarela de pago simulada (Webpay Demo)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+  const [paymentItems, setPaymentItems] = useState<Servicio[]>([]);
+  const [localCartPreview, setLocalCartPreview] = useState<Servicio[]>([]);
+  const [paymentUser, setPaymentUser] = useState<Usuario | null>(null);
 
   const serviciosFiltrados = servicios.filter((servicio) => {
     if (categoriaActiva === "todas") return true;
@@ -110,34 +116,68 @@ export default function Metodologia(): JSX.Element {
     setTriageResult({ imc, ...diagnostico });
   };
 
+  const redirectToLogin = (message: string) => {
+    setNotification({
+      message,
+      type: "warning",
+    });
+
+    // Activamos el modal de transición
+    setIsRedirecting(true);
+
+    setTimeout(() => {
+      setNotification(null);
+      setIsRedirecting(false);
+      navigate("/login");
+    }, 2000);
+  };
+
   const handleAddToCart = (servicio: Servicio) => {
     const sesionActual = StorageUsuario.getUsuarioSesion();
 
     if (!sesionActual) {
-      setNotification({
-        message: "Acceso requerido para reservar este servicio.",
-        type: "warning",
-      });
-      
-      // Activamos el modal de transición
-      setIsRedirecting(true);
-
-      // Aumentamos el tiempo a 3.5s para permitir la lectura y ver la animación
-      setTimeout(() => {
-        setNotification(null);
-        setIsRedirecting(false);
-        navigate("/login");
-      }, 3500);
+      redirectToLogin("Acceso requerido para reservar este servicio.");
       return;
     }
 
     TiendaService.agregarAlCarrito(servicio);
+    setLocalCartPreview((prev) =>
+      prev.some((item) => item.id === servicio.id) ? prev : [...prev, servicio],
+    );
 
     setNotification({
-      message: `¡"${servicio.nombre}" añadido a tu carrito! Puedes ir a pagar para asignarlo a tu cuenta.`,
+      message: `¡"${servicio.nombre}" añadido a tu carrito! Puedes proceder al pago para asignarlo a tu cuenta.`,
       type: "success",
     });
 
+    setTimeout(() => {
+      setNotification(null);
+    }, 5000);
+  };
+
+  const handleProceedToPayment = async () => {
+    const sesionActual = StorageUsuario.getUsuarioSesion();
+
+    if (!sesionActual) {
+      redirectToLogin("Inicia sesión para proceder al pago.");
+      return;
+    }
+
+    const carritoRemoto = await TiendaService.getCarrito();
+    setPaymentItems(
+      carritoRemoto.length > 0 ? carritoRemoto : localCartPreview,
+    );
+    setPaymentUser(sesionActual);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    TiendaService.vaciarCarrito();
+    setLocalCartPreview([]);
+    setNotification({
+      message: "¡Pago aprobado en la pasarela Webpay (Demo)!",
+      type: "success",
+    });
     setTimeout(() => {
       setNotification(null);
     }, 5000);
@@ -358,13 +398,31 @@ export default function Metodologia(): JSX.Element {
           </div>
 
           <div className="text-center mt-5 pt-3">
-            <Link to="/carrito" className="btn-kinetic-health text-decoration-none shadow-glass">
+            <button
+              type="button"
+              onClick={handleProceedToPayment}
+              className="btn-kinetic-health border-0 shadow-glass"
+            >
               <span className="btn-text">Proceder al pago</span>
               <span className="btn-icon">→</span>
-            </Link>
+            </button>
           </div>
         </div>
       </section>
+
+      {isPaymentModalOpen && (
+        <PaymentGatewayModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onPaymentSuccess={handlePaymentSuccess}
+          onGoToAccount={() => {
+            setIsPaymentModalOpen(false);
+            navigate("/account");
+          }}
+          items={paymentItems}
+          usuario={paymentUser}
+        />
+      )}
     </main>
   );
 }

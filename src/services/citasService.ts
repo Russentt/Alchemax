@@ -62,22 +62,30 @@ export interface NuevaCitaPayload {
 }
 
 export const CitasService = {
+  getCitasOrThrow: async (): Promise<Cita[]> => {
+    const response = await api.get<CitaBackendResponse[]>("/api/citas");
+    return response.data.map(mapearDesdeBackend);
+  },
+
   getCitas: async (): Promise<Cita[]> => {
     try {
-      const response = await api.get<CitaBackendResponse[]>("/api/citas");
-      return response.data.map(mapearDesdeBackend);
+      return await CitasService.getCitasOrThrow();
     } catch (error) {
       console.error("Error al obtener citas:", error);
       return [];
     }
   },
 
+  getCitasPorUsuarioOrThrow: async (usuarioId: number): Promise<Cita[]> => {
+    const response = await api.get<CitaBackendResponse[]>(
+      `/api/citas/usuario/${usuarioId}`,
+    );
+    return response.data.map(mapearDesdeBackend);
+  },
+
   getCitasPorUsuario: async (usuarioId: number): Promise<Cita[]> => {
     try {
-      const response = await api.get<CitaBackendResponse[]>(
-        `/api/citas/usuario/${usuarioId}`,
-      );
-      return response.data.map(mapearDesdeBackend);
+      return await CitasService.getCitasPorUsuarioOrThrow(usuarioId);
     } catch (error) {
       console.error("Error al obtener citas del usuario:", error);
       return [];
@@ -123,7 +131,7 @@ export const CitasService = {
             mensaje:
               data?.mensaje ||
               data?.message ||
-              "El profesional seleccionado ya cuenta con una cita activa en esa fecha y hora.",
+              "Existe una cita incompatible con el paciente o el profesional en esa fecha y hora.",
           };
         }
         if (error.response?.status === 400 || error.response?.status === 403) {

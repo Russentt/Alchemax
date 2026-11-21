@@ -11,6 +11,10 @@ import type {
 
 import { StorageUsuario } from "../services/storageUsuario";
 import { CitasService } from "../services/citasService";
+import {
+  validarConflictosReserva,
+  validarFechaHoraReserva,
+} from "../utils/validacionCitas";
 import { PlanService } from "../services/planService";
 import { TiendaService } from "../services/tiendaService";
 import AccountSummaryCard from "../components/AccountSummaryCard";
@@ -60,6 +64,8 @@ export default function Account(): JSX.Element {
 
   // Estados de Agendamiento de Citas
   const [isBookingCita, setIsBookingCita] = useState<boolean>(false);
+  const [isSubmittingCita, setIsSubmittingCita] = useState<boolean>(false);
+  const citaSubmitLockRef = useRef(false);
   const [bookingForm, setBookingForm] = useState({
     fecha: "",
     hora: "",
@@ -298,7 +304,7 @@ export default function Account(): JSX.Element {
   const recargarCitasUsuario = async (userId?: number) => {
     const idObjetivo = userId ?? usuario?.id;
     const data = idObjetivo
-      ? await CitasService.getCitasPorUsuario(idObjetivo)
+      ? await CitasService.getCitasPorUsuarioOrThrow(idObjetivo)
       : [];
     setCitas(data);
   };
@@ -309,8 +315,15 @@ export default function Account(): JSX.Element {
       showNotification(resultado.mensaje, "danger");
       return;
     }
-    await recargarCitasUsuario();
-    showNotification("Cita cancelada exitosamente.", "warning");
+    try {
+      await recargarCitasUsuario();
+      showNotification("Cita cancelada exitosamente.", "warning");
+    } catch {
+      showNotification(
+        "La cita se canceló, pero no se pudo actualizar el listado. Recarga la página para verificarla.",
+        "warning",
+      );
+    }
   };
 
   const handleBookingChange = (
@@ -327,67 +340,79 @@ export default function Account(): JSX.Element {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  const validarReservaCita = (fecha: string, hora: string, profesional: string): string | null => {
-    if (!fecha || !hora) {
-      return "Debes seleccionar una fecha y una hora válidas.";
-    }
-    const minFecha = obtenerFechaMinimaISO();
-    if (fecha < minFecha) {
-      return "No puedes agendar una cita en una fecha pasada.";
-    }
-    if (hora < "08:00" || hora > "20:00") {
-      return "El horario de atención clínica es de 08:00 a 20:00 hrs.";
-    }
-    const conflictoLocal = citas.some(
-      (c) =>
-        c.estado !== "Cancelada" &&
-        c.fecha === fecha &&
-        c.hora === hora &&
-        c.profesional.toLowerCase() === profesional.toLowerCase(),
-    );
-    if (conflictoLocal) {
-      return "Ya tienes una cita activa con ese profesional en la misma fecha y hora.";
-    }
-    return null;
-  };
-
   const handleBookingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const errorValidacion = validarReservaCita(
+    if (citaSubmitLockRef.current) return;
+
+    const errorFechaHora = validarFechaHoraReserva(
       bookingForm.fecha,
       bookingForm.hora,
-      bookingForm.profesional,
     );
-    if (errorValidacion) {
-      showNotification(errorValidacion, "warning");
+    if (errorFechaHora) {
+      showNotification(errorFechaHora, "warning");
+      return;
+    }
+    if (!usuario?.id) {
+      showNotification("No se pudo identificar tu cuenta para reservar.", "danger");
       return;
     }
 
-    const resultado = await CitasService.addCita({
-      fecha: bookingForm.fecha,
-      hora: bookingForm.hora,
-      tipo: bookingForm.tipo,
-      profesional: bookingForm.profesional,
-      estado: "Programada",
-      usuarioId: usuario?.id,
-      pacienteNombre: usuario?.nombre,
-      pacienteEmail: usuario?.email,
-    });
+    citaSubmitLockRef.current = true;
+    setIsSubmittingCita(true);
+    try {
+      const citasActuales = await CitasService.getCitasPorUsuarioOrThrow(usuario.id);
+      setCitas(citasActuales);
+      const errorConflicto = validarConflictosReserva(
+        bookingForm,
+        citasActuales,
+      );
+      if (errorConflicto) {
+        showNotification(errorConflicto, "warning");
+        return;
+      }
 
-    if (!resultado.success) {
-      showNotification(resultado.mensaje, "danger");
-      return;
+      const resultado = await CitasService.addCita({
+        fecha: bookingForm.fecha,
+        hora: bookingForm.hora,
+        tipo: bookingForm.tipo,
+        profesional: bookingForm.profesional,
+        estado: "Programada",
+        usuarioId: usuario.id,
+        pacienteNombre: usuario.nombre,
+        pacienteEmail: usuario.email,
+      });
+
+      if (!resultado.success) {
+        showNotification(resultado.mensaje, "danger");
+        return;
+      }
+      setIsBookingCita(false);
+      setBookingForm({
+        fecha: "",
+        hora: "",
+        tipo: "Consulta Presencial",
+        profesional: "Nut. Andrea Valdés",
+      });
+      try {
+        setCitas(await CitasService.getCitasPorUsuarioOrThrow(usuario.id));
+        showNotification("Cita agendada exitosamente.", "success");
+      } catch {
+        const citaCreada = resultado.cita;
+        if (citaCreada) setCitas((actuales) => [...actuales, citaCreada]);
+        showNotification(
+          "La cita se agendó, pero no se pudo actualizar el listado. Recarga la página para verificarla.",
+          "warning",
+        );
+      }
+    } catch {
+      showNotification(
+        "No se pudo verificar tu agenda. Inténtalo nuevamente antes de reservar.",
+        "danger",
+      );
+    } finally {
+      citaSubmitLockRef.current = false;
+      setIsSubmittingCita(false);
     }
-
-    await recargarCitasUsuario();
-    setIsBookingCita(false);
-    showNotification("Cita agendada exitosamente.", "success");
-    setBookingForm({
-      fecha: "",
-      hora: "",
-      tipo: "Consulta Presencial",
-      profesional: "Nut. Andrea Valdés",
-    });
   };
 
   // Conexión entre pestaña Compras y pestaña Citas
@@ -1206,6 +1231,7 @@ export default function Account(): JSX.Element {
                   name="hora"
                   min="08:00"
                   max="20:00"
+                  step="60"
                   className="form-control apple-input"
                   value={bookingForm.hora}
                   onChange={handleBookingChange}
@@ -1216,9 +1242,10 @@ export default function Account(): JSX.Element {
             <div className="text-end">
               <button
                 type="submit"
+                disabled={isSubmittingCita}
                 className="btn btn-success btn-lg rounded-pill fw-bold px-5 shadow-sm"
               >
-                Confirmar Reserva
+                {isSubmittingCita ? "Verificando disponibilidad..." : "Confirmar Reserva"}
               </button>
             </div>
           </form>

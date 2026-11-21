@@ -291,6 +291,23 @@ export default function Nutricionista(): JSX.Element {
       return;
     }
 
+    const hoy = new Date();
+    const minFecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+    if (nuevaCitaForm.fecha < minFecha) {
+      mostrarNotificacion(
+        "No es posible agendar una consulta en una fecha pasada.",
+        "danger",
+      );
+      return;
+    }
+    if (nuevaCitaForm.hora < "08:00" || nuevaCitaForm.hora > "20:00") {
+      mostrarNotificacion(
+        "El horario de atención clínica es entre las 08:00 y 20:00 hrs.",
+        "danger",
+      );
+      return;
+    }
+
     const res = await CitasService.addCita({
       fecha: nuevaCitaForm.fecha,
       hora: nuevaCitaForm.hora,

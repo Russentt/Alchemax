@@ -74,6 +74,16 @@ export default function Home(): JSX.Element {
       return;
     }
 
+    if (sesionActual.rol !== "usuario") {
+      setNotification({
+        message:
+          "La contratación de planes está reservada para cuentas de paciente.",
+        type: "warning",
+      });
+      setTimeout(() => setNotification(null), 4000);
+      return;
+    }
+
     TiendaService.agregarAlCarrito(servicio);
     setNotification({ message: `¡"${servicio.nombre}" añadido al carrito!`, type: "success" });
     

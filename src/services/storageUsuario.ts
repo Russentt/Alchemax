@@ -132,12 +132,39 @@ export const StorageUsuario = {
     }
 
     try {
+      if (AuthTokenStore.shouldRefreshToken()) {
+        const renovado = await StorageUsuario.renovarSesion();
+        if (renovado) return renovado;
+      }
+
       const response = await api.get<Usuario>("/api/auth/me");
       const safeUser = sanitizeSessionUser(response.data);
       if (safeUser) {
         usuarioActual = safeUser;
         persistAuthSession(safeUser);
         return safeUser;
+      }
+      return usuarioActual;
+    } catch {
+      return usuarioActual;
+    }
+  },
+
+  renovarSesion: async (): Promise<Usuario | null> => {
+    if (!AuthTokenStore.getToken()) {
+      usuarioActual = null;
+      return null;
+    }
+
+    try {
+      const response = await api.post<AuthResponseBackend>("/api/auth/refresh");
+      if (response.status === 200 && response.data?.token) {
+        const safeUser = sanitizeSessionUser(response.data);
+        if (safeUser) {
+          usuarioActual = safeUser;
+          persistAuthSession(safeUser, response.data.token);
+          return safeUser;
+        }
       }
       return usuarioActual;
     } catch {

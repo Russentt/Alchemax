@@ -386,6 +386,32 @@ export default function Navbar(): JSX.Element {
                   </>
                 ) : (
                   <>
+                    <span
+                      className="badge bg-success-subtle text-success rounded-pill px-3 py-2 fw-bold text-uppercase"
+                      style={{ fontSize: "0.7rem", letterSpacing: "0.04em" }}
+                      aria-label={`Rol actual: ${sesionActual?.rol}`}
+                    >
+                      {sesionActual?.rol === "admin"
+                        ? "Admin"
+                        : sesionActual?.rol === "nutricionista"
+                          ? "Nutricionista"
+                          : "Paciente"}
+                    </span>
+                    {sesionActual?.rol === "usuario" && (
+                      <Link
+                        to="/carrito"
+                        className="btn-kinetic-secondary text-decoration-none text-nowrap w-100 w-lg-auto"
+                        style={{
+                          fontSize: "0.9rem",
+                          padding: "0.5rem 1.1rem",
+                          backgroundColor: "transparent",
+                        }}
+                        onClick={handleLinkClick}
+                        aria-label="Ir al carrito de compras"
+                      >
+                        🛒 Carrito
+                      </Link>
+                    )}
                     <Link
                       to={rutaPerfil}
                       className="btn-kinetic-health text-decoration-none text-nowrap w-100 w-lg-auto"

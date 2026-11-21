@@ -116,7 +116,7 @@ export default function Account(): JSX.Element {
         TiendaService.getCompras(),
         perfilActual.id
           ? CitasService.getCitasPorUsuario(perfilActual.id)
-          : CitasService.getCitas(),
+          : Promise.resolve([]),
       ]);
 
       if (!active) return;
@@ -299,7 +299,7 @@ export default function Account(): JSX.Element {
     const idObjetivo = userId ?? usuario?.id;
     const data = idObjetivo
       ? await CitasService.getCitasPorUsuario(idObjetivo)
-      : await CitasService.getCitas();
+      : [];
     setCitas(data);
   };
 
@@ -319,8 +319,50 @@ export default function Account(): JSX.Element {
     setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
   };
 
+  const obtenerFechaMinimaISO = () => {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear();
+    const mm = String(hoy.getMonth() + 1).padStart(2, "0");
+    const dd = String(hoy.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const validarReservaCita = (fecha: string, hora: string, profesional: string): string | null => {
+    if (!fecha || !hora) {
+      return "Debes seleccionar una fecha y una hora válidas.";
+    }
+    const minFecha = obtenerFechaMinimaISO();
+    if (fecha < minFecha) {
+      return "No puedes agendar una cita en una fecha pasada.";
+    }
+    if (hora < "08:00" || hora > "20:00") {
+      return "El horario de atención clínica es de 08:00 a 20:00 hrs.";
+    }
+    const conflictoLocal = citas.some(
+      (c) =>
+        c.estado !== "Cancelada" &&
+        c.fecha === fecha &&
+        c.hora === hora &&
+        c.profesional.toLowerCase() === profesional.toLowerCase(),
+    );
+    if (conflictoLocal) {
+      return "Ya tienes una cita activa con ese profesional en la misma fecha y hora.";
+    }
+    return null;
+  };
+
   const handleBookingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const errorValidacion = validarReservaCita(
+      bookingForm.fecha,
+      bookingForm.hora,
+      bookingForm.profesional,
+    );
+    if (errorValidacion) {
+      showNotification(errorValidacion, "warning");
+      return;
+    }
+
     const resultado = await CitasService.addCita({
       fecha: bookingForm.fecha,
       hora: bookingForm.hora,
@@ -1134,25 +1176,36 @@ export default function Account(): JSX.Element {
             </div>
             <div className="row g-4 mb-4">
               <div className="col-md-6">
-                <label className="form-label text-dark fw-bold small text-uppercase tracking-tight">
+                <label
+                  htmlFor="bookingFecha"
+                  className="form-label text-dark fw-bold small text-uppercase tracking-tight"
+                >
                   Fecha Solicitada
                 </label>
                 <input
+                  id="bookingFecha"
                   type="date"
                   name="fecha"
                   className="form-control apple-input"
+                  min={obtenerFechaMinimaISO()}
                   value={bookingForm.fecha}
                   onChange={handleBookingChange}
                   required
                 />
               </div>
               <div className="col-md-6">
-                <label className="form-label text-dark fw-bold small text-uppercase tracking-tight">
-                  Hora Preferida
+                <label
+                  htmlFor="bookingHora"
+                  className="form-label text-dark fw-bold small text-uppercase tracking-tight"
+                >
+                  Hora Preferida (08:00 – 20:00)
                 </label>
                 <input
+                  id="bookingHora"
                   type="time"
                   name="hora"
+                  min="08:00"
+                  max="20:00"
                   className="form-control apple-input"
                   value={bookingForm.hora}
                   onChange={handleBookingChange}

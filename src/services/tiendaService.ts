@@ -47,7 +47,14 @@ export const TiendaService = {
 
     try {
       const res = await api.get<CarritoBackend>(`/api/carrito/usuario/${usuarioId}`);
-      return (res.data.items || []).map((item) => item.servicio);
+      const lista: Servicio[] = [];
+      for (const item of res.data.items || []) {
+        const cant = Math.max(1, Number(item.cantidad) || 1);
+        for (let i = 0; i < cant; i++) {
+          lista.push(item.servicio);
+        }
+      }
+      return lista;
     } catch (error) {
       console.error("Error al obtener carrito:", error);
       return [];

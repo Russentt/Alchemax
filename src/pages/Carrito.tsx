@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useState, useRef, useCallback, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type { ItemCarrito } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
@@ -8,6 +8,7 @@ import { formatPriceCLP } from "../utils/formatPriceCLP";
 export default function Carrito(): JSX.Element {
   const [itemsCarrito, setItemsCarrito] = useState<ItemCarrito[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
+  const [procesandoPago, setProcesandoPago] = useState<boolean>(false);
   const [actualizandoId, setActualizandoId] = useState<number | null>(null);
 
   const [notification, setNotification] = useState<{
@@ -15,37 +16,85 @@ export default function Carrito(): JSX.Element {
     type: "success" | "warning" | "info";
   } | null>(null);
 
+  const toastTimerRef = useRef<number | null>(null);
   const navigate = useNavigate();
 
-  const showToast = (
-    message: string,
-    type: "success" | "warning" | "info" = "info",
-  ) => {
-    setNotification({ message, type });
-    setTimeout(() => {
-      setNotification(null);
-    }, 4500);
-  };
+  const showToast = useCallback(
+    (
+      message: string,
+      type: "success" | "warning" | "info" = "info",
+    ) => {
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+      setNotification({ message, type });
+      toastTimerRef.current = window.setTimeout(() => {
+        setNotification(null);
+        toastTimerRef.current = null;
+      }, 4500);
+    },
+    [],
+  );
 
-  const cargarCarrito = async () => {
+  // Limpieza del timer al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const cargarCarrito = useCallback(async () => {
     setCargando(true);
     try {
       const items = await TiendaService.getItemsCarrito();
       setItemsCarrito(items);
+    } catch (err) {
+      console.error("Error al recargar carrito:", err);
+      showToast("Error al sincronizar el carrito con el servidor.", "warning");
     } finally {
       setCargando(false);
     }
-  };
+  }, [showToast]);
 
+  // Carga inicial sin setCargando sincrónico para cumplir regla de React 19 / ESLint
   useEffect(() => {
-    cargarCarrito();
-  }, []);
+    let active = true;
+
+    const inicializarCarrito = async () => {
+      try {
+        const items = await TiendaService.getItemsCarrito();
+        if (active) {
+          setItemsCarrito(items);
+        }
+      } catch (err) {
+        console.error("Error al inicializar carrito:", err);
+        if (active) {
+          showToast("Error de conexión al cargar tus servicios.", "warning");
+        }
+      } finally {
+        if (active) {
+          setCargando(false);
+        }
+      }
+    };
+
+    inicializarCarrito();
+
+    return () => {
+      active = false;
+    };
+  }, [showToast]);
 
   const handleIncrement = async (item: ItemCarrito) => {
+    if (procesandoPago) return;
+
     const nuevaCantidad = item.cantidad + 1;
     setActualizandoId(item.servicio.id);
+
     try {
-      // Actualización optimista local
+      // Actualización optimista en la interfaz
       setItemsCarrito((prev) =>
         prev.map((it) =>
           it.servicio.id === item.servicio.id
@@ -54,25 +103,38 @@ export default function Carrito(): JSX.Element {
         ),
       );
 
-      await TiendaService.actualizarCantidadItem(
+      const actualizado = await TiendaService.actualizarCantidadItem(
         item.servicio.id,
         nuevaCantidad,
         item.id,
       );
 
+      if (!actualizado) {
+        throw new Error("No se pudo sincronizar la cantidad con el servidor.");
+      }
+
       showToast(
         `Cantidad aumentada para "${item.servicio.nombre}" (${nuevaCantidad}).`,
         "success",
       );
-    } catch {
+    } catch (err) {
+      console.error(err);
+      // Revertir estado optimista recargando el carrito desde el backend
       await cargarCarrito();
-      showToast("No se pudo actualizar la cantidad.", "warning");
+      showToast(
+        err instanceof Error
+          ? err.message
+          : "No se pudo actualizar la cantidad en el servidor.",
+        "warning",
+      );
     } finally {
       setActualizandoId(null);
     }
   };
 
   const handleDecrement = async (item: ItemCarrito) => {
+    if (procesandoPago) return;
+
     if (item.cantidad <= 1) {
       await handleRemoveItem(item.servicio.id, item.servicio.nombre);
       return;
@@ -80,7 +142,9 @@ export default function Carrito(): JSX.Element {
 
     const nuevaCantidad = item.cantidad - 1;
     setActualizandoId(item.servicio.id);
+
     try {
+      // Actualización optimista en la interfaz
       setItemsCarrito((prev) =>
         prev.map((it) =>
           it.servicio.id === item.servicio.id
@@ -89,19 +153,30 @@ export default function Carrito(): JSX.Element {
         ),
       );
 
-      await TiendaService.actualizarCantidadItem(
+      const actualizado = await TiendaService.actualizarCantidadItem(
         item.servicio.id,
         nuevaCantidad,
         item.id,
       );
 
+      if (!actualizado) {
+        throw new Error("No se pudo sincronizar la cantidad con el servidor.");
+      }
+
       showToast(
         `Cantidad reducida para "${item.servicio.nombre}" (${nuevaCantidad}).`,
         "info",
       );
-    } catch {
+    } catch (err) {
+      console.error(err);
+      // Revertir estado optimista recargando el carrito desde el backend
       await cargarCarrito();
-      showToast("No se pudo actualizar la cantidad.", "warning");
+      showToast(
+        err instanceof Error
+          ? err.message
+          : "No se pudo actualizar la cantidad en el servidor.",
+        "warning",
+      );
     } finally {
       setActualizandoId(null);
     }
@@ -111,6 +186,8 @@ export default function Carrito(): JSX.Element {
     servicioId: number | string,
     nombre?: string,
   ) => {
+    if (procesandoPago) return;
+
     setActualizandoId(Number(servicioId));
     try {
       await TiendaService.removerDelCarrito(servicioId);
@@ -123,25 +200,33 @@ export default function Carrito(): JSX.Element {
           : "Servicio removido del carrito de compras.",
         "warning",
       );
+    } catch (err) {
+      console.error(err);
+      showToast("No se pudo eliminar el servicio del carrito.", "warning");
     } finally {
       setActualizandoId(null);
     }
   };
 
   const handleVaciarCarrito = async () => {
-    if (itemsCarrito.length === 0) return;
+    if (itemsCarrito.length === 0 || procesandoPago) return;
+
     setCargando(true);
     try {
       await TiendaService.vaciarCarrito();
       setItemsCarrito([]);
       showToast("El carrito de compras ha sido vaciado.", "info");
+    } catch (err) {
+      console.error(err);
+      showToast("Error al vaciar el carrito.", "warning");
+      await cargarCarrito();
     } finally {
       setCargando(false);
     }
   };
 
   const handleCheckout = async () => {
-    if (itemsCarrito.length === 0) return;
+    if (itemsCarrito.length === 0 || procesandoPago) return;
 
     const sessionUser = StorageUsuario.getUsuarioSesion();
 
@@ -154,32 +239,69 @@ export default function Carrito(): JSX.Element {
       return;
     }
 
-    const fechaHoy = new Date().toISOString().split("T")[0];
+    setProcesandoPago(true);
 
-    // Se genera una compra por cada unidad adquirida para permitir su agendamiento independiente
-    for (const item of itemsCarrito) {
-      for (let i = 0; i < item.cantidad; i++) {
-        await TiendaService.registrarCompra({
-          servicio: Number(item.servicio.id),
-          nombre: item.servicio.nombre,
-          fechaCompra: fechaHoy,
-          monto: item.servicio.precio,
-          estado: "Activo",
-        });
+    try {
+      const fechaHoy = new Date().toISOString().split("T")[0];
+      let erroresRegistrados = 0;
+      let comprasExitosasCount = 0;
+
+      // Se genera una compra por cada unidad adquirida para permitir su agendamiento independiente
+      for (const item of itemsCarrito) {
+        for (let i = 0; i < item.cantidad; i++) {
+          const resultado = await TiendaService.registrarCompra({
+            servicio: Number(item.servicio.id),
+            nombre: item.servicio.nombre,
+            fechaCompra: fechaHoy,
+            monto: item.servicio.precio,
+            estado: "Activo",
+          });
+
+          if (!resultado) {
+            erroresRegistrados++;
+          } else {
+            comprasExitosasCount++;
+          }
+        }
       }
+
+      if (erroresRegistrados > 0 && comprasExitosasCount === 0) {
+        showToast(
+          "No fue posible procesar el pago con el servidor. Tu carrito sigue intacto.",
+          "warning",
+        );
+        await cargarCarrito();
+        return;
+      }
+
+      if (erroresRegistrados > 0) {
+        showToast(
+          `Se procesaron ${comprasExitosasCount} servicio(s), pero ${erroresRegistrados} fallaron. Revisa tu cuenta.`,
+          "warning",
+        );
+        await cargarCarrito();
+        return;
+      }
+
+      // Solo si todas las compras se registraron con éxito, vaciamos el carrito
+      await TiendaService.vaciarCarrito();
+      setItemsCarrito([]);
+
+      showToast(
+        "¡Pago procesado con éxito! Los servicios han sido asignados a tu Portal del Paciente.",
+        "success",
+      );
+
+      setTimeout(() => {
+        navigate("/account");
+      }, 2500);
+    } catch (err) {
+      console.error("Error durante el checkout:", err);
+      showToast("Error inesperado durante el procesamiento del pago.", "warning");
+      await cargarCarrito();
+    } finally {
+      setProcesandoPago(false);
     }
-
-    await TiendaService.vaciarCarrito();
-    setItemsCarrito([]);
-
-    showToast(
-      "¡Pago procesado con éxito! Los servicios han sido asignados a tu Portal del Paciente.",
-      "success",
-    );
-
-    setTimeout(() => {
-      navigate("/account");
-    }, 2500);
   };
 
   const totalUnidades = itemsCarrito.reduce(
@@ -194,15 +316,17 @@ export default function Carrito(): JSX.Element {
 
   return (
     <main className="container my-5 flex-grow-1 position-relative">
-      {/* Notificaciones Toast */}
+      {/* Notificaciones Toast Accesibles */}
       {notification && (
         <div
           className="position-fixed top-0 end-0 p-4 animation-fade-in"
           style={{ zIndex: 1100, marginTop: "80px" }}
+          aria-live="polite"
+          aria-atomic="true"
         >
           <div
             className={`toast show align-items-center text-white bg-${notification.type === "info" ? "primary" : notification.type} border-0 shadow-lg rounded-4 p-3`}
-            role="alert"
+            role="status"
           >
             <div className="d-flex">
               <div className="toast-body fw-semibold px-2 fs-6 lh-base">
@@ -212,7 +336,7 @@ export default function Carrito(): JSX.Element {
                 type="button"
                 className="btn-close btn-close-white me-2 m-auto"
                 onClick={() => setNotification(null)}
-                aria-label="Cerrar"
+                aria-label="Cerrar notificación"
               ></button>
             </div>
             {notification.type === "success" && (
@@ -269,6 +393,7 @@ export default function Carrito(): JSX.Element {
                 <button
                   type="button"
                   onClick={handleVaciarCarrito}
+                  disabled={procesandoPago || cargando}
                   className="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold"
                   title="Eliminar todos los ítems del carrito"
                 >
@@ -306,7 +431,8 @@ export default function Carrito(): JSX.Element {
               <div className="d-flex flex-column gap-3">
                 {itemsCarrito.map((item) => {
                   const subtotalItem = item.servicio.precio * item.cantidad;
-                  const isBusy = actualizandoId === item.servicio.id;
+                  const isBusy =
+                    actualizandoId === item.servicio.id || procesandoPago;
 
                   return (
                     <div
@@ -361,7 +487,7 @@ export default function Carrito(): JSX.Element {
                                 ? "Quitar del carrito"
                                 : "Disminuir cantidad"
                             }
-                            aria-label="Disminuir cantidad"
+                            aria-label={`Disminuir cantidad de ${item.servicio.nombre}`}
                           >
                             −
                           </button>
@@ -369,6 +495,8 @@ export default function Carrito(): JSX.Element {
                           <span
                             className="fw-bold font-monospace fs-6 px-1 flex-grow-1 text-center"
                             style={{ minWidth: "2rem" }}
+                            aria-live="polite"
+                            aria-label={`Cantidad seleccionada: ${item.cantidad}`}
                           >
                             {item.cantidad}
                           </span>
@@ -379,7 +507,7 @@ export default function Carrito(): JSX.Element {
                             onClick={() => handleIncrement(item)}
                             disabled={isBusy}
                             title="Aumentar cantidad"
-                            aria-label="Aumentar cantidad"
+                            aria-label={`Aumentar cantidad de ${item.servicio.nombre}`}
                           >
                             +
                           </button>
@@ -434,12 +562,18 @@ export default function Carrito(): JSX.Element {
 
         {/* Resumen de Pago y Checkout */}
         <div className="col-lg-4">
-          <div className="bg-white p-4 rounded-4 shadow-sm border-0 sticky-top" style={{ top: "90px" }}>
+          <div
+            className="bg-white p-4 rounded-4 shadow-sm border-0 sticky-top"
+            style={{ top: "90px" }}
+          >
             <h4 className="fw-bold text-dark mb-3">Resumen de Pago</h4>
 
             <div className="d-flex justify-content-between align-items-center mb-3">
               <span className="text-muted small">Total de prestaciones</span>
-              <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold">
+              <span
+                className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold"
+                aria-live="polite"
+              >
                 {totalUnidades} {totalUnidades === 1 ? "sesión" : "sesiones"}
               </span>
             </div>
@@ -451,7 +585,10 @@ export default function Carrito(): JSX.Element {
                     key={it.servicio.id}
                     className="d-flex justify-content-between text-muted mb-1"
                   >
-                    <span className="text-truncate me-2" style={{ maxWidth: "160px" }}>
+                    <span
+                      className="text-truncate me-2"
+                      style={{ maxWidth: "160px" }}
+                    >
                       {it.servicio.nombre} (x{it.cantidad})
                     </span>
                     <span className="fw-semibold text-dark">
@@ -480,10 +617,23 @@ export default function Carrito(): JSX.Element {
 
             <button
               onClick={handleCheckout}
-              disabled={itemsCarrito.length === 0 || cargando}
+              disabled={
+                itemsCarrito.length === 0 || cargando || procesandoPago
+              }
               className="btn btn-success w-100 fw-bold py-3 rounded-pill shadow-sm mb-3 d-flex align-items-center justify-content-center gap-2"
             >
-              <span>🔒 Proceder al Pago Seguro</span>
+              {procesandoPago ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  <span>Procesando Pago Seguro...</span>
+                </>
+              ) : (
+                <span>🔒 Proceder al Pago Seguro</span>
+              )}
             </button>
 
             <p className="text-muted text-center small mb-0">

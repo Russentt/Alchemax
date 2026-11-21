@@ -1,11 +1,23 @@
-import { useEffect, useState, useRef, type JSX } from "react";
+import { useEffect, useState, useRef, useCallback, type JSX } from "react";
 import AdminSidebar, { type AdminTab } from "../components/admin/AdminSidebar";
 import AdminStatCard from "../components/admin/AdminStatCard";
-import type { Categoria, Servicio, Usuario } from "../types/index";
+import type {
+  Categoria,
+  Cita,
+  Compra,
+  EstadoCita,
+  EstadoCompra,
+  PeriodoReporte,
+  ReporteAdmin,
+  Servicio,
+  Usuario,
+} from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
 import { useNavigate } from "react-router";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
+import { TiendaService } from "../services/tiendaService";
+import { CitasService } from "../services/citasService";
 import ModalProducto from "../components/admin/ModalProducto";
 import ModalCategoria from "../components/admin/ModalCategoria";
 import ModalUsuario from "../components/admin/ModalUsuario";
@@ -22,10 +34,6 @@ export default function Admin(): JSX.Element {
       navigate("/login");
     }
   }, [navigate]);
-
-  useEffect(() => {
-  cargarCategorias();
-}, []);
 
   // Estados Globales
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -46,10 +54,6 @@ export default function Admin(): JSX.Element {
     const data = await StorageServicios.getServicios();
     setServicios(data);
   };
-
-  useEffect(() => {
-    cargarServicios();
-  }, []);
 
   const [busquedaServicios, setBusquedaServicios] = useState("");
   const [paginaServicios, setPaginaServicios] = useState(1);
@@ -85,6 +89,77 @@ export default function Admin(): JSX.Element {
   const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
   const [modalCrearUsuario, setModalCrearUsuario] = useState(false);
 
+  // Estados Reportes Administrativos y Operaciones (Compras + Citas)
+  const [periodoReporte, setPeriodoReporte] = useState<PeriodoReporte>("mes");
+  const [todasLasCompras, setTodasLasCompras] = useState<Compra[]>([]);
+  const [todasLasCitas, setTodasLasCitas] = useState<Cita[]>([]);
+  const [reporteBackend, setReporteBackend] = useState<ReporteAdmin | null>(null);
+  const [cargandoOperaciones, setCargandoOperaciones] = useState<boolean>(false);
+  const [filtroTipoOperacion, setFiltroTipoOperacion] = useState<"todas" | "compras" | "citas">("todas");
+  const [busquedaOperaciones, setBusquedaOperaciones] = useState<string>("");
+
+  const cargarOperacionesYReporte = useCallback(
+    async (periodoObjetivo: PeriodoReporte = periodoReporte) => {
+      setCargandoOperaciones(true);
+      try {
+        const [comprasData, citasData, repData] = await Promise.all([
+          TiendaService.getTodasLasCompras(),
+          CitasService.getCitas(),
+          TiendaService.getReporteAdmin(periodoObjetivo),
+        ]);
+        setTodasLasCompras(comprasData);
+        setTodasLasCitas(citasData);
+        setReporteBackend(repData);
+      } finally {
+        setCargandoOperaciones(false);
+      }
+    },
+    [periodoReporte],
+  );
+
+  useEffect(() => {
+    let active = true;
+    const sincronizarOperaciones = async () => {
+      const [comprasData, citasData, repData] = await Promise.all([
+        TiendaService.getTodasLasCompras(),
+        CitasService.getCitas(),
+        TiendaService.getReporteAdmin(periodoReporte),
+      ]);
+      if (!active) return;
+      setTodasLasCompras(comprasData);
+      setTodasLasCitas(citasData);
+      setReporteBackend(repData);
+    };
+    void sincronizarOperaciones();
+    return () => {
+      active = false;
+    };
+  }, [periodoReporte]);
+
+  const reporteEfectivo: ReporteAdmin =
+    reporteBackend ??
+    TiendaService.calcularReporteLocal(todasLasCompras, todasLasCitas, periodoReporte);
+
+  const handleCambiarEstadoCompra = async (id: number, nuevoEstado: EstadoCompra) => {
+    const res = await TiendaService.cambiarEstadoCompra(id, nuevoEstado);
+    if (!res.success) {
+      mostrarNotificacion(res.mensaje, "danger");
+      return;
+    }
+    await cargarOperacionesYReporte(periodoReporte);
+    mostrarNotificacion(res.mensaje, "success");
+  };
+
+  const handleCambiarEstadoCitaAdmin = async (id: number, nuevoEstado: EstadoCita) => {
+    const res = await CitasService.cambiarEstado(id, nuevoEstado);
+    if (!res.success) {
+      mostrarNotificacion(res.mensaje, "danger");
+      return;
+    }
+    await cargarOperacionesYReporte(periodoReporte);
+    mostrarNotificacion(res.mensaje, "success");
+  };
+
   // Estados Terminal CLI
   const [terminalHistory, setTerminalHistory] = useState<{ id: string; type: 'cmd' | 'output'; content: string | JSX.Element }[]>([
     { id: 'init1', type: 'output', content: 'Alchemax OS v11.0.4 (NutriVida Core Branch)' },
@@ -95,6 +170,7 @@ export default function Admin(): JSX.Element {
   // Referencias para la UX de la Terminal
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const terminalInputRef = useRef<HTMLInputElement>(null);
+  const terminalSeqRef = useRef<number>(1);
 
   // Estado para el System Event Log Dinámico
   const [systemLogs, setSystemLogs] = useState<{ id: number, text: string, color: string }[]>([
@@ -130,7 +206,10 @@ export default function Admin(): JSX.Element {
   }, [activeTab]);
 
   // Helpers de Carga
-  const cargarCategorias = async () => { const data = await StorageCategorias.getCategorias();setCategorias(data);};
+  const cargarCategorias = async () => {
+    const data = await StorageCategorias.getCategorias();
+    setCategorias(data);
+  };
 
   const cargarUsuarios = async () => {
     const data = await StorageUsuario.getUsuarios();
@@ -138,7 +217,22 @@ export default function Admin(): JSX.Element {
   };
 
   useEffect(() => {
-    cargarUsuarios();
+    let active = true;
+    const inicializarDatosBase = async () => {
+      const [cats, svcs, usrs] = await Promise.all([
+        StorageCategorias.getCategorias(),
+        StorageServicios.getServicios(),
+        StorageUsuario.getUsuarios(),
+      ]);
+      if (!active) return;
+      setCategorias(cats);
+      setServicios(svcs);
+      setUsuarios(usrs);
+    };
+    void inicializarDatosBase();
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Handlers Categorías
@@ -294,7 +388,9 @@ export default function Admin(): JSX.Element {
   const handleTerminalCommand = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       const cmd = currentCmd.trim();
-      const newHistory = [...terminalHistory, { id: `in-${Date.now()}`, type: 'cmd' as const, content: cmd }];
+      terminalSeqRef.current += 1;
+      const cmdSeq = terminalSeqRef.current;
+      const newHistory = [...terminalHistory, { id: `in-${cmdSeq}`, type: 'cmd' as const, content: cmd }];
       let output: string | JSX.Element = "";
       
       const argsMatch = cmd.match(/(?:[^\s"]+|"[^"]*")+/g);
@@ -345,8 +441,16 @@ export default function Admin(): JSX.Element {
             output = servicios.map(s => `[${s.estado.toUpperCase()}]\t${s.id}\t- ${s.nombre} ($${s.precio})`).join("\n");
           } else if (args[1] === "categorias") {
             output = categorias.map(c => `[ID: ${c.id}]\t${c.nombre}\t(Servicios: ${c.serviciosAsociados || 0})`).join("\n");
+          } else if (args[1] === "compras") {
+            output = todasLasCompras.length === 0
+              ? "Sin compras registradas."
+              : todasLasCompras.map(c => `[${c.estado.toUpperCase()}]\t#CMP-${c.id}\t${c.fechaCompra}\t${c.nombre} (${formatPriceCLP(c.monto)})`).join("\n");
+          } else if (args[1] === "citas") {
+            output = todasLasCitas.length === 0
+              ? "Sin citas registradas."
+              : todasLasCitas.map(c => `[${c.estado.toUpperCase()}]\t#CIT-${c.id}\t${c.fecha} ${c.hora}\t${c.tipo} - ${c.profesional}`).join("\n");
           } else {
-            output = "usuarios/  servicios/  categorias/";
+            output = "usuarios/  servicios/  categorias/  compras/  citas/";
           }
           break;
         case "catadd":
@@ -376,7 +480,7 @@ export default function Admin(): JSX.Element {
             const newU: Omit<Usuario, "id"> = {
               email: args[1],
               nombre: args[2],
-              rol: args[3] as any,
+              rol: args[3] as Usuario["rol"],
               password: "password123",
               genero: "otro",
               fechaNacimiento: "1990-01-01",
@@ -423,7 +527,8 @@ export default function Admin(): JSX.Element {
       }
 
       if (output) {
-        newHistory.push({ id: `out-${Date.now()}`, type: 'output', content: output });
+        terminalSeqRef.current += 1;
+        newHistory.push({ id: `out-${terminalSeqRef.current}`, type: 'output', content: output });
       }
 
       setTerminalHistory(newHistory);
@@ -432,13 +537,319 @@ export default function Admin(): JSX.Element {
   };
 
   // --- RENDERS DE VISTAS (DARK UI) ---
+  const etiquetasPeriodo: Record<PeriodoReporte, string> = {
+    semana: "Últimos 7 días / Semana actual",
+    mes: "Últimos 30 días / Mes en curso",
+    anio: `Año calendario ${new Date().getFullYear()}`,
+    historico: "Acumulado histórico en base de datos",
+  };
+
+  const servicioTop = reporteEfectivo.serviciosMasSolicitados[0] ?? null;
+
   const renderDashboard = () => (
     <div style={{ animation: "fadeIn 0.3s ease-in-out" }}>
-      <div className="row g-4 mb-4">
-        <AdminStatCard title="Servicios Activos" value={servicios.filter(s => s.estado === 'Activo').length} icon="📦" theme="primary" />
-        <AdminStatCard title="Categorías Clínicas" value={categorias.length} icon="🗂️" theme="info" />
-        <AdminStatCard title="Usuarios Registrados" value={usuarios.length} icon="👥" theme="warning" />
+      {/* Barra de filtro de período para reportes administrativos */}
+      <div
+        className="p-3 p-md-4 rounded-4 shadow-sm mb-4 d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3"
+        style={{ background: "#1f2937", border: "1px solid #374151" }}
+      >
+        <div>
+          <h5 className="fw-bolder mb-1 text-white">
+            Resumen Ejecutivo y Reportes de Operaciones
+          </h5>
+          <p className="mb-0 small font-monospace" style={{ color: "#9ca3af" }}>
+            Período activo: <strong className="text-info">{etiquetasPeriodo[periodoReporte]}</strong>
+            {reporteEfectivo.fechaInicio && reporteEfectivo.fechaFin
+              ? ` (${reporteEfectivo.fechaInicio} a ${reporteEfectivo.fechaFin})`
+              : ""}
+          </p>
+        </div>
+
+        <div className="d-flex flex-wrap align-items-center gap-2">
+          <div
+            className="btn-group"
+            role="group"
+            aria-label="Filtrar estadísticas por período"
+          >
+            {(
+              [
+                { id: "semana", label: "Semana" },
+                { id: "mes", label: "Mes" },
+                { id: "anio", label: "Año" },
+                { id: "historico", label: "Histórico" },
+              ] as { id: PeriodoReporte; label: string }[]
+            ).map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                aria-pressed={periodoReporte === p.id}
+                onClick={() => setPeriodoReporte(p.id)}
+                className={`btn btn-sm fw-bold px-3 ${
+                  periodoReporte === p.id
+                    ? "btn-primary text-white"
+                    : "btn-outline-secondary text-light"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              void cargarOperacionesYReporte(periodoReporte);
+              void cargarServicios();
+              void cargarCategorias();
+              void cargarUsuarios();
+              mostrarNotificacion("Indicadores actualizados desde la base de datos.", "info");
+            }}
+            disabled={cargandoOperaciones}
+            className="btn btn-sm btn-outline-info fw-bold"
+          >
+            {cargandoOperaciones ? "⏳ Sincronizando..." : "🔄 Actualizar"}
+          </button>
+        </div>
       </div>
+
+      {/* Tarjetas de Indicadores Principales (KPIs) */}
+      <div className="row g-4 mb-4">
+        <AdminStatCard
+          title="Total Operaciones"
+          value={reporteEfectivo.totalOperaciones}
+          subtitle={`${reporteEfectivo.totalCompras} compras • ${reporteEfectivo.totalCitas} citas clínicas`}
+          icon="📈"
+          theme="primary"
+        />
+        <AdminStatCard
+          title="Monto Total Vendido"
+          value={formatPriceCLP(reporteEfectivo.montoTotalVendido)}
+          subtitle={`Ticket promedio: ${formatPriceCLP(reporteEfectivo.ticketPromedio)}`}
+          icon="💰"
+          theme="success"
+        />
+        <AdminStatCard
+          title="Servicios Vendidos / Realizados"
+          value={`${reporteEfectivo.comprasActivas + reporteEfectivo.comprasCompletadas} vendidos`}
+          subtitle={`${reporteEfectivo.serviciosRealizados} prestaciones completadas`}
+          icon="🩺"
+          theme="info"
+        />
+        <AdminStatCard
+          title="Servicio Más Solicitado"
+          value={servicioTop ? servicioTop.nombre : "Sin ventas"}
+          subtitle={
+            servicioTop
+              ? `${servicioTop.cantidadVendida} contrataciones (${formatPriceCLP(servicioTop.montoRecaudado)})`
+              : "No hay compras registradas en este período"
+          }
+          icon="🏆"
+          theme="warning"
+        />
+        <AdminStatCard
+          title="Catálogo Clínico Activo"
+          value={servicios.filter((s) => s.estado === "Activo").length}
+          subtitle={`${categorias.length} categorías clínicas registradas`}
+          icon="📦"
+          theme="primary"
+        />
+        <AdminStatCard
+          title="Usuarios Registrados"
+          value={usuarios.length}
+          subtitle="Cuentas activas en la plataforma"
+          icon="👥"
+          theme="info"
+        />
+      </div>
+
+      {/* Ranking y Gráfico de Servicios Más Solicitados + Estado de Operaciones */}
+      <div className="row g-4 mb-4">
+        <div className="col-12 col-xl-7">
+          <div
+            className="p-4 rounded-4 shadow-sm h-100"
+            style={{ background: "#1f2937", border: "1px solid #374151", color: "#f3f4f6" }}
+          >
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h5 className="fw-bolder mb-1">Ranking de Servicios Más Solicitados</h5>
+                <p className="mb-0 small text-secondary">
+                  Distribución de demanda e ingresos reales según contrataciones del período
+                </p>
+              </div>
+              <span className="badge bg-primary bg-opacity-25 text-primary rounded-pill px-3 py-2 font-monospace">
+                {reporteEfectivo.serviciosMasSolicitados.length} servicios con ventas
+              </span>
+            </div>
+
+            {reporteEfectivo.serviciosMasSolicitados.length === 0 ? (
+              <div className="text-center py-5 text-secondary font-monospace">
+                No se registran ventas de servicios en el período seleccionado.
+              </div>
+            ) : (
+              <>
+                {/* Gráfico de barras horizontales */}
+                <div className="d-flex flex-column gap-3 mb-4">
+                  {reporteEfectivo.serviciosMasSolicitados.map((srv, idx) => (
+                    <div key={`${srv.nombre}-${idx}`}>
+                      <div className="d-flex justify-content-between align-items-center small mb-1">
+                        <span className="fw-bold text-white">
+                          <span className="badge bg-secondary me-2 font-monospace">
+                            #{idx + 1}
+                          </span>
+                          {srv.nombre}
+                        </span>
+                        <span className="font-monospace text-info">
+                          {srv.cantidadVendida} ud. • {formatPriceCLP(srv.montoRecaudado)} ({srv.porcentajeVentas}%)
+                        </span>
+                      </div>
+                      <div
+                        className="progress"
+                        style={{ height: "10px", backgroundColor: "#111827" }}
+                        role="progressbar"
+                        aria-label={`Participación de ventas de ${srv.nombre}`}
+                        aria-valuenow={srv.porcentajeVentas}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      >
+                        <div
+                          className="progress-bar"
+                          style={{
+                            width: `${Math.max(8, srv.porcentajeVentas)}%`,
+                            background:
+                              idx === 0
+                                ? "linear-gradient(90deg, #10b981, #059669)"
+                                : idx === 1
+                                  ? "linear-gradient(90deg, #3b82f6, #2563eb)"
+                                  : "linear-gradient(90deg, #f59e0b, #d97706)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Tabla resumen de servicios más solicitados */}
+                <div className="table-responsive rounded-3 overflow-hidden" style={{ border: "1px solid #374151" }}>
+                  <table className="table table-dark table-sm align-middle mb-0" style={{ backgroundColor: "#111827" }}>
+                    <thead style={{ borderBottom: "1px solid #374151" }}>
+                      <tr>
+                        <th className="small text-uppercase text-secondary border-0">#</th>
+                        <th className="small text-uppercase text-secondary border-0">Servicio</th>
+                        <th className="small text-uppercase text-secondary border-0 text-center">Unidades</th>
+                        <th className="small text-uppercase text-secondary border-0 text-end">Ingresos</th>
+                        <th className="small text-uppercase text-secondary border-0 text-end">% Demanda</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reporteEfectivo.serviciosMasSolicitados.map((srv, idx) => (
+                        <tr key={`row-${srv.nombre}-${idx}`}>
+                          <td className="font-monospace text-secondary">{idx + 1}</td>
+                          <td className="fw-semibold text-white">{srv.nombre}</td>
+                          <td className="text-center font-monospace text-info">{srv.cantidadVendida}</td>
+                          <td className="text-end font-monospace text-success">{formatPriceCLP(srv.montoRecaudado)}</td>
+                          <td className="text-end font-monospace">{srv.porcentajeVentas}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Desglose de Estados de Operaciones (Compras y Citas) */}
+        <div className="col-12 col-xl-5">
+          <div
+            className="p-4 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-between"
+            style={{ background: "#1f2937", border: "1px solid #374151", color: "#f3f4f6" }}
+          >
+            <div>
+              <h5 className="fw-bolder mb-1">Desglose de Operaciones</h5>
+              <p className="mb-3 small text-secondary">
+                Estado actual de compras y citas clínicas en el período seleccionado
+              </p>
+
+              <div className="p-3 rounded-3 mb-3" style={{ background: "#111827", border: "1px solid #374151" }}>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="fw-bold small text-uppercase text-info">
+                    🛍️ Compras de Planes ({reporteEfectivo.totalCompras})
+                  </span>
+                  <span className="font-monospace small text-success fw-bold">
+                    {formatPriceCLP(reporteEfectivo.montoTotalVendido)}
+                  </span>
+                </div>
+                <div className="row g-2 text-center font-monospace small">
+                  <div className="col-4">
+                    <div className="p-2 rounded bg-success bg-opacity-10 border border-success border-opacity-25">
+                      <div className="text-success fw-bolder fs-5">{reporteEfectivo.comprasActivas}</div>
+                      <div className="text-secondary" style={{ fontSize: "0.72rem" }}>Activas</div>
+                    </div>
+                  </div>
+                  <div className="col-4">
+                    <div className="p-2 rounded bg-primary bg-opacity-10 border border-primary border-opacity-25">
+                      <div className="text-primary fw-bolder fs-5">{reporteEfectivo.comprasCompletadas}</div>
+                      <div className="text-secondary" style={{ fontSize: "0.72rem" }}>Completadas</div>
+                    </div>
+                  </div>
+                  <div className="col-4">
+                    <div className="p-2 rounded bg-danger bg-opacity-10 border border-danger border-opacity-25">
+                      <div className="text-danger fw-bolder fs-5">{reporteEfectivo.comprasCanceladas}</div>
+                      <div className="text-secondary" style={{ fontSize: "0.72rem" }}>Canceladas</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-3" style={{ background: "#111827", border: "1px solid #374151" }}>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="fw-bold small text-uppercase text-warning">
+                    📅 Citas Clínicas ({reporteEfectivo.totalCitas})
+                  </span>
+                  <span className="font-monospace small text-secondary">
+                    {reporteEfectivo.citasCompletadas} realizadas
+                  </span>
+                </div>
+                <div className="row g-2 text-center font-monospace small">
+                  <div className="col-3">
+                    <div className="p-2 rounded bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                      <div className="text-warning fw-bolder">{reporteEfectivo.citasProgramadas}</div>
+                      <div className="text-secondary" style={{ fontSize: "0.68rem" }}>Prog.</div>
+                    </div>
+                  </div>
+                  <div className="col-3">
+                    <div className="p-2 rounded bg-info bg-opacity-10 border border-info border-opacity-25">
+                      <div className="text-info fw-bolder">{reporteEfectivo.citasConfirmadas}</div>
+                      <div className="text-secondary" style={{ fontSize: "0.68rem" }}>Conf.</div>
+                    </div>
+                  </div>
+                  <div className="col-3">
+                    <div className="p-2 rounded bg-success bg-opacity-10 border border-success border-opacity-25">
+                      <div className="text-success fw-bolder">{reporteEfectivo.citasCompletadas}</div>
+                      <div className="text-secondary" style={{ fontSize: "0.68rem" }}>Compl.</div>
+                    </div>
+                  </div>
+                  <div className="col-3">
+                    <div className="p-2 rounded bg-danger bg-opacity-10 border border-danger border-opacity-25">
+                      <div className="text-danger fw-bolder">{reporteEfectivo.citasCanceladas}</div>
+                      <div className="text-secondary" style={{ fontSize: "0.68rem" }}>Canc.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("operations")}
+              className="btn btn-primary fw-bold w-100 mt-3"
+            >
+              🧾 Gestionar Todas las Operaciones y Estados →
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="p-4 rounded-4 shadow-sm border-0" style={{ background: 'linear-gradient(145deg, #1f2937 0%, #111827 100%)' }}>
         <h5 className="fw-bolder mb-3 tracking-tight" style={{ color: '#f3f4f6' }}>Registro de Eventos del Sistema</h5>
         <div className="font-monospace small d-flex flex-column gap-1">
@@ -451,6 +862,270 @@ export default function Admin(): JSX.Element {
       </div>
     </div>
   );
+
+  const renderOperations = () => {
+    const termino = busquedaOperaciones.trim().toLocaleLowerCase("es-CL");
+
+    const comprasFiltradas = todasLasCompras.filter((c) =>
+      `${c.id} ${c.nombre} ${c.estado} ${c.fechaCompra} ${c.usuario?.nombre ?? ""} ${c.usuario?.email ?? ""}`
+        .toLocaleLowerCase("es-CL")
+        .includes(termino),
+    );
+
+    const citasFiltradas = todasLasCitas.filter((c) =>
+      `${c.id} ${c.tipo} ${c.profesional} ${c.estado} ${c.fecha} ${c.hora} ${c.pacienteNombre ?? ""} ${c.pacienteEmail ?? ""}`
+        .toLocaleLowerCase("es-CL")
+        .includes(termino),
+    );
+
+    return (
+      <div
+        className="p-4 rounded-4 shadow-lg border-0"
+        style={{
+          background: "#1f2937",
+          color: "#f3f4f6",
+          animation: "fadeSlideUp 0.3s var(--ease-spring)",
+        }}
+      >
+        <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+          <div>
+            <h5 className="fw-bolder mb-1 tracking-tight">
+              Control de Operaciones Clínicas y Compras
+            </h5>
+            <p className="mb-0 small text-secondary">
+              Consulta todas las contrataciones y citas registradas en la base de datos y actualiza sus estados.
+            </p>
+          </div>
+
+          <div className="d-flex flex-wrap gap-2">
+            <div className="btn-group" role="group" aria-label="Filtrar por tipo de operación">
+              <button
+                type="button"
+                onClick={() => setFiltroTipoOperacion("todas")}
+                className={`btn btn-sm fw-bold ${
+                  filtroTipoOperacion === "todas" ? "btn-primary" : "btn-outline-secondary text-light"
+                }`}
+              >
+                Todas ({todasLasCompras.length + todasLasCitas.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroTipoOperacion("compras")}
+                className={`btn btn-sm fw-bold ${
+                  filtroTipoOperacion === "compras" ? "btn-primary" : "btn-outline-secondary text-light"
+                }`}
+              >
+                Compras ({todasLasCompras.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroTipoOperacion("citas")}
+                className={`btn btn-sm fw-bold ${
+                  filtroTipoOperacion === "citas" ? "btn-primary" : "btn-outline-secondary text-light"
+                }`}
+              >
+                Citas ({todasLasCitas.length})
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void cargarOperacionesYReporte(periodoReporte)}
+              className="btn btn-sm btn-outline-info fw-bold"
+              disabled={cargandoOperaciones}
+            >
+              🔄 Recargar
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label htmlFor="buscar-operaciones-admin" className="form-label small text-secondary">
+            Buscar operación por paciente, correo, servicio, profesional o ID
+          </label>
+          <input
+            id="buscar-operaciones-admin"
+            type="search"
+            className="form-control bg-dark text-white border-secondary"
+            placeholder="Ej. Camila, Plan Deportivo, Nut. Andrea Valdés, Completado..."
+            value={busquedaOperaciones}
+            onChange={(e) => setBusquedaOperaciones(e.target.value)}
+          />
+        </div>
+
+        {/* Tabla de Compras / Contrataciones */}
+        {(filtroTipoOperacion === "todas" || filtroTipoOperacion === "compras") && (
+          <div className="mb-4">
+            <h6 className="fw-bold text-info text-uppercase small mb-3 font-monospace">
+              🛍️ Compras y Contrataciones de Servicios ({comprasFiltradas.length})
+            </h6>
+            <div className="table-responsive rounded-3 overflow-hidden" style={{ border: "1px solid #374151" }}>
+              <table className="table table-dark table-hover align-middle mb-0" style={{ backgroundColor: "#111827" }}>
+                <thead style={{ borderBottom: "2px solid #374151" }}>
+                  <tr>
+                    <th className="text-uppercase small text-white font-monospace border-0">ID</th>
+                    <th className="text-uppercase small text-white border-0">Paciente</th>
+                    <th className="text-uppercase small text-white border-0">Servicio Contratado</th>
+                    <th className="text-uppercase small text-white border-0">Fecha</th>
+                    <th className="text-uppercase small text-white border-0">Monto</th>
+                    <th className="text-uppercase small text-white border-0">Estado</th>
+                    <th className="text-end text-uppercase small text-white border-0">Actualizar Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comprasFiltradas.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-4 text-secondary">
+                        No hay compras que coincidan con el criterio de búsqueda.
+                      </td>
+                    </tr>
+                  ) : (
+                    comprasFiltradas.map((compra) => (
+                      <tr key={`compra-${compra.id}`} style={{ borderBottom: "1px solid #374151" }}>
+                        <td className="small font-monospace text-secondary">
+                          #CMP-{String(compra.id).padStart(4, "0")}
+                        </td>
+                        <td>
+                          <div className="fw-semibold text-white">
+                            {compra.usuario?.nombre || "Paciente Registrado"}
+                          </div>
+                          <div className="small font-monospace text-secondary">
+                            {compra.usuario?.email || "-"}
+                          </div>
+                        </td>
+                        <td className="fw-semibold text-white">{compra.nombre}</td>
+                        <td className="font-monospace small text-secondary">{compra.fechaCompra}</td>
+                        <td className="font-monospace fw-bold text-success">
+                          {formatPriceCLP(compra.monto)}
+                        </td>
+                        <td>
+                          <span
+                            className={`badge rounded-pill px-3 ${
+                              compra.estado === "Activo"
+                                ? "bg-success bg-opacity-25 text-success"
+                                : compra.estado === "Completado"
+                                  ? "bg-primary bg-opacity-25 text-primary"
+                                  : "bg-danger bg-opacity-25 text-danger"
+                            }`}
+                          >
+                            {compra.estado}
+                          </span>
+                        </td>
+                        <td className="text-end" style={{ minWidth: "170px" }}>
+                          <select
+                            aria-label={`Cambiar estado de compra ${compra.id}`}
+                            className="form-select form-select-sm bg-dark text-white border-secondary d-inline-block w-auto"
+                            value={compra.estado}
+                            onChange={(e) =>
+                              void handleCambiarEstadoCompra(
+                                compra.id,
+                                e.target.value as EstadoCompra,
+                              )
+                            }
+                          >
+                            <option value="Activo">Activo</option>
+                            <option value="Completado">Completado</option>
+                            <option value="Cancelado">Cancelado</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tabla de Citas Clínicas */}
+        {(filtroTipoOperacion === "todas" || filtroTipoOperacion === "citas") && (
+          <div>
+            <h6 className="fw-bold text-warning text-uppercase small mb-3 font-monospace">
+              📅 Citas Clínicas y Solicitudes ({citasFiltradas.length})
+            </h6>
+            <div className="table-responsive rounded-3 overflow-hidden" style={{ border: "1px solid #374151" }}>
+              <table className="table table-dark table-hover align-middle mb-0" style={{ backgroundColor: "#111827" }}>
+                <thead style={{ borderBottom: "2px solid #374151" }}>
+                  <tr>
+                    <th className="text-uppercase small text-white font-monospace border-0">ID</th>
+                    <th className="text-uppercase small text-white border-0">Paciente</th>
+                    <th className="text-uppercase small text-white border-0">Prestación</th>
+                    <th className="text-uppercase small text-white border-0">Profesional</th>
+                    <th className="text-uppercase small text-white border-0">Fecha y Hora</th>
+                    <th className="text-uppercase small text-white border-0">Estado</th>
+                    <th className="text-end text-uppercase small text-white border-0">Actualizar Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {citasFiltradas.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-4 text-secondary">
+                        No hay citas que coincidan con el criterio de búsqueda.
+                      </td>
+                    </tr>
+                  ) : (
+                    citasFiltradas.map((cita) => (
+                      <tr key={`cita-${cita.id}`} style={{ borderBottom: "1px solid #374151" }}>
+                        <td className="small font-monospace text-secondary">
+                          #CIT-{String(cita.id).padStart(4, "0")}
+                        </td>
+                        <td>
+                          <div className="fw-semibold text-white">
+                            {cita.pacienteNombre || cita.usuario?.nombre || "Paciente"}
+                          </div>
+                          <div className="small font-monospace text-secondary">
+                            {cita.pacienteEmail || cita.usuario?.email || "-"}
+                          </div>
+                        </td>
+                        <td className="fw-semibold text-white">{cita.tipo}</td>
+                        <td className="text-info">{cita.profesional}</td>
+                        <td className="font-monospace small text-white">
+                          {cita.fecha} <span className="text-secondary">({cita.hora})</span>
+                        </td>
+                        <td>
+                          <span
+                            className={`badge rounded-pill px-3 ${
+                              cita.estado === "Completada"
+                                ? "bg-success bg-opacity-25 text-success"
+                                : cita.estado === "Confirmada"
+                                  ? "bg-info bg-opacity-25 text-info"
+                                  : cita.estado === "Programada"
+                                    ? "bg-warning bg-opacity-25 text-warning"
+                                    : "bg-danger bg-opacity-25 text-danger"
+                            }`}
+                          >
+                            {cita.estado}
+                          </span>
+                        </td>
+                        <td className="text-end" style={{ minWidth: "170px" }}>
+                          <select
+                            aria-label={`Cambiar estado de cita ${cita.id}`}
+                            className="form-select form-select-sm bg-dark text-white border-secondary d-inline-block w-auto"
+                            value={cita.estado}
+                            onChange={(e) =>
+                              void handleCambiarEstadoCitaAdmin(
+                                cita.id,
+                                e.target.value as EstadoCita,
+                              )
+                            }
+                          >
+                            <option value="Programada">Programada</option>
+                            <option value="Confirmada">Confirmada</option>
+                            <option value="Completada">Completada</option>
+                            <option value="Cancelada">Cancelada</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderProducts = () => (
     <div className="p-4 rounded-4 shadow-lg border-0" style={{ background: '#1f2937', color: '#f3f4f6', animation: "fadeSlideUp 0.3s var(--ease-spring)" }}>
@@ -713,6 +1388,7 @@ export default function Admin(): JSX.Element {
   const renderActiveContent = () => {
     switch (activeTab) {
       case "dashboard": return renderDashboard();
+      case "operations": return renderOperations();
       case "products": return renderProducts();
       case "categories": return renderCategories();
       case "users": return renderUsers();
@@ -745,7 +1421,8 @@ export default function Admin(): JSX.Element {
               </div>
               <h3 className="fw-bolder mb-1 tracking-tight">Administración del Sistema</h3>
               <p className="mb-0 text-white small font-monospace">
-                {activeTab === "dashboard" && "Monitoreo de métricas globales y subsistemas activos."}
+                {activeTab === "dashboard" && "Reportes ejecutivos, ingresos reales, ranking de servicios y métricas por período."}
+                {activeTab === "operations" && "Supervisión y actualización de estados de compras y citas clínicas en base de datos."}
                 {activeTab === "products" && "Control de base de datos para servicios y planes clínicos."}
                 {activeTab === "categories" && "Gestión de estructura taxonómica de especialidades."}
                 {activeTab === "users" && "Control de accesos y gestión de identidades de usuarios."}

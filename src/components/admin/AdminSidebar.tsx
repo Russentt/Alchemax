@@ -1,6 +1,12 @@
 import { type JSX } from "react";
 
-export type AdminTab = "dashboard" | "products" | "categories" | "users" | "terminal";
+export type AdminTab =
+  | "dashboard"
+  | "operations"
+  | "products"
+  | "categories"
+  | "users"
+  | "terminal";
 
 interface AdminSidebarProps {
   activeTab: AdminTab;
@@ -53,7 +59,14 @@ export default function AdminSidebar({
               onClick={() => onTabChange("dashboard")}
               className={getTabClass("dashboard")}
             >
-              <span className="fs-5">📊</span> Métricas del Sistema
+              <span className="fs-5">📊</span> Reportes y Métricas
+            </button>
+            <button
+              type="button"
+              onClick={() => onTabChange("operations")}
+              className={getTabClass("operations")}
+            >
+              <span className="fs-5">🧾</span> Operaciones y Citas
             </button>
             <button
               type="button"

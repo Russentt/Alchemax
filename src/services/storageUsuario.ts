@@ -249,6 +249,9 @@ export const StorageUsuario = {
     _rememberMe = false,
   ): Promise<Usuario | null> => {
     void _rememberMe;
+    // Evita enviar tokens obsoletos/inválidos durante el inicio de sesión
+    usuarioActual = null;
+    AuthTokenStore.clear();
     try {
       const response = await api.post<AuthResponseBackend>("/api/auth/login", {
         email: email.trim().toLowerCase(),

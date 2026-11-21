@@ -7,8 +7,13 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  const requestUrl = config.url ?? "";
+  const isPublicAuthEndpoint =
+    requestUrl.includes("/api/auth/login") ||
+    requestUrl.includes("/api/auth/register");
+
   const token = AuthTokenStore.getToken();
-  if (token) {
+  if (token && !isPublicAuthEndpoint) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
   }

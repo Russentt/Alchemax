@@ -9,7 +9,6 @@ import type {
   Compra,
 } from "../types/index";
 
-import { StorageInit } from "../services/storage_init";
 import { StorageUsuario } from "../services/storageUsuario";
 import { CitasService } from "../services/citasService";
 import { PlanService } from "../services/planService";
@@ -94,42 +93,43 @@ export default function Account(): JSX.Element {
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    StorageInit.initDB();
+    let active = true;
 
-    const sesionActiva = StorageUsuario.getUsuarioSesion();
-    if (!sesionActiva) {
-      navigate("/login", { replace: true });
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      const dbUser = StorageUsuario.getUsuarioSesion();
-
-      if (!dbUser) {
+    const cargarDatosCuenta = async () => {
+      const sesionActiva = StorageUsuario.getUsuarioSesion();
+      if (!sesionActiva) {
         navigate("/login", { replace: true });
         return;
       }
 
-      setUsuario(dbUser);
-      setProfileForm(dbUser);
+      const perfilActual =
+        (await StorageUsuario.getPerfilActual()) ?? sesionActiva;
+      if (!active) return;
 
-      setCitas(CitasService.getCitas());
+      setUsuario(perfilActual);
+      setProfileForm(perfilActual);
       setPlan(PlanService.getPlan());
       setMetricas(PlanService.getMetricas());
       setExamenes(PlanService.getExamenes());
-      TiendaService.getCompras().then(setCompras);
 
-      // Cargar progreso diario de comidas desde localStorage
-      const hoyKey = `comidas_${dbUser.email}_${new Date().toLocaleDateString("es-CL")}`;
-      const guardadas = localStorage.getItem(hoyKey);
-      if (guardadas) {
-        setComidasCompletadas(JSON.parse(guardadas));
-      }
+      const [comprasData, citasData] = await Promise.all([
+        TiendaService.getCompras(),
+        perfilActual.id
+          ? CitasService.getCitasPorUsuario(perfilActual.id)
+          : CitasService.getCitas(),
+      ]);
 
+      if (!active) return;
+      setCompras(comprasData);
+      setCitas(citasData);
       setIsLoading(false);
-    }, 400);
+    };
 
-    return () => clearTimeout(timer);
+    cargarDatosCuenta();
+
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
   const showNotification = (
@@ -215,10 +215,6 @@ export default function Account(): JSX.Element {
           );
           return;
         }
-        if (passwordActual !== usuario.password) {
-          setPasswordError("La contraseña actual ingresada es incorrecta.");
-          return;
-        }
         if (!passRegex.test(nuevaPassword)) {
           setPasswordError(
             "La nueva contraseña no cumple con los requisitos de seguridad.",
@@ -233,25 +229,37 @@ export default function Account(): JSX.Element {
         }
       }
 
-      const updatedUser:  Usuario = {
-        ...profileForm,
-        fotoPerfil: profileForm.fotoPerfil, // Asegura que si es undefined se actualice
+      const resultado = await StorageUsuario.actualizarPerfilPropio({
+        nombre: profileForm.nombre,
+        email: profileForm.email,
+        genero: profileForm.genero,
+        fechaNacimiento: profileForm.fechaNacimiento,
+        pesoActual:
+          profileForm.pesoActual !== undefined
+            ? Math.round(profileForm.pesoActual)
+            : undefined,
+        objetivoPrincipal: profileForm.objetivoPrincipal,
+        fotoPerfil: profileForm.fotoPerfil,
         ...(isChangingPassword && nuevaPassword.trim() !== ""
-          ? { password: nuevaPassword }
+          ? {
+              passwordActual,
+              nuevaPassword,
+            }
           : {}),
-      };
+      });
 
-      const resultado = await StorageUsuario.updateUsuario(
-        updatedUser,
-        usuario.email,
-      );
       if (!resultado.success) {
-        showNotification(resultado.mensaje, "danger");
+        if (isChangingPassword) {
+          setPasswordError(resultado.mensaje);
+        } else {
+          showNotification(resultado.mensaje, "danger");
+        }
         return;
       }
 
-      setUsuario(updatedUser);
-      setProfileForm(updatedUser);
+      const usuarioActualizado = resultado.usuario ?? profileForm;
+      setUsuario(usuarioActualizado);
+      setProfileForm(usuarioActualizado);
       resetPasswordFields();
       setIsEditingProfile(false);
 
@@ -287,9 +295,21 @@ export default function Account(): JSX.Element {
     return fechaISO;
   };
 
-  const handleCancelarCita = (id: string) => {
-    CitasService.cancelarCita(id);
-    setCitas(CitasService.getCitas());
+  const recargarCitasUsuario = async (userId?: number) => {
+    const idObjetivo = userId ?? usuario?.id;
+    const data = idObjetivo
+      ? await CitasService.getCitasPorUsuario(idObjetivo)
+      : await CitasService.getCitas();
+    setCitas(data);
+  };
+
+  const handleCancelarCita = async (id: number) => {
+    const resultado = await CitasService.cancelarCita(id);
+    if (!resultado.success) {
+      showNotification(resultado.mensaje, "danger");
+      return;
+    }
+    await recargarCitasUsuario();
     showNotification("Cita cancelada exitosamente.", "warning");
   };
 
@@ -299,18 +319,25 @@ export default function Account(): JSX.Element {
     setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
   };
 
-  const handleBookingSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleBookingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const nuevaCita: Cita = {
-      id: `c-${Date.now()}`,
-      fecha: formatearFecha(bookingForm.fecha),
+    const resultado = await CitasService.addCita({
+      fecha: bookingForm.fecha,
       hora: bookingForm.hora,
       tipo: bookingForm.tipo,
       profesional: bookingForm.profesional,
       estado: "Programada",
-    };
-    CitasService.addCita(nuevaCita);
-    setCitas(CitasService.getCitas());
+      usuarioId: usuario?.id,
+      pacienteNombre: usuario?.nombre,
+      pacienteEmail: usuario?.email,
+    });
+
+    if (!resultado.success) {
+      showNotification(resultado.mensaje, "danger");
+      return;
+    }
+
+    await recargarCitasUsuario();
     setIsBookingCita(false);
     showNotification("Cita agendada exitosamente.", "success");
     setBookingForm({
@@ -338,14 +365,12 @@ export default function Account(): JSX.Element {
   // --- Lógica de Pauta Alimentaria ---
   const toggleComidaCompletada = (comidaId: string) => {
     if (!usuario) return;
-    const hoyKey = `comidas_${usuario.email}_${new Date().toLocaleDateString("es-CL")}`;
     const existe = comidasCompletadas.includes(comidaId);
     const nuevas = existe
       ? comidasCompletadas.filter((id) => id !== comidaId)
       : [...comidasCompletadas, comidaId];
 
     setComidasCompletadas(nuevas);
-    localStorage.setItem(hoyKey, JSON.stringify(nuevas));
   };
 
   const handleDescargarPDF = () => {
@@ -396,15 +421,15 @@ export default function Account(): JSX.Element {
       musculo: musculoNum,
     };
 
-    const actuales = PlanService.getMetricas();
-    const actualizadas = [registro, ...actuales];
-    localStorage.setItem("db_metricas", JSON.stringify(actualizadas));
-    setMetricas(actualizadas);
+    PlanService.addMetrica(registro);
+    setMetricas(PlanService.getMetricas());
 
     // Sincronizar el peso actual del usuario con el nuevo registro
     if (usuario) {
-      const userActualizado = { ...usuario, pesoActual: pesoNum };
-      StorageUsuario.updateUsuario(userActualizado, usuario.email);
+      const userActualizado = { ...usuario, pesoActual: Math.round(pesoNum) };
+      void StorageUsuario.actualizarPerfilPropio({
+        pesoActual: Math.round(pesoNum),
+      });
       setUsuario(userActualizado);
       setProfileForm(userActualizado);
     }
@@ -471,9 +496,8 @@ export default function Account(): JSX.Element {
   };
 
   const handleEliminarExamen = (id: string, nombre: string) => {
-    const filtrados = examenes.filter((e) => e.id !== id);
-    localStorage.setItem("db_examenes", JSON.stringify(filtrados));
-    setExamenes(filtrados);
+    PlanService.deleteExamen(id);
+    setExamenes(PlanService.getExamenes());
     showNotification(`Documento "${nombre}" eliminado.`, "warning");
   };
 
@@ -497,8 +521,19 @@ export default function Account(): JSX.Element {
           <AccountSummaryCard
             icon="📅"
             label="Próxima Cita"
-            value={citas.find((c) => c.estado === "Programada")?.fecha || "Sin agendar"}
-            description={citas.find((c) => c.estado === "Programada")?.tipo || "Haz clic para programar →"}
+            value={
+              (() => {
+                const proxima = citas.find(
+                  (c) => c.estado === "Programada" || c.estado === "Confirmada",
+                );
+                return proxima ? formatearFecha(proxima.fecha) : "Sin agendar";
+              })()
+            }
+            description={
+              citas.find(
+                (c) => c.estado === "Programada" || c.estado === "Confirmada",
+              )?.tipo || "Haz clic para programar →"
+            }
             onClick={() => setActiveTab("citas")}
             descriptionClassName="text-success small fw-semibold mb-0"
           />
@@ -1000,7 +1035,8 @@ export default function Account(): JSX.Element {
                       <h5 className="fw-bold text-dark mb-0">{cita.tipo}</h5>
                       <span
                         className={`badge rounded-pill px-3 py-1 ${
-                          cita.estado === "Programada"
+                          cita.estado === "Programada" ||
+                          cita.estado === "Confirmada"
                             ? "bg-success"
                             : cita.estado === "Cancelada"
                               ? "bg-danger"
@@ -1011,11 +1047,12 @@ export default function Account(): JSX.Element {
                       </span>
                     </div>
                     <p className="text-muted small mb-0">
-                      📅 <strong>{cita.fecha}</strong> a las{" "}
+                      📅 <strong>{formatearFecha(cita.fecha)}</strong> a las{" "}
                       <strong>{cita.hora} hrs</strong> • 👩‍⚕️ {cita.profesional}
                     </p>
                   </div>
-                  {cita.estado === "Programada" && (
+                  {(cita.estado === "Programada" ||
+                    cita.estado === "Confirmada") && (
                     <div className="mt-3 mt-md-0">
                       <button
                         onClick={() => handleCancelarCita(cita.id)}

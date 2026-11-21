@@ -171,8 +171,18 @@ export default function Metodologia(): JSX.Element {
     setIsPaymentModalOpen(true);
   };
 
-  const handlePaymentSuccess = () => {
-    TiendaService.vaciarCarrito();
+  const handlePaymentSuccess = async () => {
+    const fechaHoy = new Date().toISOString().split("T")[0];
+    for (const item of paymentItems) {
+      await TiendaService.registrarCompra({
+        servicio: Number(item.id),
+        nombre: item.nombre,
+        fechaCompra: fechaHoy,
+        monto: item.precio,
+        estado: "Activo",
+      });
+    }
+    await TiendaService.vaciarCarrito();
     setLocalCartPreview([]);
     setNotification({
       message: "¡Pago aprobado en la pasarela Webpay (Demo)!",

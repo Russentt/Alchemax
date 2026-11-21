@@ -1,9 +1,33 @@
 import axios from "axios";
 import type { Usuario } from "../types/index";
 import { api } from "../api/axiosConfig";
+import { AuthTokenStore } from "../utils/authToken";
 
-const SESION_KEY = "db_sesion";
-const LEGACY_SESSION_KEY = "session_user";
+interface AuthResponseBackend {
+  token: string;
+  id: number;
+  nombre: string;
+  email: string;
+  rol: Usuario["rol"];
+  genero?: string;
+  fechaNacimiento?: string;
+  pesoActual?: number;
+  objetivoPrincipal?: string;
+  fotoPerfil?: string;
+}
+
+export interface ActualizarPerfilPropioPayload {
+  nombre?: string;
+  email?: string;
+  genero?: string;
+  fechaNacimiento?: string;
+  pesoActual?: number;
+  objetivoPrincipal?: string;
+  fotoPerfil?: string;
+  passwordActual?: string;
+  nuevaPassword?: string;
+}
+
 const ALLOWED_ROLES = new Set<Usuario["rol"]>([
   "admin",
   "usuario",
@@ -24,52 +48,57 @@ const sanitizeSessionUser = (raw: unknown): Usuario | null => {
   }
 
   const sanitized: Usuario = {
-    ...(candidate as unknown as Usuario),
+    id: typeof candidate.id === "number" ? candidate.id : undefined,
+    nombre: candidate.nombre,
     email: candidate.email.trim().toLowerCase(),
+    rol: candidate.rol as Usuario["rol"],
+    genero: typeof candidate.genero === "string" ? candidate.genero : "otro",
+    fechaNacimiento:
+      typeof candidate.fechaNacimiento === "string"
+        ? candidate.fechaNacimiento
+        : "",
+    pesoActual:
+      typeof candidate.pesoActual === "number"
+        ? candidate.pesoActual
+        : undefined,
+    objetivoPrincipal:
+      typeof candidate.objetivoPrincipal === "string"
+        ? candidate.objetivoPrincipal
+        : undefined,
+    fotoPerfil:
+      typeof candidate.fotoPerfil === "string"
+        ? candidate.fotoPerfil
+        : undefined,
   };
 
-  // Never persist plaintext passwords in web storage
-  delete sanitized.password;
   return sanitized;
 };
 
 const readStoredSession = (): Usuario | null => {
-  const storages: Storage[] = [sessionStorage, localStorage];
-
-  for (const storage of storages) {
-    try {
-      const raw = storage.getItem(SESION_KEY);
-      if (!raw) continue;
-      const parsed = sanitizeSessionUser(JSON.parse(raw));
-      if (parsed) return parsed;
-      storage.removeItem(SESION_KEY);
-    } catch {
-      try {
-        storage.removeItem(SESION_KEY);
-      } catch {
-        // Ignore storage errors
-      }
-    }
+  if (!AuthTokenStore.getToken()) {
+    AuthTokenStore.clear();
+    return null;
   }
 
-  return null;
+  const raw = AuthTokenStore.getUserRaw();
+  if (!raw) return null;
+
+  try {
+    const parsed = sanitizeSessionUser(JSON.parse(raw));
+    if (parsed) return parsed;
+    AuthTokenStore.clear();
+    return null;
+  } catch {
+    AuthTokenStore.clear();
+    return null;
+  }
 };
 
-const persistSession = (usuario: Usuario, rememberMe: boolean): void => {
-  const serialized = JSON.stringify(usuario);
-  try {
-    sessionStorage.removeItem(SESION_KEY);
-    localStorage.removeItem(SESION_KEY);
-    sessionStorage.removeItem(LEGACY_SESSION_KEY);
-
-    if (rememberMe) {
-      localStorage.setItem(SESION_KEY, serialized);
-    } else {
-      sessionStorage.setItem(SESION_KEY, serialized);
-    }
-  } catch {
-    // Keep session in memory if web storage is unavailable
+const persistAuthSession = (usuario: Usuario, token?: string): void => {
+  if (token) {
+    AuthTokenStore.setToken(token);
   }
+  AuthTokenStore.setUserRaw(JSON.stringify(usuario));
 };
 
 let usuarioActual: Usuario | null = readStoredSession();
@@ -86,21 +115,39 @@ export const StorageUsuario = {
   },
 
   getUsuarioSesion: (): Usuario | null => {
+    if (!AuthTokenStore.getToken()) {
+      usuarioActual = null;
+      return null;
+    }
     if (!usuarioActual) {
       usuarioActual = readStoredSession();
     }
     return usuarioActual;
   },
 
+  getPerfilActual: async (): Promise<Usuario | null> => {
+    if (!AuthTokenStore.getToken()) {
+      usuarioActual = null;
+      return null;
+    }
+
+    try {
+      const response = await api.get<Usuario>("/api/auth/me");
+      const safeUser = sanitizeSessionUser(response.data);
+      if (safeUser) {
+        usuarioActual = safeUser;
+        persistAuthSession(safeUser);
+        return safeUser;
+      }
+      return usuarioActual;
+    } catch {
+      return usuarioActual;
+    }
+  },
+
   logout: (): void => {
     usuarioActual = null;
-    try {
-      localStorage.removeItem(SESION_KEY);
-      sessionStorage.removeItem(SESION_KEY);
-      sessionStorage.removeItem(LEGACY_SESSION_KEY);
-    } catch {
-      // Ignore storage errors
-    }
+    AuthTokenStore.clear();
   },
 
   registrarUsuario: async (
@@ -111,15 +158,20 @@ export const StorageUsuario = {
         ...nuevoUsuario,
         nombre: nuevoUsuario.nombre.trim(),
         email: nuevoUsuario.email.trim().toLowerCase(),
+        rol: "usuario",
       };
 
-      const response = await api.post<Usuario>("/api/usuarios", payload);
+      const response = await api.post<AuthResponseBackend>(
+        "/api/auth/register",
+        payload,
+      );
 
       if (response.status === 201 || response.status === 200) {
+        const safeUser = sanitizeSessionUser(response.data);
         return {
           success: true,
           mensaje: "Usuario registrado con éxito.",
-          usuario: sanitizeSessionUser(response.data) ?? response.data,
+          usuario: safeUser ?? undefined,
         };
       }
 
@@ -142,7 +194,8 @@ export const StorageUsuario = {
         if (status === 429) {
           return {
             success: false,
-            mensaje: "Demasiados intentos. Espera unos momentos antes de reintentar.",
+            mensaje:
+              "Demasiados intentos. Espera unos momentos antes de reintentar.",
           };
         }
       }
@@ -155,30 +208,117 @@ export const StorageUsuario = {
     }
   },
 
+  crearUsuarioAdmin: async (
+    nuevoUsuario: Omit<Usuario, "id">,
+  ): Promise<{ success: boolean; mensaje: string; usuario?: Usuario }> => {
+    try {
+      const payload: Omit<Usuario, "id"> = {
+        ...nuevoUsuario,
+        nombre: nuevoUsuario.nombre.trim(),
+        email: nuevoUsuario.email.trim().toLowerCase(),
+      };
+
+      const response = await api.post<Usuario>("/api/usuarios", payload);
+      if (response.status === 201 || response.status === 200) {
+        return {
+          success: true,
+          mensaje: "Usuario registrado con éxito.",
+          usuario: sanitizeSessionUser(response.data) ?? response.data,
+        };
+      }
+
+      return { success: false, mensaje: "No se pudo registrar el usuario." };
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        return {
+          success: false,
+          mensaje: "Datos inválidos o correo ya registrado.",
+        };
+      }
+      console.error("Error al crear usuario desde administración.");
+      return {
+        success: false,
+        mensaje: "Error al conectar con el servidor.",
+      };
+    }
+  },
+
   login: async (
     email: string,
     pass: string,
-    rememberMe = false,
+    _rememberMe = false,
   ): Promise<Usuario | null> => {
+    void _rememberMe;
+    // Evita enviar tokens obsoletos/inválidos durante el inicio de sesión
+    usuarioActual = null;
+    AuthTokenStore.clear();
     try {
-      const response = await api.post<Usuario>("/api/usuarios/login", {
+      const response = await api.post<AuthResponseBackend>("/api/auth/login", {
         email: email.trim().toLowerCase(),
         password: pass,
       });
 
-      if (response.status === 200 && response.data) {
+      if (response.status === 200 && response.data?.token) {
         const safeUser = sanitizeSessionUser(response.data);
         if (!safeUser) {
           return null;
         }
         usuarioActual = safeUser;
-        persistSession(safeUser, rememberMe);
+        persistAuthSession(safeUser, response.data.token);
         return usuarioActual;
       }
       return null;
     } catch {
       console.error("Error al iniciar sesión.");
       return null;
+    }
+  },
+
+  actualizarPerfilPropio: async (
+    payload: ActualizarPerfilPropioPayload,
+  ): Promise<{ success: boolean; mensaje: string; usuario?: Usuario }> => {
+    try {
+      const response = await api.put<AuthResponseBackend>(
+        "/api/auth/me",
+        payload,
+      );
+      const safeUser = sanitizeSessionUser(response.data);
+      if (safeUser) {
+        usuarioActual = safeUser;
+        persistAuthSession(safeUser, response.data.token);
+        return {
+          success: true,
+          mensaje: "Perfil actualizado con éxito.",
+          usuario: safeUser,
+        };
+      }
+      return { success: false, mensaje: "Respuesta inválida del servidor." };
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const serverMsg = (
+          error.response?.data as { message?: string; mensaje?: string } | undefined
+        );
+        if (error.response?.status === 400) {
+          return {
+            success: false,
+            mensaje:
+              serverMsg?.message ||
+              serverMsg?.mensaje ||
+              "La contraseña actual o los datos ingresados no son válidos.",
+          };
+        }
+        if (error.response?.status === 409) {
+          return {
+            success: false,
+            mensaje: "El correo electrónico ya está en uso por otra cuenta.",
+          };
+        }
+      }
+      console.error("Error al actualizar perfil propio.");
+      return {
+        success: false,
+        mensaje: "Error al actualizar el perfil en el servidor.",
+      };
     }
   },
 
@@ -193,21 +333,16 @@ export const StorageUsuario = {
         emailOriginal &&
         emailOriginal.toLowerCase() !== usuarioActualizado.email.toLowerCase()
       ) {
-        let correoDuplicado = false;
-        for (const u of usuarios) {
-          if (
+        const correoDuplicado = usuarios.some(
+          (u) =>
             u.id !== usuarioActualizado.id &&
-            u.email.toLowerCase() === usuarioActualizado.email.toLowerCase()
-          ) {
-            correoDuplicado = true;
-            break;
-          }
-        }
+            u.email.toLowerCase() === usuarioActualizado.email.toLowerCase(),
+        );
 
         if (correoDuplicado) {
           return {
             success: false,
-            mensaje: "Correo invalido.",
+            mensaje: "Correo inválido o ya registrado.",
           };
         }
       }
@@ -217,12 +352,9 @@ export const StorageUsuario = {
         const correoBuscar = (
           emailOriginal || usuarioActualizado.email
         ).toLowerCase();
-        for (const u of usuarios) {
-          if (u.email.toLowerCase() === correoBuscar) {
-            idObjetivo = u.id;
-            break;
-          }
-        }
+        idObjetivo = usuarios.find(
+          (u) => u.email.toLowerCase() === correoBuscar,
+        )?.id;
       }
 
       if (!idObjetivo) {
@@ -238,15 +370,17 @@ export const StorageUsuario = {
         const safeUser = sanitizeSessionUser(response.data);
         if (safeUser) {
           usuarioActual = safeUser;
-          const isPersistedLocally = Boolean(localStorage.getItem(SESION_KEY));
-          persistSession(safeUser, isPersistedLocally);
+          persistAuthSession(safeUser);
         }
       }
 
       return { success: true, mensaje: "Usuario actualizado con éxito." };
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
-      return { success: false, mensaje: "Error al actualizar en el servidor." };
+      return {
+        success: false,
+        mensaje: "Error al actualizar en el servidor.",
+      };
     }
   },
 

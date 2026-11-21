@@ -1,35 +1,38 @@
-import type { PlanNutricional, Examen,  Metrica} from "../types/index";
+import { SEED_DATA } from "../data/seedData";
+import type { PlanNutricional, Examen, Metrica } from "../types/index";
 
+// Estado clínico en memoria (sin localStorage) mientras se incorporan
+// endpoints SQL dedicados para pautas, métricas biométricas y exámenes.
+let planMemoria: PlanNutricional = structuredClone(SEED_DATA.plan);
+let metricasMemoria: Metrica[] = structuredClone(SEED_DATA.metricas);
+let examenesMemoria: Examen[] = structuredClone(SEED_DATA.examenes);
 
 export const PlanService = {
-  getPlan: (): PlanNutricional =>
-    JSON.parse(localStorage.getItem("db_plan") || "{}"),
-  getMetricas: (): Metrica[] =>
-    JSON.parse(localStorage.getItem("db_metricas") || "[]"),
-  addMetrica: (metrica: Metrica): void => {
-    const metricas = PlanService.getMetricas();
-    metricas.unshift(metrica);
-    localStorage.setItem("db_metricas", JSON.stringify(metricas));
-  },
-  getExamenes: (): Examen[] =>
-    JSON.parse(localStorage.getItem("db_examenes") || "[]"),
-  addExamen: (examen: Examen): void => {
-    const examenes = PlanService.getExamenes();
-    examenes.unshift(examen);
-    localStorage.setItem("db_examenes", JSON.stringify(examenes));
-  },
-  deleteExamen: (id: string): void => {
-    const examenes = PlanService.getExamenes().filter((e) => e.id !== id);
-    localStorage.setItem("db_examenes", JSON.stringify(examenes));
-  },
-  // Añadir dentro de PlanService en src/services/planService.ts
+  getPlan: (): PlanNutricional => structuredClone(planMemoria),
+
   updatePlan: (nuevoPlan: PlanNutricional): void => {
-    localStorage.setItem("db_plan", JSON.stringify(nuevoPlan));
+    planMemoria = structuredClone(nuevoPlan);
   },
+
+  getMetricas: (): Metrica[] => structuredClone(metricasMemoria),
+
+  addMetrica: (metrica: Metrica): void => {
+    metricasMemoria = [metrica, ...metricasMemoria];
+  },
+
+  getExamenes: (): Examen[] => structuredClone(examenesMemoria),
+
+  addExamen: (examen: Examen): void => {
+    examenesMemoria = [examen, ...examenesMemoria];
+  },
+
+  deleteExamen: (id: string): void => {
+    examenesMemoria = examenesMemoria.filter((e) => e.id !== id);
+  },
+
   updateEstadoExamen: (id: string, estado: "Pendiente" | "Revisado"): void => {
-    const examenes = PlanService.getExamenes().map((ex) =>
+    examenesMemoria = examenesMemoria.map((ex) =>
       ex.id === id ? { ...ex, estado } : ex,
     );
-    localStorage.setItem("db_examenes", JSON.stringify(examenes));
   },
 };

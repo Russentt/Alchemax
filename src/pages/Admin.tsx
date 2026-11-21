@@ -215,7 +215,7 @@ export default function Admin(): JSX.Element {
 
   // Handlers Usuarios
   const handleCrearUsuario = async (nuevoUsuario: Usuario) => {
-    const res = await StorageUsuario.registrarUsuario(nuevoUsuario);
+    const res = await StorageUsuario.crearUsuarioAdmin(nuevoUsuario);
 
     if (!res.success) {
       return mostrarNotificacion(res.mensaje, "danger");
@@ -382,7 +382,7 @@ export default function Admin(): JSX.Element {
               fechaNacimiento: "1990-01-01",
             };
 
-            const res = await StorageUsuario.registrarUsuario(newU);
+            const res = await StorageUsuario.crearUsuarioAdmin(newU);
 
             if (res.success) {
               await cargarUsuarios();

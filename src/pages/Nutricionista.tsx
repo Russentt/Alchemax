@@ -9,6 +9,8 @@ import NutricionistaCategoriesTab from "../components/nutricionista/Nutricionist
 
 import type {
     Categoria,
+    Cita,
+    EstadoCita,
     Metrica,
     Examen,
     PlanNutricional,
@@ -19,16 +21,17 @@ import { StorageUsuario } from "../services/storageUsuario";
 import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 import { PlanService } from "../services/planService";
+import { CitasService } from "../services/citasService";
 
 interface CitaNormalizada {
-  id: string;
+  id: number;
   pacienteNombre: string;
   pacienteEmail: string;
   servicioNombre: string;
   profesional: string;
   fecha: string;
   hora: string;
-  estado: "Pendiente" | "Programada" | "Confirmada" | "Completada" | "Cancelada";
+  estado: EstadoCita;
 }
 
 export type NutricionistaTab = nutriTab;
@@ -187,11 +190,15 @@ export default function Nutricionista(): JSX.Element {
   }, []);
 
   const cargarDatosClinicos = async () => {
-    const todosUsuarios = await StorageUsuario.getUsuarios();
-    setPacientes(todosUsuarios.filter((u) => u.rol === "usuario"));
+    const [todosUsuarios, citasBackend] = await Promise.all([
+      StorageUsuario.getUsuarios(),
+      CitasService.getCitas(),
+    ]);
+    const soloPacientes = todosUsuarios.filter((u) => u.rol === "usuario");
+    setPacientes(soloPacientes);
+    setCitas(normalizarCitas(citasBackend, soloPacientes));
     setExamenes(PlanService.getExamenes());
     setPlanActivo(PlanService.getPlan());
-    setMetricasPaciente(PlanService.getMetricas());
   };
 
   const cambiarTab = (tab: NutricionistaTab) => {
@@ -218,69 +225,89 @@ export default function Nutricionista(): JSX.Element {
     hora: "",
   });
 
-  const obtenerCitasNormalizadas = (): CitaNormalizada[] => {
-    const raw = localStorage.getItem("db_citas");
-    const pacienteDefault = pacientes[0];
-
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed.map((c: Record<string, string>) => ({
-        id: c.id || `CITA-${Date.now()}`,
-        pacienteNombre: c.pacienteNombre || pacienteDefault?.nombre || "Paciente Registrado",
-        pacienteEmail: c.pacienteEmail || pacienteDefault?.email || "paciente@gmail.com",
-        servicioNombre: c.servicioNombre || c.tipo || "Consulta Clínica",
-        profesional: c.profesional || nutricionistaActual?.nombre || "Staff NutriVida",
-        fecha: c.fecha || "Por definir",
-        hora: c.hora || "--:--",
-        estado: (c.estado as CitaNormalizada["estado"]) || "Programada",
-      }));
-    } catch {
-      return [];
-    }
-  };
-
-  const [citas, setCitas] = useState<CitaNormalizada[]>(obtenerCitasNormalizadas);
-
-  const guardarCitasEnStorage = (nuevasCitas: CitaNormalizada[]) => {
-    setCitas(nuevasCitas);
-    const formatoCompatible = nuevasCitas.map((c) => ({
-      ...c,
-      tipo: c.servicioNombre,
+  const normalizarCitas = (
+    citasApi: Cita[],
+    listaPacientes: Usuario[] = pacientes,
+  ): CitaNormalizada[] => {
+    const pacienteDefault = listaPacientes[0];
+    return citasApi.map((c) => ({
+      id: Number(c.id),
+      pacienteNombre:
+        c.pacienteNombre ||
+        c.usuario?.nombre ||
+        pacienteDefault?.nombre ||
+        "Paciente Registrado",
+      pacienteEmail:
+        c.pacienteEmail ||
+        c.usuario?.email ||
+        pacienteDefault?.email ||
+        "paciente@gmail.com",
+      servicioNombre: c.tipo || "Consulta Clínica",
+      profesional: c.profesional || nutricionistaActual?.nombre || "Staff NutriVida",
+      fecha: c.fecha || "Por definir",
+      hora: c.hora || "--:--",
+      estado: c.estado || "Programada",
     }));
-    localStorage.setItem("db_citas", JSON.stringify(formatoCompatible));
   };
 
-  const cambiarEstadoCita = (id: string, nuevoEstado: CitaNormalizada["estado"]) => {
-    const actualizadas = citas.map((c) =>
-      c.id === id ? { ...c, estado: nuevoEstado } : c,
-    );
-    guardarCitasEnStorage(actualizadas);
+  const [citas, setCitas] = useState<CitaNormalizada[]>([]);
+
+  useEffect(() => {
+    const cargarAgendaInicial = async () => {
+      const citasApi = await CitasService.getCitas();
+      setCitas(normalizarCitas(citasApi));
+    };
+    cargarAgendaInicial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const recargarCitas = async () => {
+    const citasApi = await CitasService.getCitas();
+    setCitas(normalizarCitas(citasApi));
+  };
+
+  const cambiarEstadoCita = async (id: number, nuevoEstado: EstadoCita) => {
+    const res = await CitasService.cambiarEstado(id, nuevoEstado);
+    if (!res.success) {
+      mostrarNotificacion(res.mensaje, "danger");
+      return;
+    }
+    await recargarCitas();
     mostrarNotificacion(`Cita marcada como ${nuevoEstado}.`, "success");
   };
 
-  const handleCrearCitaManual = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCrearCitaManual = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // VALIDACIÓN ESTRICTA: El paciente debe existir en la BD
-    const pacienteValido = pacientes.find(p => p.email === nuevaCitaForm.pacienteEmail);
+    const pacienteValido = pacientes.find(
+      (p) => p.email === nuevaCitaForm.pacienteEmail,
+    );
     if (!pacienteValido) {
-      mostrarNotificacion("Error de integridad: Debes seleccionar un paciente registrado.", "danger");
+      mostrarNotificacion(
+        "Error de integridad: Debes seleccionar un paciente registrado.",
+        "danger",
+      );
       return;
     }
 
-    const nueva: CitaNormalizada = {
-      id: `c-${Date.now()}`,
-      pacienteNombre: pacienteValido.nombre,
-      pacienteEmail: pacienteValido.email,
-      servicioNombre: nuevaCitaForm.servicioNombre,
-      profesional: nutricionistaActual?.nombre || "Nutricionista",
+    const res = await CitasService.addCita({
       fecha: nuevaCitaForm.fecha,
       hora: nuevaCitaForm.hora,
+      tipo: nuevaCitaForm.servicioNombre,
+      profesional: nutricionistaActual?.nombre || "Nutricionista",
       estado: "Confirmada",
-    };
+      usuarioId: pacienteValido.id,
+      pacienteNombre: pacienteValido.nombre,
+      pacienteEmail: pacienteValido.email,
+    });
 
-    guardarCitasEnStorage([nueva, ...citas]);
+    if (!res.success) {
+      mostrarNotificacion(res.mensaje, "danger");
+      return;
+    }
+
+    await recargarCitas();
     setIsCreatingCita(false);
     setNuevaCitaForm({
       pacienteNombre: "",
@@ -289,7 +316,10 @@ export default function Nutricionista(): JSX.Element {
       fecha: "",
       hora: "",
     });
-    mostrarNotificacion("Cita agendada correctamente en la plataforma.", "success");
+    mostrarNotificacion(
+      "Cita agendada correctamente en la plataforma.",
+      "success",
+    );
   };
 
   const citasFiltradas = citas.filter((c) => {
@@ -302,7 +332,7 @@ export default function Nutricionista(): JSX.Element {
     const coincideEstado =
       filtroEstadoCita === "TODOS" ||
       (filtroEstadoCita === "ACTIVAS" &&
-        (c.estado === "Pendiente" || c.estado === "Programada" || c.estado === "Confirmada")) ||
+        (c.estado === "Programada" || c.estado === "Confirmada")) ||
       c.estado === filtroEstadoCita;
 
     return coincideTexto && coincideEstado;
@@ -313,7 +343,6 @@ export default function Nutricionista(): JSX.Element {
   // =========================================================
   const [examenes, setExamenes] = useState<Examen[]>(() => PlanService.getExamenes());
   const [planActivo, setPlanActivo] = useState<PlanNutricional | null>(() => PlanService.getPlan());
-  const [metricasPaciente, setMetricasPaciente] = useState<Metrica[]>(() => PlanService.getMetricas());
   const [isEditingPlan, setIsEditingPlan] = useState(false);
 
   const [nuevaComida, setNuevaComida] = useState({
@@ -329,18 +358,18 @@ export default function Nutricionista(): JSX.Element {
   });
 
   const handleToggleEstadoExamen = (id: string) => {
-    const actualizados: Examen[] = examenes.map((ex) =>
-      ex.id === id ? { ...ex, estado: ex.estado === "Revisado" ? "Pendiente" : "Revisado" } : ex
-    );
-    setExamenes(actualizados);
-    localStorage.setItem("db_examenes", JSON.stringify(actualizados));
+    const actual = examenes.find((ex) => ex.id === id);
+    if (!actual) return;
+    const nuevoEstado = actual.estado === "Revisado" ? "Pendiente" : "Revisado";
+    PlanService.updateEstadoExamen(id, nuevoEstado);
+    setExamenes(PlanService.getExamenes());
     mostrarNotificacion("Estado de revisión del examen actualizado.", "success");
   };
 
   const handleGuardarPlanNutricional = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!planActivo) return;
-    localStorage.setItem("db_plan", JSON.stringify(planActivo));
+    PlanService.updatePlan(planActivo);
     setIsEditingPlan(false);
     mostrarNotificacion("Pauta alimentaria sincronizada con el Portal del Paciente.", "success");
   };
@@ -358,7 +387,7 @@ export default function Nutricionista(): JSX.Element {
       comidas: [...(planActivo.comidas || []), comidaObj],
     };
     setPlanActivo(actualizado);
-    localStorage.setItem("db_plan", JSON.stringify(actualizado));
+    PlanService.updatePlan(actualizado);
     setNuevaComida({ horario: "13:30", tipo: "Almuerzo", descripcion: "" });
     mostrarNotificacion("Tiempo de comida añadido a la pauta.", "success");
   };
@@ -370,7 +399,7 @@ export default function Nutricionista(): JSX.Element {
       comidas: planActivo.comidas.filter((c) => c.id !== idComida),
     };
     setPlanActivo(actualizado);
-    localStorage.setItem("db_plan", JSON.stringify(actualizado));
+    PlanService.updatePlan(actualizado);
     mostrarNotificacion("Tiempo de comida eliminado de la pauta.", "info");
   };
 
@@ -389,14 +418,12 @@ export default function Nutricionista(): JSX.Element {
       musculo,
     };
 
-    const actualizadas = [nuevaMetrica, ...metricasPaciente];
-    setMetricasPaciente(actualizadas);
-    localStorage.setItem("db_metricas", JSON.stringify(actualizadas));
+    PlanService.addMetrica(nuevaMetrica);
     setNuevoControlClinico({ peso: "", grasa: "", musculo: "" });
     mostrarNotificacion("Medición InBody registrada en la evolución del paciente.", "success");
   };
 
-  const citasPendientesCount = citas.filter((c) => c.estado === "Pendiente" || c.estado === "Programada").length;
+  const citasPendientesCount = citas.filter((c) => c.estado === "Programada").length;
   const examenesPendientesCount = examenes.filter((e) => e.estado === "Pendiente").length;
 
   // =========================================================
@@ -442,7 +469,7 @@ export default function Nutricionista(): JSX.Element {
                           <small className="text-muted">🕒 {c.fecha} a las {c.hora} hrs • {c.pacienteEmail}</small>
                         </div>
                         <div className="d-flex gap-2">
-                          {(c.estado === "Pendiente" || c.estado === "Programada") && (
+                          {c.estado === "Programada" && (
                             <button onClick={() => cambiarEstadoCita(c.id, "Confirmada")} className="btn btn-sm btn-success rounded-pill px-3 fw-bold">
                               Confirmar
                             </button>
@@ -612,13 +639,13 @@ export default function Nutricionista(): JSX.Element {
                     <small className="text-muted">{c.hora} hrs</small>
                   </td>
                   <td>
-                    <span className={`badge rounded-pill px-3 py-1 ${c.estado === "Confirmada" ? "bg-success-subtle text-success" : c.estado === "Pendiente" || c.estado === "Programada" ? "bg-warning-subtle text-dark" : c.estado === "Completada" ? "bg-primary-subtle text-primary" : "bg-danger-subtle text-danger"}`}>
+                    <span className={`badge rounded-pill px-3 py-1 ${c.estado === "Confirmada" ? "bg-success-subtle text-success" : c.estado === "Programada" ? "bg-warning-subtle text-dark" : c.estado === "Completada" ? "bg-primary-subtle text-primary" : "bg-danger-subtle text-danger"}`}>
                       {c.estado}
                     </span>
                   </td>
                   <td className="pe-4 text-end">
                     <div className="d-inline-flex gap-2">
-                      {(c.estado === "Pendiente" || c.estado === "Programada") && (
+                      {c.estado === "Programada" && (
                         <button type="button" className="btn btn-sm btn-success rounded-pill px-3 fw-bold" onClick={() => cambiarEstadoCita(c.id, "Confirmada")}>Confirmar</button>
                       )}
                       {c.estado === "Confirmada" && (

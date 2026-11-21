@@ -21,9 +21,7 @@ export default function Navbar(): JSX.Element {
   const navigate = useNavigate();
 
   const sesionActual = StorageUsuario.getUsuarioSesion();
-  const isAuthenticated = Boolean(
-    sesionActual || sessionStorage.getItem("session_user"),
-  );
+  const isAuthenticated = Boolean(sesionActual);
 
   const rutaPerfil =
     sesionActual?.rol === "admin"
@@ -74,7 +72,6 @@ export default function Navbar(): JSX.Element {
 
   const handleLogout = () => {
     StorageUsuario.logout();
-    sessionStorage.removeItem("session_user");
     handleLinkClick();
     navigate("/login", { replace: true });
   };

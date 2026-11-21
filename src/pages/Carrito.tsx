@@ -1,6 +1,6 @@
 import { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { Compra, Servicio } from "../types/index";
+import type { Servicio } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
 // 1. [SOLID] Importamos nuestro servicio que ahora es la única "fuente de la verdad"
 import { TiendaService } from "../services/tiendaService";
@@ -9,12 +9,11 @@ import { formatPriceCLP } from "../utils/formatPriceCLP";
 export default function Carrito(): JSX.Element {
   const [carrito, setCarrito] = useState<Servicio[]>([]);
 
-  const cargarCarrito = async () => {
-    const items = await TiendaService.getCarrito();
-    setCarrito(items);
-  };
-
   useEffect(() => {
+    const cargarCarrito = async () => {
+      const items = await TiendaService.getCarrito();
+      setCarrito(items);
+    };
     cargarCarrito();
   }, []);
 

@@ -1,12 +1,18 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
-import { StorageInit } from "./services/storage_init.ts";
-import './index.css'
-import { registerSW } from 'virtual:pwa-register';
-registerSW({ immediate: true });
+import "./index.css";
+import { registerSW } from "virtual:pwa-register";
 
-StorageInit.initDB();
+if (import.meta.env.PROD) {
+  registerSW({ immediate: true });
+} else if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      void registration.unregister();
+    }
+  });
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -22,6 +22,12 @@ import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 import { PlanService } from "../services/planService";
 import { CitasService } from "../services/citasService";
+import {
+  obtenerFechaMinimaCita,
+  perteneceCitaAPaciente,
+  validarConflictosReserva,
+  validarFechaHoraReserva,
+} from "../utils/validacionCitas";
 
 interface CitaNormalizada {
   id: number;
@@ -216,6 +222,8 @@ export default function Nutricionista(): JSX.Element {
   const [busquedaCitas, setBusquedaCitas] = useState("");
   const [filtroEstadoCita, setFiltroEstadoCita] = useState<string>("TODOS");
   const [isCreatingCita, setIsCreatingCita] = useState(false);
+  const [isSubmittingCita, setIsSubmittingCita] = useState(false);
+  const citaSubmitLockRef = useRef(false);
   
   const [nuevaCitaForm, setNuevaCitaForm] = useState({
     pacienteNombre: "",
@@ -254,15 +262,22 @@ export default function Nutricionista(): JSX.Element {
 
   useEffect(() => {
     const cargarAgendaInicial = async () => {
-      const citasApi = await CitasService.getCitas();
-      setCitas(normalizarCitas(citasApi));
+      try {
+        const citasApi = await CitasService.getCitasOrThrow();
+        setCitas(normalizarCitas(citasApi));
+      } catch {
+        mostrarNotificacion(
+          "No se pudo cargar la agenda. Verifica la conexión antes de gestionar citas.",
+          "danger",
+        );
+      }
     };
     cargarAgendaInicial();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const recargarCitas = async () => {
-    const citasApi = await CitasService.getCitas();
+    const citasApi = await CitasService.getCitasOrThrow();
     setCitas(normalizarCitas(citasApi));
   };
 
@@ -272,18 +287,27 @@ export default function Nutricionista(): JSX.Element {
       mostrarNotificacion(res.mensaje, "danger");
       return;
     }
-    await recargarCitas();
+    try {
+      await recargarCitas();
+    } catch {
+      mostrarNotificacion(
+        "El estado se actualizó, pero no se pudo sincronizar la agenda. Recarga la página para verificarlo.",
+        "danger",
+      );
+      return;
+    }
     mostrarNotificacion(`Cita marcada como ${nuevoEstado}.`, "success");
   };
 
   const handleCrearCitaManual = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (citaSubmitLockRef.current) return;
 
     // VALIDACIÓN ESTRICTA: El paciente debe existir en la BD
     const pacienteValido = pacientes.find(
-      (p) => p.email === nuevaCitaForm.pacienteEmail,
+      (p) => p.email.trim().toLocaleLowerCase("es-CL") === nuevaCitaForm.pacienteEmail.trim().toLocaleLowerCase("es-CL"),
     );
-    if (!pacienteValido) {
+    if (!pacienteValido || !pacienteValido.id) {
       mostrarNotificacion(
         "Error de integridad: Debes seleccionar un paciente registrado.",
         "danger",
@@ -291,52 +315,80 @@ export default function Nutricionista(): JSX.Element {
       return;
     }
 
-    const hoy = new Date();
-    const minFecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
-    if (nuevaCitaForm.fecha < minFecha) {
-      mostrarNotificacion(
-        "No es posible agendar una consulta en una fecha pasada.",
-        "danger",
-      );
-      return;
-    }
-    if (nuevaCitaForm.hora < "08:00" || nuevaCitaForm.hora > "20:00") {
-      mostrarNotificacion(
-        "El horario de atención clínica es entre las 08:00 y 20:00 hrs.",
-        "danger",
-      );
-      return;
-    }
-
-    const res = await CitasService.addCita({
-      fecha: nuevaCitaForm.fecha,
-      hora: nuevaCitaForm.hora,
-      tipo: nuevaCitaForm.servicioNombre,
-      profesional: nutricionistaActual?.nombre || "Nutricionista",
-      estado: "Confirmada",
-      usuarioId: pacienteValido.id,
-      pacienteNombre: pacienteValido.nombre,
-      pacienteEmail: pacienteValido.email,
-    });
-
-    if (!res.success) {
-      mostrarNotificacion(res.mensaje, "danger");
-      return;
-    }
-
-    await recargarCitas();
-    setIsCreatingCita(false);
-    setNuevaCitaForm({
-      pacienteNombre: "",
-      pacienteEmail: "",
-      servicioNombre: "Consulta Presencial",
-      fecha: "",
-      hora: "",
-    });
-    mostrarNotificacion(
-      "Cita agendada correctamente en la plataforma.",
-      "success",
+    const errorFechaHora = validarFechaHoraReserva(
+      nuevaCitaForm.fecha,
+      nuevaCitaForm.hora,
     );
+    if (errorFechaHora) {
+      mostrarNotificacion(errorFechaHora, "danger");
+      return;
+    }
+
+    const profesional = nutricionistaActual?.nombre || "Nutricionista";
+    citaSubmitLockRef.current = true;
+    setIsSubmittingCita(true);
+    try {
+      const agendaActual = await CitasService.getCitasOrThrow();
+      setCitas(normalizarCitas(agendaActual));
+      const citasDelPaciente = agendaActual.filter((cita) =>
+        perteneceCitaAPaciente(cita, pacienteValido.id, pacienteValido.email),
+      );
+      const errorConflicto = validarConflictosReserva(
+        { ...nuevaCitaForm, profesional },
+        citasDelPaciente,
+        agendaActual,
+      );
+      if (errorConflicto) {
+        mostrarNotificacion(errorConflicto, "danger");
+        return;
+      }
+
+      const res = await CitasService.addCita({
+        fecha: nuevaCitaForm.fecha,
+        hora: nuevaCitaForm.hora,
+        tipo: nuevaCitaForm.servicioNombre,
+        profesional,
+        estado: "Confirmada",
+        usuarioId: pacienteValido.id,
+        pacienteNombre: pacienteValido.nombre,
+        pacienteEmail: pacienteValido.email,
+      });
+
+      if (!res.success) {
+        mostrarNotificacion(res.mensaje, "danger");
+        return;
+      }
+
+      setIsCreatingCita(false);
+      setNuevaCitaForm({
+        pacienteNombre: "",
+        pacienteEmail: "",
+        servicioNombre: "Consulta Presencial",
+        fecha: "",
+        hora: "",
+      });
+      try {
+        await recargarCitas();
+        mostrarNotificacion("Cita agendada correctamente en la plataforma.", "success");
+      } catch {
+        const citaCreada = res.cita;
+        if (citaCreada) {
+          setCitas((actuales) => [...actuales, ...normalizarCitas([citaCreada])]);
+        }
+        mostrarNotificacion(
+          "La cita se agendó, pero no se pudo actualizar la agenda. Recarga la página para verificarla.",
+          "danger",
+        );
+      }
+    } catch {
+      mostrarNotificacion(
+        "No se pudo verificar la agenda actual. Inténtalo nuevamente antes de reservar.",
+        "danger",
+      );
+    } finally {
+      citaSubmitLockRef.current = false;
+      setIsSubmittingCita(false);
+    }
   };
 
   const citasFiltradas = citas.filter((c) => {
@@ -557,7 +609,7 @@ export default function Nutricionista(): JSX.Element {
           <h4 className="fw-bolder text-dark mb-1 tracking-tight">Control de Agenda y Consultas</h4>
           <p className="text-muted small mb-0">Sincronizado en tiempo real con el agendamiento de los pacientes.</p>
         </div>
-        <button type="button" onClick={() => setIsCreatingCita(!isCreatingCita)} className="btn-kinetic-health py-2 px-4 border-0 shadow-sm">
+        <button type="button" onClick={() => setIsCreatingCita(!isCreatingCita)} disabled={isSubmittingCita} className="btn-kinetic-health py-2 px-4 border-0 shadow-sm">
           {isCreatingCita ? "Cerrar Formulario" : "+ Agendar Paciente"}
         </button>
       </div>
@@ -599,14 +651,14 @@ export default function Nutricionista(): JSX.Element {
           <div className="row g-3 align-items-end">
             <div className="col-md-4">
               <label className="form-label small fw-bold text-muted text-uppercase">Fecha</label>
-              <input type="date" className="form-control apple-input" value={nuevaCitaForm.fecha} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, fecha: e.target.value })} required />
+              <input type="date" min={obtenerFechaMinimaCita()} className="form-control apple-input" value={nuevaCitaForm.fecha} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, fecha: e.target.value })} required />
             </div>
             <div className="col-md-4">
               <label className="form-label small fw-bold text-muted text-uppercase">Hora</label>
-              <input type="time" className="form-control apple-input" value={nuevaCitaForm.hora} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, hora: e.target.value })} required />
+              <input type="time" min="08:00" max="20:00" step="60" className="form-control apple-input" value={nuevaCitaForm.hora} onChange={(e) => setNuevaCitaForm({ ...nuevaCitaForm, hora: e.target.value })} required />
             </div>
             <div className="col-md-4 text-end">
-              <button type="submit" className="btn btn-success rounded-pill w-100 py-2 fw-bold">Guardar en Agenda</button>
+              <button type="submit" disabled={isSubmittingCita} className="btn btn-success rounded-pill w-100 py-2 fw-bold">{isSubmittingCita ? "Verificando disponibilidad..." : "Guardar en Agenda"}</button>
             </div>
           </div>
         </form>

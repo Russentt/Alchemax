@@ -140,6 +140,16 @@ export default function Metodologia(): JSX.Element {
       return;
     }
 
+    if (sesionActual.rol !== "usuario") {
+      setNotification({
+        message:
+          "La contratación de servicios está habilitada únicamente para cuentas de paciente.",
+        type: "warning",
+      });
+      setTimeout(() => setNotification(null), 4500);
+      return;
+    }
+
     TiendaService.agregarAlCarrito(servicio);
     setLocalCartPreview((prev) =>
       prev.some((item) => item.id === servicio.id) ? prev : [...prev, servicio],
@@ -160,6 +170,16 @@ export default function Metodologia(): JSX.Element {
 
     if (!sesionActual) {
       redirectToLogin("Inicia sesión para proceder al pago.");
+      return;
+    }
+
+    if (sesionActual.rol !== "usuario") {
+      setNotification({
+        message:
+          "El flujo de pago está reservado para cuentas de paciente.",
+        type: "warning",
+      });
+      setTimeout(() => setNotification(null), 4500);
       return;
     }
 

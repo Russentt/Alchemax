@@ -1,10 +1,9 @@
 import { lazy } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router";
+import { BrowserRouter, Route, Routes } from "react-router";
 import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
-import { StorageUsuario } from "./services/storageUsuario";
-import type { JSX } from "react/jsx-runtime";
 
 const Home = lazy(() => import("./pages/Home"));
 const Metodologia = lazy(() => import("./pages/Metodologia"));
@@ -21,27 +20,26 @@ const Article = lazy(() => import("./pages/Article"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Nutricionista = lazy(() => import("./pages/Nutricionista"));
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const usuario = StorageUsuario.getUsuarioSesion();
-  if (!usuario) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
-
 const App = () => {
   return (
     <BrowserRouter basename="/Alchemax">
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Layout></Layout>}>
+        <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="account" element={<Account />} />
+          <Route
+            path="account"
+            element={
+              <ProtectedRoute allowedRoles={["usuario"]}>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
           <Route path="register" element={<Register />} />
           <Route
             path="carrito"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["usuario"]}>
                 <Carrito />
               </ProtectedRoute>
             }
@@ -51,8 +49,22 @@ const App = () => {
           <Route path="telemedicina" element={<Telemedicina />} />
           <Route path="faq" element={<Faq />} />
           <Route path="testimonios" element={<Testimonios />} />
-          <Route path="admin" element={<Admin />} />
-          <Route path="nutricionista" element={<Nutricionista />} />
+          <Route
+            path="admin"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Admin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="nutricionista"
+            element={
+              <ProtectedRoute allowedRoles={["nutricionista"]}>
+                <Nutricionista />
+              </ProtectedRoute>
+            }
+          />
           <Route path="blog" element={<Blog />} />
           <Route path="blog/:articleId" element={<Article />} />
 

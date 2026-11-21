@@ -1,3 +1,4 @@
+import axios from "axios";
 import { api } from "../api/axiosConfig";
 import type { Cita, EstadoCita } from "../types/index";
 
@@ -111,7 +112,30 @@ export const CitasService = {
       }
 
       return { success: false, mensaje: "No se pudo registrar la cita." };
-    } catch (error) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const data = error.response?.data as
+          | { mensaje?: string; message?: string }
+          | undefined;
+        if (error.response?.status === 409) {
+          return {
+            success: false,
+            mensaje:
+              data?.mensaje ||
+              data?.message ||
+              "El profesional seleccionado ya cuenta con una cita activa en esa fecha y hora.",
+          };
+        }
+        if (error.response?.status === 400 || error.response?.status === 403) {
+          return {
+            success: false,
+            mensaje:
+              data?.mensaje ||
+              data?.message ||
+              "No fue posible agendar la cita con los datos indicados.",
+          };
+        }
+      }
       console.error("Error al crear cita:", error);
       return {
         success: false,

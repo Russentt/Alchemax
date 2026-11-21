@@ -116,7 +116,7 @@ export default function Account(): JSX.Element {
         TiendaService.getCompras(),
         perfilActual.id
           ? CitasService.getCitasPorUsuario(perfilActual.id)
-          : CitasService.getCitas(),
+          : Promise.resolve([]),
       ]);
 
       if (!active) return;
@@ -299,7 +299,7 @@ export default function Account(): JSX.Element {
     const idObjetivo = userId ?? usuario?.id;
     const data = idObjetivo
       ? await CitasService.getCitasPorUsuario(idObjetivo)
-      : await CitasService.getCitas();
+      : [];
     setCitas(data);
   };
 

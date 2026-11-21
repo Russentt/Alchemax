@@ -1,45 +1,147 @@
 import { useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { Servicio } from "../types/index";
+import type { ItemCarrito } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
-// 1. [SOLID] Importamos nuestro servicio que ahora es la única "fuente de la verdad"
 import { TiendaService } from "../services/tiendaService";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
 
 export default function Carrito(): JSX.Element {
-  const [carrito, setCarrito] = useState<Servicio[]>([]);
-
-  useEffect(() => {
-    const cargarCarrito = async () => {
-      const items = await TiendaService.getCarrito();
-      setCarrito(items);
-    };
-    cargarCarrito();
-  }, []);
+  const [itemsCarrito, setItemsCarrito] = useState<ItemCarrito[]>([]);
+  const [cargando, setCargando] = useState<boolean>(true);
+  const [actualizandoId, setActualizandoId] = useState<number | null>(null);
 
   const [notification, setNotification] = useState<{
     message: string;
-    type: "success" | "warning";
+    type: "success" | "warning" | "info";
   } | null>(null);
+
   const navigate = useNavigate();
 
-  const showToast = (message: string, type: "success" | "warning") => {
+  const showToast = (
+    message: string,
+    type: "success" | "warning" | "info" = "info",
+  ) => {
     setNotification({ message, type });
     setTimeout(() => {
       setNotification(null);
-    }, 15000);
+    }, 4500);
   };
 
-  const handleRemoveItem = async (id: number | string) => {
-    await TiendaService.removerDelCarrito(id);
-    const carritoActualizado = await TiendaService.getCarrito();
-    setCarrito(carritoActualizado);
+  const cargarCarrito = async () => {
+    setCargando(true);
+    try {
+      const items = await TiendaService.getItemsCarrito();
+      setItemsCarrito(items);
+    } finally {
+      setCargando(false);
+    }
+  };
 
-    showToast("Servicio removido del carrito de compras.", "warning");
+  useEffect(() => {
+    cargarCarrito();
+  }, []);
+
+  const handleIncrement = async (item: ItemCarrito) => {
+    const nuevaCantidad = item.cantidad + 1;
+    setActualizandoId(item.servicio.id);
+    try {
+      // Actualización optimista local
+      setItemsCarrito((prev) =>
+        prev.map((it) =>
+          it.servicio.id === item.servicio.id
+            ? { ...it, cantidad: nuevaCantidad }
+            : it,
+        ),
+      );
+
+      await TiendaService.actualizarCantidadItem(
+        item.servicio.id,
+        nuevaCantidad,
+        item.id,
+      );
+
+      showToast(
+        `Cantidad aumentada para "${item.servicio.nombre}" (${nuevaCantidad}).`,
+        "success",
+      );
+    } catch {
+      await cargarCarrito();
+      showToast("No se pudo actualizar la cantidad.", "warning");
+    } finally {
+      setActualizandoId(null);
+    }
+  };
+
+  const handleDecrement = async (item: ItemCarrito) => {
+    if (item.cantidad <= 1) {
+      await handleRemoveItem(item.servicio.id, item.servicio.nombre);
+      return;
+    }
+
+    const nuevaCantidad = item.cantidad - 1;
+    setActualizandoId(item.servicio.id);
+    try {
+      setItemsCarrito((prev) =>
+        prev.map((it) =>
+          it.servicio.id === item.servicio.id
+            ? { ...it, cantidad: nuevaCantidad }
+            : it,
+        ),
+      );
+
+      await TiendaService.actualizarCantidadItem(
+        item.servicio.id,
+        nuevaCantidad,
+        item.id,
+      );
+
+      showToast(
+        `Cantidad reducida para "${item.servicio.nombre}" (${nuevaCantidad}).`,
+        "info",
+      );
+    } catch {
+      await cargarCarrito();
+      showToast("No se pudo actualizar la cantidad.", "warning");
+    } finally {
+      setActualizandoId(null);
+    }
+  };
+
+  const handleRemoveItem = async (
+    servicioId: number | string,
+    nombre?: string,
+  ) => {
+    setActualizandoId(Number(servicioId));
+    try {
+      await TiendaService.removerDelCarrito(servicioId);
+      const itemsActualizados = await TiendaService.getItemsCarrito();
+      setItemsCarrito(itemsActualizados);
+
+      showToast(
+        nombre
+          ? `"${nombre}" fue removido de tu carrito.`
+          : "Servicio removido del carrito de compras.",
+        "warning",
+      );
+    } finally {
+      setActualizandoId(null);
+    }
+  };
+
+  const handleVaciarCarrito = async () => {
+    if (itemsCarrito.length === 0) return;
+    setCargando(true);
+    try {
+      await TiendaService.vaciarCarrito();
+      setItemsCarrito([]);
+      showToast("El carrito de compras ha sido vaciado.", "info");
+    } finally {
+      setCargando(false);
+    }
   };
 
   const handleCheckout = async () => {
-    if (carrito.length === 0) return;
+    if (itemsCarrito.length === 0) return;
 
     const sessionUser = StorageUsuario.getUsuarioSesion();
 
@@ -52,19 +154,23 @@ export default function Carrito(): JSX.Element {
       return;
     }
 
-    const nuevasCompras = carrito.map((item) => ({
-      servicio: Number(item.id),
-      nombre: item.nombre,
-      fechaCompra: new Date().toISOString().split("T")[0],
-      monto: item.precio,
-      estado: "Activo" as const,
-    }));
+    const fechaHoy = new Date().toISOString().split("T")[0];
 
-    for (const compra of nuevasCompras) {
-      await TiendaService.registrarCompra(compra);
+    // Se genera una compra por cada unidad adquirida para permitir su agendamiento independiente
+    for (const item of itemsCarrito) {
+      for (let i = 0; i < item.cantidad; i++) {
+        await TiendaService.registrarCompra({
+          servicio: Number(item.servicio.id),
+          nombre: item.servicio.nombre,
+          fechaCompra: fechaHoy,
+          monto: item.servicio.precio,
+          estado: "Activo",
+        });
+      }
     }
+
     await TiendaService.vaciarCarrito();
-    setCarrito([]);
+    setItemsCarrito([]);
 
     showToast(
       "¡Pago procesado con éxito! Los servicios han sido asignados a tu Portal del Paciente.",
@@ -76,18 +182,26 @@ export default function Carrito(): JSX.Element {
     }, 2500);
   };
 
-  const totalPagar = carrito.reduce((acc, item) => acc + item.precio, 0);
+  const totalUnidades = itemsCarrito.reduce(
+    (acc, item) => acc + item.cantidad,
+    0,
+  );
+
+  const totalPagar = itemsCarrito.reduce(
+    (acc, item) => acc + item.servicio.precio * item.cantidad,
+    0,
+  );
 
   return (
     <main className="container my-5 flex-grow-1 position-relative">
-      {/* Global Toast Notification Overlay */}
+      {/* Notificaciones Toast */}
       {notification && (
         <div
           className="position-fixed top-0 end-0 p-4 animation-fade-in"
           style={{ zIndex: 1100, marginTop: "80px" }}
         >
           <div
-            className={`toast show align-items-center text-white bg-${notification.type} border-0 shadow-lg rounded-4 p-3`}
+            className={`toast show align-items-center text-white bg-${notification.type === "info" ? "primary" : notification.type} border-0 shadow-lg rounded-4 p-3`}
             role="alert"
           >
             <div className="d-flex">
@@ -107,7 +221,7 @@ export default function Carrito(): JSX.Element {
                   to="/account"
                   className="btn btn-light btn-sm fw-bold text-success rounded-pill px-3 shadow-sm"
                 >
-                  Ver en mi perfil
+                  Ver en mi perfil →
                 </Link>
               </div>
             )}
@@ -115,6 +229,7 @@ export default function Carrito(): JSX.Element {
         </div>
       )}
 
+      {/* Migas de Pan */}
       <nav aria-label="breadcrumb" className="mb-4">
         <ol className="breadcrumb p-3 bg-white rounded-3 shadow-sm">
           <li className="breadcrumb-item">
@@ -137,14 +252,40 @@ export default function Carrito(): JSX.Element {
       </nav>
 
       <div className="row g-4">
-        {/* Cart Items List */}
+        {/* Listado de Servicios y Controles de Cantidad */}
         <div className="col-lg-8">
           <div className="bg-white p-4 p-md-5 rounded-4 shadow-sm border-0 h-100">
-            <h2 className="fw-bold text-dark mb-4">
-              Tus Servicios Seleccionados
-            </h2>
+            <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+              <div>
+                <h2 className="fw-bold text-dark mb-1">
+                  Tus Servicios Seleccionados
+                </h2>
+                <p className="text-muted small mb-0">
+                  Ajusta la cantidad de sesiones o prestaciones antes de
+                  confirmar tu atención.
+                </p>
+              </div>
+              {itemsCarrito.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleVaciarCarrito}
+                  className="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold"
+                  title="Eliminar todos los ítems del carrito"
+                >
+                  Vaciar carrito
+                </button>
+              )}
+            </div>
 
-            {carrito.length === 0 ? (
+            {cargando ? (
+              <div className="text-center py-5">
+                <div
+                  className="spinner-border text-success mb-3"
+                  role="status"
+                ></div>
+                <p className="text-muted small">Cargando tus servicios...</p>
+              </div>
+            ) : itemsCarrito.length === 0 ? (
               <div className="text-center py-5">
                 <div className="fs-1 mb-3">🛒</div>
                 <h5 className="fw-bold text-dark mb-2">
@@ -163,35 +304,120 @@ export default function Carrito(): JSX.Element {
               </div>
             ) : (
               <div className="d-flex flex-column gap-3">
-                {carrito.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center"
-                  >
-                    <div className="d-flex align-items-center gap-3">
-                      <div className="fs-2">{item.icono}</div>
-                      <div>
-                        <h6 className="fw-bold text-dark mb-1">
-                          {item.nombre}
-                        </h6>
-                        <p className="text-muted small mb-0">
-                          {item.descripcion}
-                        </p>
+                {itemsCarrito.map((item) => {
+                  const subtotalItem = item.servicio.precio * item.cantidad;
+                  const isBusy = actualizandoId === item.servicio.id;
+
+                  return (
+                    <div
+                      key={item.servicio.id}
+                      className="p-3 p-md-4 bg-light rounded-4 border d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 transition-all hover-lift"
+                    >
+                      {/* Información de la Prestación */}
+                      <div className="d-flex align-items-start gap-3 flex-grow-1">
+                        <div
+                          className="fs-2 p-2 rounded-3 bg-white shadow-sm border d-flex align-items-center justify-content-center"
+                          style={{ width: "52px", height: "52px" }}
+                        >
+                          {item.servicio.icono || "🥗"}
+                        </div>
+                        <div>
+                          <div className="d-flex align-items-center gap-2 mb-1">
+                            <h6 className="fw-bold text-dark mb-0">
+                              {item.servicio.nombre}
+                            </h6>
+                            {item.servicio.categoriaNombre && (
+                              <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 small">
+                                {item.servicio.categoriaNombre}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-muted small mb-2 text-truncate-2">
+                            {item.servicio.descripcion}
+                          </p>
+                          <div className="small text-secondary">
+                            Precio unitario:{" "}
+                            <span className="fw-bold text-dark">
+                              {formatPriceCLP(item.servicio.precio)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Controles Interactivos de Cantidad y Subtotal */}
+                      <div className="d-flex align-items-center justify-content-between justify-content-md-end gap-3 pt-2 pt-md-0 border-top border-md-top-0">
+                        {/* Selector de Cantidades (+ / -) */}
+                        <div
+                          className="d-flex align-items-center border rounded-pill px-2 py-1 bg-white shadow-sm"
+                          style={{ minWidth: "115px" }}
+                        >
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold fs-5 lh-1"
+                            onClick={() => handleDecrement(item)}
+                            disabled={isBusy}
+                            title={
+                              item.cantidad <= 1
+                                ? "Quitar del carrito"
+                                : "Disminuir cantidad"
+                            }
+                            aria-label="Disminuir cantidad"
+                          >
+                            −
+                          </button>
+
+                          <span
+                            className="fw-bold font-monospace fs-6 px-1 flex-grow-1 text-center"
+                            style={{ minWidth: "2rem" }}
+                          >
+                            {item.cantidad}
+                          </span>
+
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link text-dark p-0 px-2 text-decoration-none fw-bold fs-5 lh-1"
+                            onClick={() => handleIncrement(item)}
+                            disabled={isBusy}
+                            title="Aumentar cantidad"
+                            aria-label="Aumentar cantidad"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Subtotal del Servicio */}
+                        <div className="text-end" style={{ minWidth: "120px" }}>
+                          <h5 className="fw-bold text-success mb-0">
+                            {formatPriceCLP(subtotalItem)}
+                          </h5>
+                          {item.cantidad > 1 && (
+                            <small className="text-muted d-block font-monospace">
+                              {item.cantidad} x{" "}
+                              {formatPriceCLP(item.servicio.precio)}
+                            </small>
+                          )}
+                        </div>
+
+                        {/* Botón Eliminar */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleRemoveItem(
+                              item.servicio.id,
+                              item.servicio.nombre,
+                            )
+                          }
+                          disabled={isBusy}
+                          className="btn btn-sm btn-outline-danger border-0 rounded-circle p-2 lh-1"
+                          title="Eliminar prestación"
+                          aria-label={`Eliminar ${item.servicio.nombre} del carrito`}
+                        >
+                          🗑️
+                        </button>
                       </div>
                     </div>
-                    <div className="text-end ms-3">
-                      <h5 className="fw-bold text-success mb-2">
-                        {formatPriceCLP(item.precio)}
-                      </h5>
-                      <button
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="btn btn-sm btn-outline-danger border-0 fw-semibold"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 <div className="mt-4 text-start">
                   <Link
@@ -206,42 +432,69 @@ export default function Carrito(): JSX.Element {
           </div>
         </div>
 
-        {/* Order Summary & Checkout Action */}
+        {/* Resumen de Pago y Checkout */}
         <div className="col-lg-4">
-          <div className="bg-white p-4 rounded-4 shadow-sm border-0">
-            <h4 className="fw-bold text-dark mb-4">Resumen de Pago</h4>
+          <div className="bg-white p-4 rounded-4 shadow-sm border-0 sticky-top" style={{ top: "90px" }}>
+            <h4 className="fw-bold text-dark mb-3">Resumen de Pago</h4>
+
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <span className="text-muted small">Total de prestaciones</span>
+              <span className="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold">
+                {totalUnidades} {totalUnidades === 1 ? "sesión" : "sesiones"}
+              </span>
+            </div>
+
+            {itemsCarrito.length > 0 && (
+              <div className="mb-3 p-3 bg-light rounded-3 small">
+                {itemsCarrito.map((it) => (
+                  <div
+                    key={it.servicio.id}
+                    className="d-flex justify-content-between text-muted mb-1"
+                  >
+                    <span className="text-truncate me-2" style={{ maxWidth: "160px" }}>
+                      {it.servicio.nombre} (x{it.cantidad})
+                    </span>
+                    <span className="fw-semibold text-dark">
+                      {formatPriceCLP(it.servicio.precio * it.cantidad)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="d-flex justify-content-between mb-2 text-muted">
-              <span>Subtotal</span>
+              <span>Subtotal Neto</span>
               <span>{formatPriceCLP(totalPagar)}</span>
             </div>
             <div className="d-flex justify-content-between mb-3 text-muted">
               <span>Impuestos / Tasas Clínicas</span>
-              <span>$0</span>
+              <span className="text-success fw-bold">Exento</span>
             </div>
             <hr className="text-muted opacity-25 mb-3" />
-            <div className="d-flex justify-content-between mb-4">
-              <span className="fw-bold text-dark fs-5">Total</span>
-              <span className="fw-bold text-success fs-4">
+            <div className="d-flex justify-content-between align-items-baseline mb-4">
+              <span className="fw-bold text-dark fs-5">Total a Pagar</span>
+              <span className="fw-bolder text-success fs-3">
                 {formatPriceCLP(totalPagar)}
               </span>
             </div>
 
             <button
               onClick={handleCheckout}
-              disabled={carrito.length === 0}
-              className="btn btn-success w-100 fw-bold py-3 rounded-pill shadow-sm mb-3"
+              disabled={itemsCarrito.length === 0 || cargando}
+              className="btn btn-success w-100 fw-bold py-3 rounded-pill shadow-sm mb-3 d-flex align-items-center justify-content-center gap-2"
             >
-              Proceder al Pago Seguro
+              <span>🔒 Proceder al Pago Seguro</span>
             </button>
+
             <p className="text-muted text-center small mb-0">
-              🔒 Transacción encriptada bajo estándares de seguridad
-              clínico-financieros.
+              Transacción protegida bajo estándares de encriptación y
+              confidencialidad clínica.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Toast Animation CSS */}
+      {/* Estilos adicionales */}
       <style>{`
         .animation-fade-in {
           animation: fadeIn 0.4s ease-in-out;
@@ -250,8 +503,13 @@ export default function Carrito(): JSX.Element {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        .text-truncate-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
       `}</style>
     </main>
   );
 }
-

@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { Servicio } from "../types/servicio";
+import type { ItemCarrito } from "../types/carrito";
 import type {
   Compra,
   EstadoCompra,
@@ -53,16 +54,73 @@ export const TiendaService = {
     }
   },
 
-  agregarAlCarrito: async (servicio: Servicio): Promise<void> => {
+  getItemsCarrito: async (): Promise<ItemCarrito[]> => {
+    const usuarioId = getUsuarioId();
+    if (!usuarioId) return [];
+
+    try {
+      const res = await api.get<CarritoBackend>(`/api/carrito/usuario/${usuarioId}`);
+      return (res.data.items || []).map((item) => ({
+        id: item.id,
+        servicio: item.servicio,
+        cantidad: Math.max(1, Number(item.cantidad) || 1),
+      }));
+    } catch (error) {
+      console.error("Error al obtener items del carrito:", error);
+      return [];
+    }
+  },
+
+  agregarAlCarrito: async (servicio: Servicio, cantidad: number = 1): Promise<void> => {
     const usuarioId = getUsuarioId();
     if (!usuarioId || !servicio.id) return;
 
     try {
       await api.post(`/api/carrito/usuario/${usuarioId}/agregar`, null, {
-        params: { servicioId: Number(servicio.id), cantidad: 1 },
+        params: { servicioId: Number(servicio.id), cantidad: Math.max(1, cantidad) },
       });
     } catch (error) {
       console.error("Error al agregar al carrito:", error);
+    }
+  },
+
+  actualizarCantidadItem: async (
+    servicioId: number | string,
+    nuevaCantidad: number,
+    itemCarritoId?: number,
+  ): Promise<boolean> => {
+    const usuarioId = getUsuarioId();
+    if (!usuarioId) return false;
+
+    if (nuevaCantidad <= 0) {
+      await TiendaService.removerDelCarrito(servicioId);
+      return true;
+    }
+
+    try {
+      if (itemCarritoId) {
+        await api.put(`/api/items-carrito/${itemCarritoId}`, {
+          cantidad: nuevaCantidad,
+        });
+        return true;
+      }
+
+      const res = await api.get<CarritoBackend>(`/api/carrito/usuario/${usuarioId}`);
+      const itemEncontrado = (res.data.items || []).find(
+        (it) => it.servicio.id === Number(servicioId),
+      );
+
+      if (itemEncontrado?.id) {
+        await api.put(`/api/items-carrito/${itemEncontrado.id}`, {
+          cantidad: nuevaCantidad,
+        });
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error al actualizar cantidad del item:", error);
+      return false;
     }
   },
 

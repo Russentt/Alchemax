@@ -1,4 +1,5 @@
 export * from "./categoria";
+export * from "./carrito";
 export * from "./cita";
 export * from "./comida";
 export * from "./compra";

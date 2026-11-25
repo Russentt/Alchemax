@@ -24,10 +24,7 @@ export default function Carrito(): JSX.Element {
   const navigate = useNavigate();
 
   const showToast = useCallback(
-    (
-      message: string,
-      type: "success" | "warning" | "info" = "info",
-    ) => {
+    (message: string, type: "success" | "warning" | "info" = "info") => {
       if (toastTimerRef.current !== null) {
         window.clearTimeout(toastTimerRef.current);
       }
@@ -274,7 +271,6 @@ export default function Carrito(): JSX.Element {
       let erroresRegistrados = 0;
       let comprasExitosasCount = 0;
 
-      // Se genera una compra por cada unidad adquirida para permitir su agendamiento independiente
       for (const item of itemsCarrito) {
         for (let i = 0; i < item.cantidad; i++) {
           const resultado = await TiendaService.registrarCompra({
@@ -296,7 +292,7 @@ export default function Carrito(): JSX.Element {
       if (erroresRegistrados > 0 && comprasExitosasCount === 0) {
         setIsPaymentModalOpen(false);
         showToast(
-          "No fue posible procesar el pago con el servidor. Tu carrito sigue intacto.",
+          "No fue posible registrar el pago con el servidor. Tu carrito sigue intacto.",
           "warning",
         );
         await cargarCarrito();
@@ -313,7 +309,6 @@ export default function Carrito(): JSX.Element {
         return;
       }
 
-      // Solo si todas las compras se registraron con éxito, vaciamos el carrito
       await TiendaService.vaciarCarrito();
       setItemsCarrito([]);
 

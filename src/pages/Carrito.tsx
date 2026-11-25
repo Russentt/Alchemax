@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { ItemCarrito } from "../types/index";
+import type { ItemCarrito, Servicio, Usuario } from "../types/index";
+import PaymentGatewayModal from "../components/PaymentGatewayModal";
 import { StorageUsuario } from "../services/storageUsuario";
 import { TiendaService } from "../services/tiendaService";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
@@ -10,6 +11,8 @@ export default function Carrito(): JSX.Element {
   const [cargando, setCargando] = useState<boolean>(true);
   const [procesandoPago, setProcesandoPago] = useState<boolean>(false);
   const [actualizandoId, setActualizandoId] = useState<number | null>(null);
+  const [mostrarPasarela, setMostrarPasarela] = useState<boolean>(false);
+  const [usuarioActual, setUsuarioActual] = useState<Usuario | null>(null);
 
   const [notification, setNotification] = useState<{
     message: string;
@@ -20,10 +23,7 @@ export default function Carrito(): JSX.Element {
   const navigate = useNavigate();
 
   const showToast = useCallback(
-    (
-      message: string,
-      type: "success" | "warning" | "info" = "info",
-    ) => {
+    (message: string, type: "success" | "warning" | "info" = "info") => {
       if (toastTimerRef.current !== null) {
         window.clearTimeout(toastTimerRef.current);
       }
@@ -225,7 +225,22 @@ export default function Carrito(): JSX.Element {
     }
   };
 
-  const handleCheckout = async () => {
+  const serviciosExpandidos: Servicio[] = itemsCarrito.flatMap((item) =>
+    Array.from({ length: item.cantidad }, () => item.servicio),
+  );
+
+  const totalUnidades = itemsCarrito.reduce(
+    (acc, item) => acc + item.cantidad,
+    0,
+  );
+
+  const totalPagar = itemsCarrito.reduce(
+    (acc, item) => acc + item.servicio.precio * item.cantidad,
+    0,
+  );
+
+  // Abrir modal datos pago
+  const handleAbrirPasarela = () => {
     if (itemsCarrito.length === 0 || procesandoPago) return;
 
     const sessionUser = StorageUsuario.getUsuarioSesion();
@@ -239,6 +254,13 @@ export default function Carrito(): JSX.Element {
       return;
     }
 
+    setUsuarioActual(sessionUser);
+    setMostrarPasarela(true);
+  };
+
+  const confirmarCompraBackend = async () => {
+    if (itemsCarrito.length === 0 || procesandoPago) return;
+
     setProcesandoPago(true);
 
     try {
@@ -246,7 +268,6 @@ export default function Carrito(): JSX.Element {
       let erroresRegistrados = 0;
       let comprasExitosasCount = 0;
 
-      // Se genera una compra por cada unidad adquirida para permitir su agendamiento independiente
       for (const item of itemsCarrito) {
         for (let i = 0; i < item.cantidad; i++) {
           const resultado = await TiendaService.registrarCompra({
@@ -267,7 +288,7 @@ export default function Carrito(): JSX.Element {
 
       if (erroresRegistrados > 0 && comprasExitosasCount === 0) {
         showToast(
-          "No fue posible procesar el pago con el servidor. Tu carrito sigue intacto.",
+          "No fue posible registrar el pago con el servidor. Tu carrito sigue intacto.",
           "warning",
         );
         await cargarCarrito();
@@ -283,7 +304,6 @@ export default function Carrito(): JSX.Element {
         return;
       }
 
-      // Solo si todas las compras se registraron con éxito, vaciamos el carrito
       await TiendaService.vaciarCarrito();
       setItemsCarrito([]);
 
@@ -291,28 +311,17 @@ export default function Carrito(): JSX.Element {
         "¡Pago procesado con éxito! Los servicios han sido asignados a tu Portal del Paciente.",
         "success",
       );
-
-      setTimeout(() => {
-        navigate("/account");
-      }, 2500);
     } catch (err) {
       console.error("Error durante el checkout:", err);
-      showToast("Error inesperado durante el procesamiento del pago.", "warning");
+      showToast(
+        "Error inesperado durante el procesamiento del pago.",
+        "warning",
+      );
       await cargarCarrito();
     } finally {
       setProcesandoPago(false);
     }
   };
-
-  const totalUnidades = itemsCarrito.reduce(
-    (acc, item) => acc + item.cantidad,
-    0,
-  );
-
-  const totalPagar = itemsCarrito.reduce(
-    (acc, item) => acc + item.servicio.precio * item.cantidad,
-    0,
-  );
 
   return (
     <main className="container my-5 flex-grow-1 position-relative">
@@ -616,24 +625,11 @@ export default function Carrito(): JSX.Element {
             </div>
 
             <button
-              onClick={handleCheckout}
-              disabled={
-                itemsCarrito.length === 0 || cargando || procesandoPago
-              }
+              onClick={handleAbrirPasarela}
+              disabled={itemsCarrito.length === 0 || cargando || procesandoPago}
               className="btn btn-success w-100 fw-bold py-3 rounded-pill shadow-sm mb-3 d-flex align-items-center justify-content-center gap-2"
             >
-              {procesandoPago ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  <span>Procesando Pago Seguro...</span>
-                </>
-              ) : (
-                <span>🔒 Proceder al Pago Seguro</span>
-              )}
+              <span>🔒 Proceder al Pago Seguro</span>
             </button>
 
             <p className="text-muted text-center small mb-0">
@@ -643,7 +639,6 @@ export default function Carrito(): JSX.Element {
           </div>
         </div>
       </div>
-
       {/* Estilos adicionales */}
       <style>{`
         .animation-fade-in {
@@ -660,6 +655,20 @@ export default function Carrito(): JSX.Element {
           overflow: hidden;
         }
       `}</style>
+
+      {mostrarPasarela && (
+        <PaymentGatewayModal
+          isOpen={mostrarPasarela}
+          onClose={() => setMostrarPasarela(false)}
+          onPaymentSuccess={confirmarCompraBackend}
+          onGoToAccount={() => {
+            setMostrarPasarela(false);
+            navigate("/account");
+          }}
+          items={serviciosExpandidos}
+          usuario={usuarioActual}
+        />
+      )}
     </main>
   );
 }

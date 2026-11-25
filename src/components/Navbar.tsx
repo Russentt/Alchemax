@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type JSX } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { StorageUsuario } from "../services/storageUsuario";
+import { CART_UPDATED_EVENT, TiendaService } from "../services/tiendaService";
 
 export default function Navbar(): JSX.Element {
   const [isVisible, setIsVisible] = useState<boolean>(true);
@@ -22,6 +23,28 @@ export default function Navbar(): JSX.Element {
 
   const sesionActual = StorageUsuario.getUsuarioSesion();
   const isAuthenticated = Boolean(sesionActual);
+  const [cartCount, setCartCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (sesionActual?.rol !== "usuario") {
+      return;
+    }
+    let active = true;
+
+    const syncCartCount = async () => {
+      const items = await TiendaService.getItemsCarrito();
+      if (!active) return;
+      const total = items.reduce((acc, item) => acc + item.cantidad, 0);
+      setCartCount(total);
+    };
+
+    void syncCartCount();
+    window.addEventListener(CART_UPDATED_EVENT, syncCartCount);
+    return () => {
+      active = false;
+      window.removeEventListener(CART_UPDATED_EVENT, syncCartCount);
+    };
+  }, [sesionActual?.id, sesionActual?.rol, location.pathname]);
 
   const rutaPerfil =
     sesionActual?.rol === "admin"
@@ -400,16 +423,25 @@ export default function Navbar(): JSX.Element {
                     {sesionActual?.rol === "usuario" && (
                       <Link
                         to="/carrito"
-                        className="btn-kinetic-secondary text-decoration-none text-nowrap w-100 w-lg-auto"
+                        className="btn-kinetic-secondary text-decoration-none text-nowrap w-100 w-lg-auto d-inline-flex align-items-center justify-content-center gap-1"
                         style={{
                           fontSize: "0.9rem",
                           padding: "0.5rem 1.1rem",
                           backgroundColor: "transparent",
                         }}
                         onClick={handleLinkClick}
-                        aria-label="Ir al carrito de compras"
+                        aria-label={`Ir al carrito de compras (${cartCount} ${cartCount === 1 ? "prestación" : "prestaciones"})`}
                       >
-                        🛒 Carrito
+                        <span>🛒 Carrito</span>
+                        {cartCount > 0 && (
+                          <span
+                            className="badge rounded-pill bg-success text-white ms-1"
+                            style={{ fontSize: "0.72rem" }}
+                            aria-live="polite"
+                          >
+                            {cartCount}
+                          </span>
+                        )}
                       </Link>
                     )}
                     <Link

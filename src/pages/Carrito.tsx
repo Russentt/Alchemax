@@ -1,18 +1,19 @@
 import { useEffect, useState, useRef, useCallback, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
 import type { ItemCarrito, Servicio, Usuario } from "../types/index";
-import PaymentGatewayModal from "../components/PaymentGatewayModal";
 import { StorageUsuario } from "../services/storageUsuario";
 import { TiendaService } from "../services/tiendaService";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
+import PaymentGatewayModal from "../components/PaymentGatewayModal";
 
 export default function Carrito(): JSX.Element {
   const [itemsCarrito, setItemsCarrito] = useState<ItemCarrito[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [procesandoPago, setProcesandoPago] = useState<boolean>(false);
   const [actualizandoId, setActualizandoId] = useState<number | null>(null);
-  const [mostrarPasarela, setMostrarPasarela] = useState<boolean>(false);
-  const [usuarioActual, setUsuarioActual] = useState<Usuario | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+  const [paymentItems, setPaymentItems] = useState<Servicio[]>([]);
+  const [paymentUser, setPaymentUser] = useState<Usuario | null>(null);
 
   const [notification, setNotification] = useState<{
     message: string;
@@ -225,22 +226,7 @@ export default function Carrito(): JSX.Element {
     }
   };
 
-  const serviciosExpandidos: Servicio[] = itemsCarrito.flatMap((item) =>
-    Array.from({ length: item.cantidad }, () => item.servicio),
-  );
-
-  const totalUnidades = itemsCarrito.reduce(
-    (acc, item) => acc + item.cantidad,
-    0,
-  );
-
-  const totalPagar = itemsCarrito.reduce(
-    (acc, item) => acc + item.servicio.precio * item.cantidad,
-    0,
-  );
-
-  // Abrir modal datos pago
-  const handleAbrirPasarela = () => {
+  const handleOpenPaymentGateway = () => {
     if (itemsCarrito.length === 0 || procesandoPago) return;
 
     const sessionUser = StorageUsuario.getUsuarioSesion();
@@ -250,15 +236,32 @@ export default function Carrito(): JSX.Element {
         "Debes iniciar sesión para procesar el pago y asignar los servicios.",
         "warning",
       );
-      setTimeout(() => navigate("/login"), 2500);
+      setTimeout(() => navigate("/login"), 2000);
       return;
     }
 
-    setUsuarioActual(sessionUser);
-    setMostrarPasarela(true);
+    if (sessionUser.rol !== "usuario") {
+      showToast(
+        "El flujo de pago está reservado únicamente para cuentas de paciente.",
+        "warning",
+      );
+      return;
+    }
+
+    // Expandimos cada ítem según su cantidad para que Webpay muestre el total exacto
+    const expandidos: Servicio[] = [];
+    for (const item of itemsCarrito) {
+      for (let i = 0; i < item.cantidad; i++) {
+        expandidos.push(item.servicio);
+      }
+    }
+
+    setPaymentItems(expandidos);
+    setPaymentUser(sessionUser);
+    setIsPaymentModalOpen(true);
   };
 
-  const confirmarCompraBackend = async () => {
+  const handleConfirmarPagoEnBD = async () => {
     if (itemsCarrito.length === 0 || procesandoPago) return;
 
     setProcesandoPago(true);
@@ -287,6 +290,7 @@ export default function Carrito(): JSX.Element {
       }
 
       if (erroresRegistrados > 0 && comprasExitosasCount === 0) {
+        setIsPaymentModalOpen(false);
         showToast(
           "No fue posible registrar el pago con el servidor. Tu carrito sigue intacto.",
           "warning",
@@ -296,6 +300,7 @@ export default function Carrito(): JSX.Element {
       }
 
       if (erroresRegistrados > 0) {
+        setIsPaymentModalOpen(false);
         showToast(
           `Se procesaron ${comprasExitosasCount} servicio(s), pero ${erroresRegistrados} fallaron. Revisa tu cuenta.`,
           "warning",
@@ -308,20 +313,28 @@ export default function Carrito(): JSX.Element {
       setItemsCarrito([]);
 
       showToast(
-        "¡Pago procesado con éxito! Los servicios han sido asignados a tu Portal del Paciente.",
+        "¡Pago aprobado y registrado! Tus servicios ya están disponibles en tu Portal del Paciente.",
         "success",
       );
     } catch (err) {
       console.error("Error durante el checkout:", err);
-      showToast(
-        "Error inesperado durante el procesamiento del pago.",
-        "warning",
-      );
+      setIsPaymentModalOpen(false);
+      showToast("Error inesperado durante el procesamiento del pago.", "warning");
       await cargarCarrito();
     } finally {
       setProcesandoPago(false);
     }
   };
+
+  const totalUnidades = itemsCarrito.reduce(
+    (acc, item) => acc + item.cantidad,
+    0,
+  );
+
+  const totalPagar = itemsCarrito.reduce(
+    (acc, item) => acc + item.servicio.precio * item.cantidad,
+    0,
+  );
 
   return (
     <main className="container my-5 flex-grow-1 position-relative">
@@ -625,11 +638,25 @@ export default function Carrito(): JSX.Element {
             </div>
 
             <button
-              onClick={handleAbrirPasarela}
-              disabled={itemsCarrito.length === 0 || cargando || procesandoPago}
+              type="button"
+              onClick={handleOpenPaymentGateway}
+              disabled={
+                itemsCarrito.length === 0 || cargando || procesandoPago
+              }
               className="btn btn-success w-100 fw-bold py-3 rounded-pill shadow-sm mb-3 d-flex align-items-center justify-content-center gap-2"
             >
-              <span>🔒 Proceder al Pago Seguro</span>
+              {procesandoPago ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  <span>Procesando Pago Seguro...</span>
+                </>
+              ) : (
+                <span>🔒 Pagar con Webpay Plus</span>
+              )}
             </button>
 
             <p className="text-muted text-center small mb-0">
@@ -639,6 +666,21 @@ export default function Carrito(): JSX.Element {
           </div>
         </div>
       </div>
+
+      {isPaymentModalOpen && (
+        <PaymentGatewayModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onPaymentSuccess={() => void handleConfirmarPagoEnBD()}
+          onGoToAccount={() => {
+            setIsPaymentModalOpen(false);
+            navigate("/account?tab=compras");
+          }}
+          items={paymentItems}
+          usuario={paymentUser}
+        />
+      )}
+
       {/* Estilos adicionales */}
       <style>{`
         .animation-fade-in {
@@ -655,20 +697,6 @@ export default function Carrito(): JSX.Element {
           overflow: hidden;
         }
       `}</style>
-
-      {mostrarPasarela && (
-        <PaymentGatewayModal
-          isOpen={mostrarPasarela}
-          onClose={() => setMostrarPasarela(false)}
-          onPaymentSuccess={confirmarCompraBackend}
-          onGoToAccount={() => {
-            setMostrarPasarela(false);
-            navigate("/account");
-          }}
-          items={serviciosExpandidos}
-          usuario={usuarioActual}
-        />
-      )}
     </main>
   );
 }

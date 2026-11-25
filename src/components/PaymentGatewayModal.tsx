@@ -70,6 +70,8 @@ export default function PaymentGatewayModal({
     orderCode: "NV-2026-841029",
     authCode: "629418",
     timestamp: "",
+    paidAmount: 0,
+    installments: "1",
   });
 
   useEffect(() => {
@@ -127,7 +129,9 @@ export default function PaymentGatewayModal({
         return;
       }
       if (cardHolder.trim().length < 3) {
-        setFormError("Ingresa el nombre del titular tal como figura en la tarjeta.");
+        setFormError(
+          "Ingresa el nombre del titular tal como figura en la tarjeta.",
+        );
         return;
       }
       if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
@@ -153,8 +157,17 @@ export default function PaymentGatewayModal({
       minute: "2-digit",
     });
 
+    const amountAtPayment = montoFinal;
+    const selectedInstallments = method === "credito" ? cuotas : "1";
+
     window.setTimeout(() => {
-      setOrderInfo({ orderCode, authCode, timestamp });
+      setOrderInfo({
+        orderCode,
+        authCode,
+        timestamp,
+        paidAmount: amountAtPayment,
+        installments: selectedInstallments,
+      });
       setStep("success");
       onPaymentSuccess();
     }, 1400);
@@ -189,7 +202,8 @@ export default function PaymentGatewayModal({
         <div
           className="px-4 py-3 text-white d-flex justify-content-between align-items-center"
           style={{
-            background: "linear-gradient(135deg, #2d1457 0%, #5b21b6 65%, #7c3aed 100%)",
+            background:
+              "linear-gradient(135deg, #2d1457 0%, #5b21b6 65%, #7c3aed 100%)",
           }}
         >
           <div className="d-flex align-items-center gap-3">
@@ -206,10 +220,16 @@ export default function PaymentGatewayModal({
             </div>
             <div>
               <div className="d-flex align-items-center gap-2">
-                <h5 id="webpayModalTitle" className="mb-0 fw-bolder tracking-tight">
+                <h5
+                  id="webpayModalTitle"
+                  className="mb-0 fw-bolder tracking-tight"
+                >
                   Webpay Plus
                 </h5>
-                <span className="badge bg-light text-dark rounded-pill" style={{ fontSize: "0.68rem" }}>
+                <span
+                  className="badge bg-light text-dark rounded-pill"
+                  style={{ fontSize: "0.68rem" }}
+                >
                   DEMO
                 </span>
               </div>
@@ -232,7 +252,10 @@ export default function PaymentGatewayModal({
         {/* Barra de resumen de monto */}
         <div className="bg-light border-bottom px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div>
-            <small className="text-muted text-uppercase fw-bold d-block" style={{ fontSize: "0.7rem" }}>
+            <small
+              className="text-muted text-uppercase fw-bold d-block"
+              style={{ fontSize: "0.7rem" }}
+            >
               Comercio / Detalle
             </small>
             <span className="fw-semibold text-dark small">
@@ -242,11 +265,16 @@ export default function PaymentGatewayModal({
             </span>
           </div>
           <div className="text-end">
-            <small className="text-muted text-uppercase fw-bold d-block" style={{ fontSize: "0.7rem" }}>
+            <small
+              className="text-muted text-uppercase fw-bold d-block"
+              style={{ fontSize: "0.7rem" }}
+            >
               Total a pagar
             </small>
             <span className="fs-4 fw-bolder text-success">
-              {formatPriceCLP(montoFinal)}
+              {formatPriceCLP(
+                step === "success" ? orderInfo.paidAmount : montoFinal,
+              )}
             </span>
           </div>
         </div>
@@ -303,7 +331,10 @@ export default function PaymentGatewayModal({
               </div>
 
               {formError && (
-                <div className="alert alert-danger py-2 px-3 small mb-3" role="alert">
+                <div
+                  className="alert alert-danger py-2 px-3 small mb-3"
+                  role="alert"
+                >
                   ⚠️ {formError}
                 </div>
               )}
@@ -311,7 +342,9 @@ export default function PaymentGatewayModal({
               {method === "paypal" ? (
                 <div className="p-3 rounded-4 border bg-light mb-4">
                   <div className="d-flex align-items-center justify-content-between mb-3">
-                    <span className="fw-bolder text-primary fs-5">PayPal Checkout</span>
+                    <span className="fw-bolder text-primary fs-5">
+                      PayPal Checkout
+                    </span>
                     <span className="badge bg-primary-subtle text-primary rounded-pill">
                       Pago Express
                     </span>
@@ -337,8 +370,8 @@ export default function PaymentGatewayModal({
                     />
                   </div>
                   <p className="text-muted small mb-0">
-                    Al confirmar, se simulará la autorización inmediata del pago con
-                    tu cuenta PayPal por {formatPriceCLP(montoFinal)}.
+                    Al confirmar, se simulará la autorización inmediata del pago
+                    con tu cuenta PayPal por {formatPriceCLP(montoFinal)}.
                   </p>
                 </div>
               ) : (
@@ -346,7 +379,8 @@ export default function PaymentGatewayModal({
                   {/* Selector de marca de tarjeta */}
                   <div className="mb-3">
                     <label className="form-label small fw-bold text-uppercase text-muted mb-2">
-                      Marca de tarjeta ({method === "credito" ? "Crédito" : "Débito"})
+                      Marca de tarjeta (
+                      {method === "credito" ? "Crédito" : "Débito"})
                     </label>
                     <div className="d-flex flex-wrap gap-2">
                       {availableBrands.map((itemBrand) => (
@@ -451,7 +485,9 @@ export default function PaymentGatewayModal({
                         type="password"
                         inputMode="numeric"
                         className="form-control apple-input font-monospace"
-                        placeholder={brand === "American Express" ? "1234" : "123"}
+                        placeholder={
+                          brand === "American Express" ? "1234" : "123"
+                        }
                         value={cvv}
                         onChange={(e) => {
                           setCvv(e.target.value.replace(/\D/g, "").slice(0, 4));
@@ -478,10 +514,21 @@ export default function PaymentGatewayModal({
                         value={cuotas}
                         onChange={(e) => setCuotas(e.target.value)}
                       >
-                        <option value="1">Sin cuotas (1 pago de {formatPriceCLP(montoFinal)})</option>
-                        <option value="3">3 cuotas sin interés ({formatPriceCLP(Math.round(montoFinal / 3))}/mes)</option>
-                        <option value="6">6 cuotas ({formatPriceCLP(Math.round(montoFinal / 6))}/mes)</option>
-                        <option value="12">12 cuotas ({formatPriceCLP(Math.round(montoFinal / 12))}/mes)</option>
+                        <option value="1">
+                          Sin cuotas (1 pago de {formatPriceCLP(montoFinal)})
+                        </option>
+                        <option value="3">
+                          3 cuotas sin interés (
+                          {formatPriceCLP(Math.round(montoFinal / 3))}/mes)
+                        </option>
+                        <option value="6">
+                          6 cuotas ({formatPriceCLP(Math.round(montoFinal / 6))}
+                          /mes)
+                        </option>
+                        <option value="12">
+                          12 cuotas (
+                          {formatPriceCLP(Math.round(montoFinal / 12))}/mes)
+                        </option>
                       </select>
                     </div>
                   ) : (
@@ -512,13 +559,16 @@ export default function PaymentGatewayModal({
               {/* Lista breve de servicios si hay items */}
               {items.length > 0 && (
                 <div className="p-3 rounded-3 bg-light border mb-4">
-                  <small className="fw-bold text-muted text-uppercase d-block mb-2" style={{ fontSize: "0.7rem" }}>
+                  <small
+                    className="fw-bold text-muted text-uppercase d-block mb-2"
+                    style={{ fontSize: "0.7rem" }}
+                  >
                     Servicios incluidos
                   </small>
                   <ul className="list-unstyled mb-0 small">
-                    {items.map((srv) => (
+                    {items.map((srv, idx) => (
                       <li
-                        key={srv.id}
+                        key={`${srv.id}-${idx}`}
                         className="d-flex justify-content-between py-1 border-bottom border-opacity-10"
                       >
                         <span className="text-dark">
@@ -549,8 +599,12 @@ export default function PaymentGatewayModal({
                 </button>
               </div>
 
-              <p className="text-center text-muted mb-0 mt-3" style={{ fontSize: "0.75rem" }}>
-                Entorno de demostración — No se realizan cargos reales ni se almacenan datos bancarios.
+              <p
+                className="text-center text-muted mb-0 mt-3"
+                style={{ fontSize: "0.75rem" }}
+              >
+                Entorno de demostración — No se realizan cargos reales ni se
+                almacenan datos bancarios.
               </p>
             </form>
           )}
@@ -568,7 +622,9 @@ export default function PaymentGatewayModal({
                 Conectando con la entidad emisora...
               </h5>
               <p className="text-muted small mb-0">
-                Validando autorización {method === "paypal" ? "PayPal" : `${brand} (${method})`} de forma segura.
+                Validando autorización{" "}
+                {method === "paypal" ? "PayPal" : `${brand} (${method})`} de
+                forma segura.
               </p>
             </div>
           )}
@@ -581,7 +637,9 @@ export default function PaymentGatewayModal({
               >
                 ✓
               </div>
-              <h4 className="fw-bolder text-dark mb-1">¡Transacción Aprobada!</h4>
+              <h4 className="fw-bolder text-dark mb-1">
+                ¡Transacción Aprobada!
+              </h4>
               <p className="text-muted small mb-4">
                 Tu comprobante de pago simulado ha sido generado exitosamente.
               </p>
@@ -607,14 +665,29 @@ export default function PaymentGatewayModal({
                       : `${brand} ${method === "credito" ? "Crédito" : "Débito"} •••• ${last4}`}
                   </span>
                 </div>
+                {method === "credito" && Number(orderInfo.installments) > 1 && (
+                  <div className="d-flex justify-content-between py-1">
+                    <span className="text-muted">Cuotas pactadas</span>
+                    <span className="fw-semibold text-dark">
+                      {orderInfo.installments} cuotas de{" "}
+                      {formatPriceCLP(
+                        Math.round(
+                          orderInfo.paidAmount / Number(orderInfo.installments),
+                        ),
+                      )}
+                    </span>
+                  </div>
+                )}
                 <div className="d-flex justify-content-between py-1">
                   <span className="text-muted">Fecha y hora</span>
-                  <span className="fw-semibold text-dark">{orderInfo.timestamp}</span>
+                  <span className="fw-semibold text-dark">
+                    {orderInfo.timestamp}
+                  </span>
                 </div>
                 <div className="d-flex justify-content-between pt-2 mt-1 border-top">
                   <span className="fw-bold text-dark">Monto pagado</span>
                   <span className="fw-bolder text-success">
-                    {formatPriceCLP(montoFinal)}
+                    {formatPriceCLP(orderInfo.paidAmount)}
                   </span>
                 </div>
               </div>

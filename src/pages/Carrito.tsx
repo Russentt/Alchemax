@@ -1,15 +1,19 @@
 import { useEffect, useState, useRef, useCallback, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import type { ItemCarrito } from "../types/index";
+import type { ItemCarrito, Servicio, Usuario } from "../types/index";
 import { StorageUsuario } from "../services/storageUsuario";
 import { TiendaService } from "../services/tiendaService";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
+import PaymentGatewayModal from "../components/PaymentGatewayModal";
 
 export default function Carrito(): JSX.Element {
   const [itemsCarrito, setItemsCarrito] = useState<ItemCarrito[]>([]);
   const [cargando, setCargando] = useState<boolean>(true);
   const [procesandoPago, setProcesandoPago] = useState<boolean>(false);
   const [actualizandoId, setActualizandoId] = useState<number | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+  const [paymentItems, setPaymentItems] = useState<Servicio[]>([]);
+  const [paymentUser, setPaymentUser] = useState<Usuario | null>(null);
 
   const [notification, setNotification] = useState<{
     message: string;
@@ -225,7 +229,7 @@ export default function Carrito(): JSX.Element {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleOpenPaymentGateway = () => {
     if (itemsCarrito.length === 0 || procesandoPago) return;
 
     const sessionUser = StorageUsuario.getUsuarioSesion();
@@ -235,9 +239,33 @@ export default function Carrito(): JSX.Element {
         "Debes iniciar sesión para procesar el pago y asignar los servicios.",
         "warning",
       );
-      setTimeout(() => navigate("/login"), 2500);
+      setTimeout(() => navigate("/login"), 2000);
       return;
     }
+
+    if (sessionUser.rol !== "usuario") {
+      showToast(
+        "El flujo de pago está reservado únicamente para cuentas de paciente.",
+        "warning",
+      );
+      return;
+    }
+
+    // Expandimos cada ítem según su cantidad para que Webpay muestre el total exacto
+    const expandidos: Servicio[] = [];
+    for (const item of itemsCarrito) {
+      for (let i = 0; i < item.cantidad; i++) {
+        expandidos.push(item.servicio);
+      }
+    }
+
+    setPaymentItems(expandidos);
+    setPaymentUser(sessionUser);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleConfirmarPagoEnBD = async () => {
+    if (itemsCarrito.length === 0 || procesandoPago) return;
 
     setProcesandoPago(true);
 
@@ -266,6 +294,7 @@ export default function Carrito(): JSX.Element {
       }
 
       if (erroresRegistrados > 0 && comprasExitosasCount === 0) {
+        setIsPaymentModalOpen(false);
         showToast(
           "No fue posible procesar el pago con el servidor. Tu carrito sigue intacto.",
           "warning",
@@ -275,6 +304,7 @@ export default function Carrito(): JSX.Element {
       }
 
       if (erroresRegistrados > 0) {
+        setIsPaymentModalOpen(false);
         showToast(
           `Se procesaron ${comprasExitosasCount} servicio(s), pero ${erroresRegistrados} fallaron. Revisa tu cuenta.`,
           "warning",
@@ -288,15 +318,12 @@ export default function Carrito(): JSX.Element {
       setItemsCarrito([]);
 
       showToast(
-        "¡Pago procesado con éxito! Los servicios han sido asignados a tu Portal del Paciente.",
+        "¡Pago aprobado y registrado! Tus servicios ya están disponibles en tu Portal del Paciente.",
         "success",
       );
-
-      setTimeout(() => {
-        navigate("/account");
-      }, 2500);
     } catch (err) {
       console.error("Error durante el checkout:", err);
+      setIsPaymentModalOpen(false);
       showToast("Error inesperado durante el procesamiento del pago.", "warning");
       await cargarCarrito();
     } finally {
@@ -616,7 +643,8 @@ export default function Carrito(): JSX.Element {
             </div>
 
             <button
-              onClick={handleCheckout}
+              type="button"
+              onClick={handleOpenPaymentGateway}
               disabled={
                 itemsCarrito.length === 0 || cargando || procesandoPago
               }
@@ -632,7 +660,7 @@ export default function Carrito(): JSX.Element {
                   <span>Procesando Pago Seguro...</span>
                 </>
               ) : (
-                <span>🔒 Proceder al Pago Seguro</span>
+                <span>🔒 Pagar con Webpay Plus</span>
               )}
             </button>
 
@@ -643,6 +671,20 @@ export default function Carrito(): JSX.Element {
           </div>
         </div>
       </div>
+
+      {isPaymentModalOpen && (
+        <PaymentGatewayModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onPaymentSuccess={() => void handleConfirmarPagoEnBD()}
+          onGoToAccount={() => {
+            setIsPaymentModalOpen(false);
+            navigate("/account?tab=compras");
+          }}
+          items={paymentItems}
+          usuario={paymentUser}
+        />
+      )}
 
       {/* Estilos adicionales */}
       <style>{`

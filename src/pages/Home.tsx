@@ -5,6 +5,7 @@ import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
 import type { Servicio } from "../types/index";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
+import ServiceDetailModal from "../components/ServiceDetailModal";
 
 export default function Home(): JSX.Element {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function Home(): JSX.Element {
 
   // Estados de la Vitrina del Catálogo
   const [serviciosPreview, setServiciosPreview] = useState<Servicio[]>([]);
+  const [servicioDetalle, setServicioDetalle] = useState<Servicio | null>(null);
 
   useEffect(() => {
     const cargarPreview = async () => {
@@ -62,7 +64,7 @@ export default function Home(): JSX.Element {
     setMensaje("");
   };
 
-  const handleAddToCart = (servicio: Servicio) => {
+  const handleAddToCart = async (servicio: Servicio, cantidad: number = 1) => {
     const sesionActual = StorageUsuario.getUsuarioSesion();
 
     if (!sesionActual) {
@@ -84,10 +86,39 @@ export default function Home(): JSX.Element {
       return;
     }
 
-    TiendaService.agregarAlCarrito(servicio);
-    setNotification({ message: `¡"${servicio.nombre}" añadido al carrito!`, type: "success" });
-    
-    setTimeout(() => setNotification(null), 4000);
+    const ok = await TiendaService.agregarAlCarrito(servicio, cantidad);
+    if (!ok) {
+      setNotification({
+        message: "No se pudo añadir el servicio al carrito. Intenta nuevamente.",
+        type: "warning",
+      });
+      setTimeout(() => setNotification(null), 4000);
+      return;
+    }
+
+    setNotification({
+      message:
+        cantidad > 1
+          ? `¡${cantidad} unidades de "${servicio.nombre}" añadidas al carrito!`
+          : `¡"${servicio.nombre}" añadido al carrito!`,
+      type: "success",
+    });
+
+    setTimeout(() => setNotification(null), 4500);
+  };
+
+  const handleBuyNow = async (servicio: Servicio, cantidad: number = 1) => {
+    const sesionActual = StorageUsuario.getUsuarioSesion();
+    if (!sesionActual) {
+      navigate("/login");
+      return;
+    }
+    if (sesionActual.rol !== "usuario") return;
+
+    const ok = await TiendaService.agregarAlCarrito(servicio, cantidad);
+    if (ok) {
+      navigate("/carrito");
+    }
   };
 
   return (
@@ -182,9 +213,22 @@ export default function Home(): JSX.Element {
                     <h4 className="fw-bolder text-success mb-3 tracking-tight">
                       {formatPriceCLP(servicio.precio)}
                     </h4>
-                    <button onClick={() => handleAddToCart(servicio)} className="btn btn-dark w-100 fw-bold rounded-pill apple-btn py-2">
-                      Adquirir Plan
-                    </button>
+                    <div className="d-flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setServicioDetalle(servicio)}
+                        className="btn btn-outline-secondary fw-semibold rounded-pill py-2 px-3 small"
+                      >
+                        Detalle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleAddToCart(servicio, 1)}
+                        className="btn btn-dark flex-grow-1 fw-bold rounded-pill apple-btn py-2"
+                      >
+                        Adquirir Plan
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -469,6 +513,17 @@ export default function Home(): JSX.Element {
           </div>
         </div>
       </section>
+      <ServiceDetailModal
+        key={servicioDetalle?.id ?? "closed"}
+        servicio={servicioDetalle}
+        onClose={() => setServicioDetalle(null)}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        isPatientOrGuest={
+          !StorageUsuario.getUsuarioSesion() ||
+          StorageUsuario.getUsuarioSesion()?.rol === "usuario"
+        }
+      />
     </main>
   );
 }

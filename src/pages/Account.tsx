@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type JSX } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import type {
   Usuario,
   Cita,
@@ -32,9 +32,24 @@ export type AccountTab =
   | "examenes"
   | "compras";
 
+const ACCOUNT_TABS_VALIDOS: Set<AccountTab> = new Set([
+  "resumen",
+  "citas",
+  "plan",
+  "evolucion",
+  "examenes",
+  "compras",
+]);
+
 export default function Account(): JSX.Element {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<AccountTab>("resumen");
+  const [searchParams] = useSearchParams();
+  const tabInicialRaw = searchParams.get("tab") as AccountTab | null;
+  const [activeTab, setActiveTab] = useState<AccountTab>(
+    tabInicialRaw && ACCOUNT_TABS_VALIDOS.has(tabInicialRaw)
+      ? tabInicialRaw
+      : "resumen",
+  );
 
   useEffect(() => {
     const sesion = StorageUsuario.getUsuarioSesion();
@@ -72,14 +87,6 @@ export default function Account(): JSX.Element {
     tipo: "Consulta Presencial",
     profesional: "Nut. Andrea Valdés",
   });
-
-  useEffect(() => {
-    const cargarCompras = async () => {
-      const data = await TiendaService.getCompras();
-      setCompras(data);
-    };
-    cargarCompras();
-  }, []);
 
   // Nuevos Estados Interactivos para las Pestañas
   const [comidasCompletadas, setComidasCompletadas] = useState<string[]>([]);

@@ -36,6 +36,14 @@ const formatearISO = (d: Date): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+export const CART_UPDATED_EVENT = "alchemax:cart-updated";
+
+const emitCartUpdated = (): void => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
+  }
+};
+
 // ---------------------------------------------------------
 // SERVICIO DE TIENDA Y REPORTES ADMINISTRATIVOS
 // ---------------------------------------------------------
@@ -78,16 +86,19 @@ export const TiendaService = {
     }
   },
 
-  agregarAlCarrito: async (servicio: Servicio, cantidad: number = 1): Promise<void> => {
+  agregarAlCarrito: async (servicio: Servicio, cantidad: number = 1): Promise<boolean> => {
     const usuarioId = getUsuarioId();
-    if (!usuarioId || !servicio.id) return;
+    if (!usuarioId || !servicio.id) return false;
 
     try {
       await api.post(`/api/carrito/usuario/${usuarioId}/agregar`, null, {
         params: { servicioId: Number(servicio.id), cantidad: Math.max(1, cantidad) },
       });
+      emitCartUpdated();
+      return true;
     } catch (error) {
       console.error("Error al agregar al carrito:", error);
+      return false;
     }
   },
 
@@ -109,6 +120,7 @@ export const TiendaService = {
         await api.put(`/api/items-carrito/${itemCarritoId}`, {
           cantidad: nuevaCantidad,
         });
+        emitCartUpdated();
         return true;
       }
 
@@ -121,6 +133,7 @@ export const TiendaService = {
         await api.put(`/api/items-carrito/${itemEncontrado.id}`, {
           cantidad: nuevaCantidad,
         });
+        emitCartUpdated();
         return true;
       }
 
@@ -139,6 +152,7 @@ export const TiendaService = {
       await api.delete(`/api/carrito/usuario/${usuarioId}/remover`, {
         params: { servicioId: Number(idServicio) },
       });
+      emitCartUpdated();
     } catch (error) {
       console.error("Error al remover del carrito:", error);
     }
@@ -150,6 +164,7 @@ export const TiendaService = {
 
     try {
       await api.delete(`/api/carrito/usuario/${usuarioId}/vaciar`);
+      emitCartUpdated();
     } catch (error) {
       console.error("Error al vaciar carrito:", error);
     }

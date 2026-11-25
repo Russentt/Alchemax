@@ -1,6 +1,5 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useMemo, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import type { Categoria, Servicio, Usuario } from "../types/index";
 import { TiendaService } from "../services/tiendaService";
 import { StorageUsuario } from "../services/storageUsuario";
@@ -8,35 +7,37 @@ import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
 import PaymentGatewayModal from "../components/PaymentGatewayModal";
+import ServiceDetailModal from "../components/ServiceDetailModal";
 
-const chunkArray = <T,>(arr: T[], size: number): T[][] => {
-  return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
-    arr.slice(i * size, i * size + size),
-  );
-};
+type OrdenCatalogo = "destacados" | "precio-asc" | "precio-desc" | "nombre-asc";
+const SERVICIOS_POR_PAGINA = 8;
 
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
 
   const [servicios, setServicios] = useState<Servicio[]>([]);
-
-  useEffect(() => {
-    const cargarServicios = async () => {
-      const data = await StorageServicios.getServicios();
-      setServicios(data);
-    };
-    cargarServicios();
-  }, []);
-  
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaActiva, setCategoriaActiva] = useState<number | "todas">("todas");
+  const [busquedaCatalogo, setBusquedaCatalogo] = useState<string>("");
+  const [ordenCatalogo, setOrdenCatalogo] = useState<OrdenCatalogo>("destacados");
+  const [paginaCatalogo, setPaginaCatalogo] = useState<number>(1);
+  const [servicioDetalle, setServicioDetalle] = useState<Servicio | null>(null);
 
   useEffect(() => {
-    const cargarCategorias = async () => {
-      const data = await StorageCategorias.getCategorias();
-      setCategorias(data);
+    let active = true;
+    const cargarCatalogo = async () => {
+      const [srvs, cats] = await Promise.all([
+        StorageServicios.getServicios(),
+        StorageCategorias.getCategorias(),
+      ]);
+      if (!active) return;
+      setServicios(srvs.filter((s) => !s.estado || s.estado === "Activo"));
+      setCategorias(cats);
     };
-    cargarCategorias();
+    void cargarCatalogo();
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Nuevo estado para controlar el modal de redirección suave
@@ -45,15 +46,49 @@ export default function Metodologia(): JSX.Element {
   // Estados para la pasarela de pago simulada (Webpay Demo)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
   const [paymentItems, setPaymentItems] = useState<Servicio[]>([]);
-  const [localCartPreview, setLocalCartPreview] = useState<Servicio[]>([]);
   const [paymentUser, setPaymentUser] = useState<Usuario | null>(null);
 
-  const serviciosFiltrados = servicios.filter((servicio) => {
-    if (categoriaActiva === "todas") return true;
-    return String(servicio.categoriaId) === String(categoriaActiva);
-  });
+  const serviciosFiltrados = useMemo(() => {
+    const termino = busquedaCatalogo.trim().toLocaleLowerCase("es-CL");
+    const filtrados = servicios.filter((servicio) => {
+      const coincideCategoria =
+        categoriaActiva === "todas" ||
+        String(servicio.categoriaId) === String(categoriaActiva);
+      if (!coincideCategoria) return false;
+      if (!termino) return true;
+      return `${servicio.nombre} ${servicio.descripcion} ${servicio.tipo} ${servicio.categoriaNombre ?? ""}`
+        .toLocaleLowerCase("es-CL")
+        .includes(termino);
+    });
 
-  const serviciosChunked = chunkArray(serviciosFiltrados, 4);
+    const ordenados = [...filtrados];
+    if (ordenCatalogo === "precio-asc") {
+      ordenados.sort((a, b) => a.precio - b.precio);
+    } else if (ordenCatalogo === "precio-desc") {
+      ordenados.sort((a, b) => b.precio - a.precio);
+    } else if (ordenCatalogo === "nombre-asc") {
+      ordenados.sort((a, b) => a.nombre.localeCompare(b.nombre, "es-CL"));
+    }
+    return ordenados;
+  }, [servicios, categoriaActiva, busquedaCatalogo, ordenCatalogo]);
+
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(serviciosFiltrados.length / SERVICIOS_POR_PAGINA),
+  );
+  const paginaActual = Math.min(paginaCatalogo, totalPaginas);
+  const serviciosPagina = serviciosFiltrados.slice(
+    (paginaActual - 1) * SERVICIOS_POR_PAGINA,
+    paginaActual * SERVICIOS_POR_PAGINA,
+  );
+  const primerItem =
+    serviciosFiltrados.length === 0
+      ? 0
+      : (paginaActual - 1) * SERVICIOS_POR_PAGINA + 1;
+  const ultimoItem = Math.min(
+    paginaActual * SERVICIOS_POR_PAGINA,
+    serviciosFiltrados.length,
+  );
 
   const [triageForm, setTriageForm] = useState({
     peso: "",
@@ -66,6 +101,7 @@ export default function Metodologia(): JSX.Element {
     diagnostico: string;
     color: string;
     recomendacion: string;
+    terminoSugerido: string;
   } | null>(null);
 
   const [notification, setNotification] = useState<{
@@ -92,6 +128,7 @@ export default function Metodologia(): JSX.Element {
           diagnostico: "Bajo Peso",
           color: "warning",
           recomendacion: "Sugerimos un Plan Clínico enfocado en superávit calórico controlado y ganancia de masa magra.",
+          terminoSugerido: "Clínico",
         }
       : imc <= 24.9
         ? {
@@ -100,17 +137,21 @@ export default function Metodologia(): JSX.Element {
             recomendacion: triageForm.objetivo === "rendimiento"
               ? "Estás en un rango óptimo. Te sugerimos el Plan Nutricional Deportivo para potenciar tu rendimiento."
               : "Estás en un rango óptimo. Una Evaluación Biométrica Inicial nos ayudará a afinar tus hábitos actuales.",
+            terminoSugerido:
+              triageForm.objetivo === "rendimiento" ? "Deportivo" : "Evaluación",
           }
         : imc <= 29.9
           ? {
               diagnostico: "Sobrepeso",
               color: "warning",
               recomendacion: "Sugerimos una Evaluación Biométrica Inicial para diseñar un déficit calórico que proteja tu masa muscular.",
+              terminoSugerido: "Evaluación",
             }
           : {
               diagnostico: "Obesidad",
               color: "danger",
               recomendacion: "Te recomendamos encarecidamente nuestro Plan Nutricional Clínico para un abordaje metabólico integral.",
+              terminoSugerido: "Clínico",
             };
 
     setTriageResult({ imc, ...diagnostico });
@@ -132,7 +173,7 @@ export default function Metodologia(): JSX.Element {
     }, 2000);
   };
 
-  const handleAddToCart = (servicio: Servicio) => {
+  const handleAddToCart = async (servicio: Servicio, cantidad: number = 1) => {
     const sesionActual = StorageUsuario.getUsuarioSesion();
 
     if (!sesionActual) {
@@ -150,19 +191,41 @@ export default function Metodologia(): JSX.Element {
       return;
     }
 
-    TiendaService.agregarAlCarrito(servicio);
-    setLocalCartPreview((prev) =>
-      prev.some((item) => item.id === servicio.id) ? prev : [...prev, servicio],
-    );
+    const ok = await TiendaService.agregarAlCarrito(servicio, cantidad);
+    if (!ok) {
+      setNotification({
+        message: "No se pudo añadir el servicio al carrito. Intenta nuevamente.",
+        type: "warning",
+      });
+      setTimeout(() => setNotification(null), 4500);
+      return;
+    }
 
     setNotification({
-      message: `¡"${servicio.nombre}" añadido a tu carrito! Puedes proceder al pago para asignarlo a tu cuenta.`,
+      message:
+        cantidad > 1
+          ? `¡${cantidad} unidades de "${servicio.nombre}" añadidas a tu carrito!`
+          : `¡"${servicio.nombre}" añadido a tu carrito! Puedes ir al carrito para ajustar cantidades o pagar.`,
       type: "success",
     });
 
     setTimeout(() => {
       setNotification(null);
     }, 5000);
+  };
+
+  const handleBuyNow = async (servicio: Servicio, cantidad: number = 1) => {
+    const sesionActual = StorageUsuario.getUsuarioSesion();
+    if (!sesionActual) {
+      redirectToLogin("Inicia sesión para contratar este servicio.");
+      return;
+    }
+    if (sesionActual.rol !== "usuario") return;
+
+    const ok = await TiendaService.agregarAlCarrito(servicio, cantidad);
+    if (ok) {
+      navigate("/carrito");
+    }
   };
 
   const handleProceedToPayment = async () => {
@@ -184,9 +247,16 @@ export default function Metodologia(): JSX.Element {
     }
 
     const carritoRemoto = await TiendaService.getCarrito();
-    setPaymentItems(
-      carritoRemoto.length > 0 ? carritoRemoto : localCartPreview,
-    );
+    if (carritoRemoto.length === 0) {
+      setNotification({
+        message: "Tu carrito está vacío. Añade al menos un servicio del catálogo antes de pagar.",
+        type: "warning",
+      });
+      setTimeout(() => setNotification(null), 4500);
+      return;
+    }
+
+    setPaymentItems(carritoRemoto);
     setPaymentUser(sesionActual);
     setIsPaymentModalOpen(true);
   };
@@ -203,7 +273,6 @@ export default function Metodologia(): JSX.Element {
       });
     }
     await TiendaService.vaciarCarrito();
-    setLocalCartPreview([]);
     setNotification({
       message: "¡Pago aprobado en la pasarela Webpay (Demo)!",
       type: "success",
@@ -329,8 +398,16 @@ export default function Metodologia(): JSX.Element {
                       {triageResult.recomendacion}
                     </p>
                   </div>
-                  <a href="#catalogo" className="btn-kinetic-secondary mt-4 text-decoration-none d-inline-flex">
-                    Ver catálogo sugerido ↓
+                  <a
+                    href="#catalogo"
+                    onClick={() => {
+                      setCategoriaActiva("todas");
+                      setBusquedaCatalogo(triageResult.terminoSugerido);
+                      setPaginaCatalogo(1);
+                    }}
+                    className="btn-kinetic-secondary mt-4 text-decoration-none d-inline-flex"
+                  >
+                    Ver plan sugerido en el catálogo ↓
                   </a>
                 </div>
               )}
@@ -342,103 +419,246 @@ export default function Metodologia(): JSX.Element {
       {/* Catálogo Clínico */}
       <section id="catalogo" className="py-5 position-relative z-index-2">
         <div className="container px-4 px-md-5">
-          <div className="text-center mb-5">
+          <div className="text-center mb-4">
             <h2 className="display-6 fw-bold text-dark tracking-tight">Catálogo de Servicios Clínicos</h2>
-            <p className="text-muted mx-auto" style={{ maxWidth: '600px' }}>
-              Selecciona el plan sugerido en tu Triage o inicia con una evaluación general. Cada plan incluye acceso a nuestro ecosistema digital.
+            <p className="text-muted mx-auto" style={{ maxWidth: '640px' }}>
+              Busca por especialidad, compara planes y consulta el detalle clínico de cada prestación antes de añadirla a tu carrito.
             </p>
           </div>
 
-          <div className="d-flex flex-wrap justify-content-center gap-2 mb-5 p-1 rounded-pill mx-auto" style={{ background: 'rgba(0,0,0,0.03)', maxWidth: 'fit-content' }}>
+          {/* Buscador y Selector de Orden */}
+          <div className="glass-panel-small p-3 p-md-4 rounded-4 mb-4">
+            <div className="row g-3 align-items-end">
+              <div className="col-12 col-md-7">
+                <label
+                  htmlFor="busqueda-catalogo-cliente"
+                  className="form-label small fw-bold text-uppercase text-muted mb-1"
+                >
+                  Buscar servicio o especialidad
+                </label>
+                <div className="input-group">
+                  <input
+                    id="busqueda-catalogo-cliente"
+                    type="search"
+                    className="form-control apple-input"
+                    placeholder="Ej: Evaluación, Deportivo, Telemedicina, Clínico..."
+                    value={busquedaCatalogo}
+                    onChange={(e) => {
+                      setBusquedaCatalogo(e.target.value);
+                      setPaginaCatalogo(1);
+                    }}
+                  />
+                  {busquedaCatalogo && (
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary"
+                      onClick={() => {
+                        setBusquedaCatalogo("");
+                        setPaginaCatalogo(1);
+                      }}
+                      aria-label="Limpiar búsqueda del catálogo"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="col-12 col-sm-6 col-md-3">
+                <label
+                  htmlFor="orden-catalogo-cliente"
+                  className="form-label small fw-bold text-uppercase text-muted mb-1"
+                >
+                  Ordenar por
+                </label>
+                <select
+                  id="orden-catalogo-cliente"
+                  className="form-select apple-input"
+                  value={ordenCatalogo}
+                  onChange={(e) => {
+                    setOrdenCatalogo(e.target.value as OrdenCatalogo);
+                    setPaginaCatalogo(1);
+                  }}
+                >
+                  <option value="destacados">Destacados</option>
+                  <option value="precio-asc">Menor a mayor precio</option>
+                  <option value="precio-desc">Mayor a menor precio</option>
+                  <option value="nombre-asc">Nombre (A–Z)</option>
+                </select>
+              </div>
+              <div className="col-12 col-sm-6 col-md-2 text-md-end">
+                <div className="small text-muted fw-semibold" aria-live="polite">
+                  {primerItem}–{ultimoItem} de {serviciosFiltrados.length}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filtros de Categoría */}
+          <div className="d-flex flex-wrap justify-content-center gap-2 mb-4 p-2 rounded-4 mx-auto" style={{ background: 'rgba(0,0,0,0.03)' }}>
             <button
               type="button"
               className={`btn btn-sm rounded-pill px-4 py-2 fw-bold transition-all ${categoriaActiva === "todas" ? "bg-white text-dark shadow-sm" : "btn-link text-muted text-decoration-none"}`}
-              onClick={() => setCategoriaActiva("todas")}
+              onClick={() => {
+                setCategoriaActiva("todas");
+                setPaginaCatalogo(1);
+              }}
             >
-              Todos
+              Todos ({servicios.length})
             </button>
-            {categorias.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`btn btn-sm rounded-pill px-4 py-2 fw-bold transition-all ${categoriaActiva === cat.id ? "bg-white text-dark shadow-sm" : "btn-link text-muted text-decoration-none"}`}
-                onClick={() => setCategoriaActiva(cat.id)}
-              >
-                {cat.nombre}
-              </button>
-            ))}
+            {categorias.map((cat) => {
+              const count = servicios.filter(
+                (s) => String(s.categoriaId) === String(cat.id),
+              ).length;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`btn btn-sm rounded-pill px-4 py-2 fw-bold transition-all ${categoriaActiva === cat.id ? "bg-white text-dark shadow-sm" : "btn-link text-muted text-decoration-none"}`}
+                  onClick={() => {
+                    setCategoriaActiva(cat.id);
+                    setPaginaCatalogo(1);
+                  }}
+                >
+                  {cat.nombre} ({count})
+                </button>
+              );
+            })}
           </div>
 
-          <div key={categoriaActiva} id="catalogoCarousel" className="carousel slide" data-bs-ride="false" data-bs-interval="false">
-            <div className="carousel-inner px-2 py-4">
-              {serviciosChunked.length === 0 ? (
-                <div className="col-12 text-center py-5 opacity-50">
-                  <div className="fs-1 text-muted mb-2">🔍</div>
-                  <h5 className="text-muted fw-semibold tracking-tight">Sin servicios en esta categoría.</h5>
-                </div>
-              ) : (
-                serviciosChunked.map((chunk, index) => (
-                  <div key={index} className={`carousel-item ${index === 0 ? "active" : ""}`}>
-                    <div className="row g-4 justify-content-center">
-                      {chunk.map((servicio) => (
-                        <div key={servicio.id} className="col-12 col-md-6 col-lg-3">
-                          <div className="glass-panel-small h-100 rounded-5 hover-lift p-4 d-flex flex-column position-relative overflow-hidden">
-                            <div className="position-absolute" style={{ top: '-20px', right: '-20px', fontSize: '6rem', opacity: 0.05, filter: 'grayscale(100%)' }}>
-                              {servicio.icono}
-                            </div>
-                            <div className="fs-1 mb-3 position-relative z-index-2">{servicio.icono}</div>
-                            <span className="badge bg-dark text-white border-0 align-self-start mb-3 rounded-pill text-uppercase px-3 py-1 tracking-tight" style={{ fontSize: "0.65rem" }}>
-                              {servicio.tipo}
-                            </span>
-                            <h5 className="fw-bolder text-dark mb-2 tracking-tight position-relative z-index-2">
-                              {servicio.nombre}
-                            </h5>
-                            <p className="text-muted small mb-4 flex-grow-1 position-relative z-index-2" style={{ lineHeight: 1.6 }}>
-                              {servicio.descripcion}
-                            </p>
-                            <div className="position-relative z-index-2 border-top pt-3" style={{ borderColor: 'rgba(0,0,0,0.05)!important' }}>
-                              <h4 className="fw-bolder text-success mb-3 tracking-tight">
-                                {formatPriceCLP(servicio.precio)}
-                              </h4>
-                              <button onClick={() => handleAddToCart(servicio)} className="btn btn-dark w-100 fw-bold rounded-pill apple-btn py-2">
-                                + Añadir
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+          {/* Grilla Responsiva y Paginada del Catálogo */}
+          {serviciosPagina.length === 0 ? (
+            <div className="text-center py-5 glass-panel-small rounded-5">
+              <div className="fs-1 text-muted mb-2">🔍</div>
+              <h5 className="text-dark fw-bold tracking-tight mb-2">
+                No encontramos prestaciones con esos criterios
+              </h5>
+              <p className="text-muted small mb-3">
+                Prueba con otra palabra clave o restablece los filtros de categoría.
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline-success rounded-pill px-4 fw-bold"
+                onClick={() => {
+                  setCategoriaActiva("todas");
+                  setBusquedaCatalogo("");
+                  setOrdenCatalogo("destacados");
+                  setPaginaCatalogo(1);
+                }}
+              >
+                Ver todo el catálogo
+              </button>
+            </div>
+          ) : (
+            <div className="row g-4">
+              {serviciosPagina.map((servicio) => (
+                <div key={servicio.id} className="col-12 col-sm-6 col-lg-3">
+                  <div className="glass-panel-small h-100 rounded-5 hover-lift p-4 d-flex flex-column position-relative overflow-hidden">
+                    <div className="position-absolute" style={{ top: '-20px', right: '-20px', fontSize: '6rem', opacity: 0.05, filter: 'grayscale(100%)' }} aria-hidden="true">
+                      {servicio.icono}
+                    </div>
+                    <div className="fs-1 mb-3 position-relative z-index-2" aria-hidden="true">{servicio.icono}</div>
+                    <div className="d-flex flex-wrap gap-1 mb-2 position-relative z-index-2">
+                      <span className="badge bg-dark text-white border-0 rounded-pill text-uppercase px-3 py-1 tracking-tight" style={{ fontSize: "0.65rem" }}>
+                        {servicio.tipo}
+                      </span>
+                      {servicio.categoriaNombre && (
+                        <span className="badge bg-success-subtle text-success rounded-pill px-2 py-1" style={{ fontSize: "0.65rem" }}>
+                          {servicio.categoriaNombre}
+                        </span>
+                      )}
+                    </div>
+                    <h5 className="fw-bolder text-dark mb-2 tracking-tight position-relative z-index-2">
+                      {servicio.nombre}
+                    </h5>
+                    <p className="text-muted small mb-4 flex-grow-1 position-relative z-index-2" style={{ lineHeight: 1.6 }}>
+                      {servicio.descripcion}
+                    </p>
+                    <div className="position-relative z-index-2 border-top pt-3" style={{ borderColor: 'rgba(0,0,0,0.05)!important' }}>
+                      <h4 className="fw-bolder text-success mb-3 tracking-tight">
+                        {formatPriceCLP(servicio.precio)}
+                      </h4>
+                      <div className="d-flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setServicioDetalle(servicio)}
+                          className="btn btn-outline-secondary btn-sm fw-semibold rounded-pill py-2 px-3"
+                          aria-label={`Ver detalle de ${servicio.nombre}`}
+                        >
+                          Detalle
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleAddToCart(servicio, 1)}
+                          className="btn btn-dark btn-sm flex-grow-1 fw-bold rounded-pill apple-btn py-2"
+                        >
+                          + Añadir
+                        </button>
+                      </div>
                     </div>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
+          )}
 
-            {serviciosChunked.length > 1 && (
-              <>
-                <button className="carousel-control-prev" type="button" data-bs-target="#catalogoCarousel" data-bs-slide="prev" style={{ width: "5%", left: "-2%" }}>
-                  <span className="carousel-control-prev-icon bg-dark rounded-circle p-3 shadow-glass" style={{ backgroundSize: '40%' }} aria-hidden="true"></span>
-                  <span className="visually-hidden">Anterior</span>
-                </button>
-                <button className="carousel-control-next" type="button" data-bs-target="#catalogoCarousel" data-bs-slide="next" style={{ width: "5%", right: "-2%" }}>
-                  <span className="carousel-control-next-icon bg-dark rounded-circle p-3 shadow-glass" style={{ backgroundSize: '40%' }} aria-hidden="true"></span>
-                  <span className="visually-hidden">Siguiente</span>
-                </button>
-              </>
-            )}
-          </div>
+          {/* Controles de Paginación */}
+          {totalPaginas > 1 && (
+            <nav
+              aria-label="Paginación del catálogo de servicios"
+              className="d-flex justify-content-center align-items-center gap-3 mt-5"
+            >
+              <button
+                type="button"
+                className="btn btn-outline-dark rounded-pill px-4 fw-semibold"
+                disabled={paginaActual <= 1}
+                onClick={() => setPaginaCatalogo((p) => Math.max(1, p - 1))}
+              >
+                ← Anterior
+              </button>
+              <span className="small fw-bold text-muted font-monospace">
+                Página {paginaActual} de {totalPaginas}
+              </span>
+              <button
+                type="button"
+                className="btn btn-outline-dark rounded-pill px-4 fw-semibold"
+                disabled={paginaActual >= totalPaginas}
+                onClick={() => setPaginaCatalogo((p) => Math.min(totalPaginas, p + 1))}
+              >
+                Siguiente →
+              </button>
+            </nav>
+          )}
 
-          <div className="text-center mt-5 pt-3">
+          <div className="text-center mt-5 pt-3 d-flex flex-wrap justify-content-center gap-3">
+            <Link
+              to="/carrito"
+              className="btn-kinetic-secondary text-decoration-none shadow-sm"
+            >
+              🛒 Revisar mi carrito
+            </Link>
             <button
               type="button"
-              onClick={handleProceedToPayment}
+              onClick={() => void handleProceedToPayment()}
               className="btn-kinetic-health border-0 shadow-glass"
             >
-              <span className="btn-text">Proceder al pago</span>
+              <span className="btn-text">Ir directo al pago Webpay</span>
               <span className="btn-icon">→</span>
             </button>
           </div>
         </div>
       </section>
+
+      <ServiceDetailModal
+        key={servicioDetalle?.id ?? "closed"}
+        servicio={servicioDetalle}
+        onClose={() => setServicioDetalle(null)}
+        onAddToCart={handleAddToCart}
+        onBuyNow={handleBuyNow}
+        isPatientOrGuest={
+          !StorageUsuario.getUsuarioSesion() ||
+          StorageUsuario.getUsuarioSesion()?.rol === "usuario"
+        }
+      />
 
       {isPaymentModalOpen && (
         <PaymentGatewayModal
@@ -447,7 +667,7 @@ export default function Metodologia(): JSX.Element {
           onPaymentSuccess={handlePaymentSuccess}
           onGoToAccount={() => {
             setIsPaymentModalOpen(false);
-            navigate("/account");
+            navigate("/account?tab=compras");
           }}
           items={paymentItems}
           usuario={paymentUser}

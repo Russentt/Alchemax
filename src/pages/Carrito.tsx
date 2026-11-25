@@ -225,88 +225,6 @@ export default function Carrito(): JSX.Element {
     }
   };
 
-  const handleCheckout = async () => {
-    if (itemsCarrito.length === 0 || procesandoPago) return;
-
-    const sessionUser = StorageUsuario.getUsuarioSesion();
-
-    if (!sessionUser) {
-      showToast(
-        "Debes iniciar sesión para procesar el pago y asignar los servicios.",
-        "warning",
-      );
-      setTimeout(() => navigate("/login"), 2500);
-      return;
-    }
-
-    setProcesandoPago(true);
-
-    try {
-      const fechaHoy = new Date().toISOString().split("T")[0];
-      let erroresRegistrados = 0;
-      let comprasExitosasCount = 0;
-
-      // Se genera una compra por cada unidad adquirida para permitir su agendamiento independiente
-      for (const item of itemsCarrito) {
-        for (let i = 0; i < item.cantidad; i++) {
-          const resultado = await TiendaService.registrarCompra({
-            servicio: Number(item.servicio.id),
-            nombre: item.servicio.nombre,
-            fechaCompra: fechaHoy,
-            monto: item.servicio.precio,
-            estado: "Activo",
-          });
-
-          if (!resultado) {
-            erroresRegistrados++;
-          } else {
-            comprasExitosasCount++;
-          }
-        }
-      }
-
-      if (erroresRegistrados > 0 && comprasExitosasCount === 0) {
-        showToast(
-          "No fue posible procesar el pago con el servidor. Tu carrito sigue intacto.",
-          "warning",
-        );
-        await cargarCarrito();
-        return;
-      }
-
-      if (erroresRegistrados > 0) {
-        showToast(
-          `Se procesaron ${comprasExitosasCount} servicio(s), pero ${erroresRegistrados} fallaron. Revisa tu cuenta.`,
-          "warning",
-        );
-        await cargarCarrito();
-        return;
-      }
-
-      // Solo si todas las compras se registraron con éxito, vaciamos el carrito
-      await TiendaService.vaciarCarrito();
-      setItemsCarrito([]);
-
-      showToast(
-        "¡Pago procesado con éxito! Los servicios han sido asignados a tu Portal del Paciente.",
-        "success",
-      );
-
-      setTimeout(() => {
-        navigate("/account");
-      }, 2500);
-    } catch (err) {
-      console.error("Error durante el checkout:", err);
-      showToast(
-        "Error inesperado durante el procesamiento del pago.",
-        "warning",
-      );
-      await cargarCarrito();
-    } finally {
-      setProcesandoPago(false);
-    }
-  };
-
   const serviciosExpandidos: Servicio[] = itemsCarrito.flatMap((item) =>
     Array.from({ length: item.cantidad }, () => item.servicio),
   );
@@ -738,17 +656,19 @@ export default function Carrito(): JSX.Element {
         }
       `}</style>
 
-      <PaymentGatewayModal
-        isOpen={mostrarPasarela}
-        onClose={() => setMostrarPasarela(false)}
-        onPaymentSuccess={confirmarCompraBackend}
-        onGoToAccount={() => {
-          setMostrarPasarela(false);
-          navigate("/account");
-        }}
-        items={serviciosExpandidos}
-        usuario={usuarioActual}
-      />
+      {mostrarPasarela && (
+        <PaymentGatewayModal
+          isOpen={mostrarPasarela}
+          onClose={() => setMostrarPasarela(false)}
+          onPaymentSuccess={confirmarCompraBackend}
+          onGoToAccount={() => {
+            setMostrarPasarela(false);
+            navigate("/account");
+          }}
+          items={serviciosExpandidos}
+          usuario={usuarioActual}
+        />
+      )}
     </main>
   );
 }

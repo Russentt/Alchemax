@@ -120,6 +120,102 @@ body {
   transform: translateY(1px);
 }
 
+/* Slider de Rango de Precio (Dual Thumb) */
+.price-range-slider {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.price-range-track,
+.price-range-fill {
+  position: absolute;
+  height: 6px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.price-range-track {
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.price-range-fill {
+  background: linear-gradient(90deg, var(--color-brand-primary), #2ecc71);
+}
+
+.price-range-input {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: none;
+}
+
+.price-range-input:focus {
+  outline: none;
+}
+
+.price-range-input::-webkit-slider-runnable-track {
+  height: 6px;
+  background: transparent;
+}
+
+.price-range-input::-moz-range-track {
+  height: 6px;
+  background: transparent;
+}
+
+.price-range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2.5px solid var(--color-brand-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-spring);
+}
+
+.price-range-input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2.5px solid var(--color-brand-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-spring);
+}
+
+.price-range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.28);
+}
+
+.price-range-input::-moz-range-thumb:hover {
+  transform: scale(1.12);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.28);
+}
+
+.price-range-input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.22);
+}
+
+.price-range-input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.22);
+}
+
 /* Botones Cinéticos (Estilo Hoverstat) */
 .btn-kinetic-health, .btn-kinetic-secondary {
   display: inline-flex;

@@ -7,10 +7,12 @@ import { StorageCategorias } from "../services/storageCategorias";
 import { StorageServicios } from "../services/storageProductos";
 import { formatPriceCLP } from "../utils/formatPriceCLP";
 import PaymentGatewayModal from "../components/PaymentGatewayModal";
+import PriceRangeSlider from "../components/PriceRangeSlider";
 import ServiceDetailModal from "../components/ServiceDetailModal";
 
 type OrdenCatalogo = "destacados" | "precio-asc" | "precio-desc" | "nombre-asc";
 const SERVICIOS_POR_PAGINA = 8;
+const PASO_PRECIO_CLP = 1000;
 
 export default function Metodologia(): JSX.Element {
   const navigate = useNavigate();
@@ -20,6 +22,10 @@ export default function Metodologia(): JSX.Element {
   const [categoriaActiva, setCategoriaActiva] = useState<number | "todas">("todas");
   const [busquedaCatalogo, setBusquedaCatalogo] = useState<string>("");
   const [ordenCatalogo, setOrdenCatalogo] = useState<OrdenCatalogo>("destacados");
+  const [rangoPrecio, setRangoPrecio] = useState<[number | null, number | null]>([
+    null,
+    null,
+  ]);
   const [paginaCatalogo, setPaginaCatalogo] = useState<number>(1);
   const [servicioDetalle, setServicioDetalle] = useState<Servicio | null>(null);
 
@@ -48,13 +54,44 @@ export default function Metodologia(): JSX.Element {
   const [paymentItems, setPaymentItems] = useState<Servicio[]>([]);
   const [paymentUser, setPaymentUser] = useState<Usuario | null>(null);
 
+  const limitesPrecio = useMemo(() => {
+    if (servicios.length === 0) return { min: 0, max: 0 };
+    const precios = servicios.map((s) => s.precio);
+    const rawMin = Math.min(...precios);
+    const rawMax = Math.max(...precios);
+    if (rawMax < PASO_PRECIO_CLP) {
+      return { min: rawMin, max: rawMax };
+    }
+    return {
+      min: Math.floor(rawMin / PASO_PRECIO_CLP) * PASO_PRECIO_CLP,
+      max: Math.ceil(rawMax / PASO_PRECIO_CLP) * PASO_PRECIO_CLP,
+    };
+  }, [servicios]);
+
+  const precioMinSeleccionado =
+    rangoPrecio[0] !== null
+      ? Math.max(limitesPrecio.min, Math.min(rangoPrecio[0], limitesPrecio.max))
+      : limitesPrecio.min;
+  const precioMaxSeleccionado =
+    rangoPrecio[1] !== null
+      ? Math.min(limitesPrecio.max, Math.max(rangoPrecio[1], limitesPrecio.min))
+      : limitesPrecio.max;
+
   const serviciosFiltrados = useMemo(() => {
     const termino = busquedaCatalogo.trim().toLocaleLowerCase("es-CL");
+    const filtrarPorPrecio = limitesPrecio.max > limitesPrecio.min;
     const filtrados = servicios.filter((servicio) => {
       const coincideCategoria =
         categoriaActiva === "todas" ||
         String(servicio.categoriaId) === String(categoriaActiva);
       if (!coincideCategoria) return false;
+      if (
+        filtrarPorPrecio &&
+        (servicio.precio < precioMinSeleccionado ||
+          servicio.precio > precioMaxSeleccionado)
+      ) {
+        return false;
+      }
       if (!termino) return true;
       return `${servicio.nombre} ${servicio.descripcion} ${servicio.tipo} ${servicio.categoriaNombre ?? ""}`
         .toLocaleLowerCase("es-CL")
@@ -70,7 +107,16 @@ export default function Metodologia(): JSX.Element {
       ordenados.sort((a, b) => a.nombre.localeCompare(b.nombre, "es-CL"));
     }
     return ordenados;
-  }, [servicios, categoriaActiva, busquedaCatalogo, ordenCatalogo]);
+  }, [
+    servicios,
+    categoriaActiva,
+    busquedaCatalogo,
+    ordenCatalogo,
+    limitesPrecio.min,
+    limitesPrecio.max,
+    precioMinSeleccionado,
+    precioMaxSeleccionado,
+  ]);
 
   const totalPaginas = Math.max(
     1,
@@ -403,6 +449,7 @@ export default function Metodologia(): JSX.Element {
                     onClick={() => {
                       setCategoriaActiva("todas");
                       setBusquedaCatalogo(triageResult.terminoSugerido);
+                      setRangoPrecio([null, null]);
                       setPaginaCatalogo(1);
                     }}
                     className="btn-kinetic-secondary mt-4 text-decoration-none d-inline-flex"
@@ -491,6 +538,28 @@ export default function Metodologia(): JSX.Element {
                 </div>
               </div>
             </div>
+
+            {limitesPrecio.max > limitesPrecio.min && (
+              <div className="border-top mt-3 pt-3" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+                <PriceRangeSlider
+                  min={limitesPrecio.min}
+                  max={limitesPrecio.max}
+                  step={
+                    limitesPrecio.max < PASO_PRECIO_CLP ? 1 : PASO_PRECIO_CLP
+                  }
+                  valueMin={precioMinSeleccionado}
+                  valueMax={precioMaxSeleccionado}
+                  onChange={(nextMin, nextMax) => {
+                    setRangoPrecio([nextMin, nextMax]);
+                    setPaginaCatalogo(1);
+                  }}
+                  onReset={() => {
+                    setRangoPrecio([null, null]);
+                    setPaginaCatalogo(1);
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Filtros de Categoría */}
@@ -533,7 +602,7 @@ export default function Metodologia(): JSX.Element {
                 No encontramos prestaciones con esos criterios
               </h5>
               <p className="text-muted small mb-3">
-                Prueba con otra palabra clave o restablece los filtros de categoría.
+                Prueba con otra palabra clave o ajusta los filtros de categoría y precio.
               </p>
               <button
                 type="button"
@@ -542,6 +611,7 @@ export default function Metodologia(): JSX.Element {
                   setCategoriaActiva("todas");
                   setBusquedaCatalogo("");
                   setOrdenCatalogo("destacados");
+                  setRangoPrecio([null, null]);
                   setPaginaCatalogo(1);
                 }}
               >
